@@ -24,7 +24,8 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
     - it writes an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as;
     - it explains a technical term the first time a reply uses it;
     - it gives a short progress line during work that runs longer than a few minutes;
-    - it shows text in the reply instead of pointing to a file the person cannot open.
+    - it shows text in the reply instead of pointing to a file the person cannot open;
+    - it never asks a person to edit a file at a gate: the person gives the decision in the chat or on the pull request, and the agent writes it.
 11. When the person's pending action has not changed since the previous reply and the person asked a question, the **Now** line says that nothing new is needed and holds no URL. `check-reply-shape.sh` keeps requiring a **Now** line as the last line.
 12. On every GitHub plan, the hooks keep blocking the agent's approve and merge calls, and `pnpm gates:check` keeps covering those cases.
 13. `templates/base/SETUP.md` marks each step that needs a paid GitHub plan and gives the free alternative next to it.
@@ -37,6 +38,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
   - After the push, a new step reads the branch rules as requirement 1 says, and checks for a workflow run on the head.
   - The step also sets the **Not yet** line.
   - When the push is refused for the `workflow` scope, the step stops as requirement 4 says, before the pull request opens.
+- **`playbooks/design.md`** (requirement 10): step 5 says the product owner gives each corrected `Decision:` in the chat or on the pull request, and the agent writes it and pushes.
 - **`playbooks/review.md`** (requirement 2): step 6 reports the gate that requirement 1 found, not a fixed code owner.
 - **`SKILL.md`** (requirements 2, 10, 11): the reply examples follow the three cases. The reply rules gain the lines of requirement 10 and the **Now** rule of requirement 11.
 - **`plugins/sdlc/source/hooks/check-reply-shape.sh`** (requirement 11): unchanged; its cases file gains a reply whose **Now** line says that nothing new is needed.
