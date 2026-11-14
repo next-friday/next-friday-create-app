@@ -1,6 +1,6 @@
 # Intent: Close the gaps a consumer hit creating its first project
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 
