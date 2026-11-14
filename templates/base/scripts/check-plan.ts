@@ -374,6 +374,7 @@ function isFixPlanFolder(folder: string): boolean {
 const unplannedBranchPrefixes = ["dependabot/", "changeset-release/"];
 const headReferenceVariable = "GITHUB_HEAD_REF";
 const planPathPattern = /^intent\/[^/]+\/plan\.md$/;
+const manifestFileName = "package.json";
 const testDirectoryPattern = /(?:^|\/)(?:tests?|e2e|__tests__)\//;
 const testFilePattern = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const testChangeAcceptedPattern = /^Test change accepted by: @[\dA-Za-z][\w-]*\.$/m;
@@ -382,17 +383,23 @@ const testChangeAcceptedPattern = /^Test change accepted by: @[\dA-Za-z][\w-]*\.
  * Find a branch that changes code with no plan for its change.
  * @param changedPaths The paths the branch changed since it left the default branch.
  * @param branchName The branch's name; branches that a bot opens for dependencies and releases need no plan.
+ * @param isFirstImport Whether the default branch has no `package.json` yet, as before a generated project's first import.
  * @returns At most one message.
  */
-function findUnplannedChangeProblems(changedPaths: string[], branchName: string): string[] {
+function findUnplannedChangeProblems(
+  changedPaths: string[],
+  branchName: string,
+  isFirstImport = false,
+): string[] {
   const isChangesCode = changedPaths.some(
     changedPath => !changedPath.startsWith(`${intentDirectory}/`),
   );
 
   const hasPlan = changedPaths.some(changedPath => planPathPattern.test(changedPath));
   const isBotBranch = unplannedBranchPrefixes.some(prefix => branchName.startsWith(prefix));
+  const isExempt = hasPlan || isBotBranch || isFirstImport;
 
-  return !isChangesCode || hasPlan || isBotBranch
+  return !isChangesCode || isExempt
     ? []
     : [
         `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request`,
@@ -484,40 +491,40 @@ function findMissingPlanProblems(specText: string, hasPlan: boolean): string[] {
       ];
 }
 
+const addedStatuses = new Set(["accepted", "rejected"]);
+
 /**
- * Tell whether a document says `Status: accepted.` at the end of a line.
+ * Read the status a document gives on its status line.
  * @param text Intent or spec content.
- * @returns True when the status line says accepted.
+ * @returns The word after `Status:`, such as `accepted`, or undefined when there is no status line.
  */
-function isAcceptedDocument(text: string): boolean {
+function readStatus(text: string): string | undefined {
   return splitLines(text)
     .slice(0, statusLineLimit)
-    .some(line => /Status: accepted\.$/.test(line.trimEnd()));
+    .map(line => /Status: ([a-z]+)\.$/.exec(line.trimEnd())?.at(1))
+    .find(status => status !== undefined);
 }
 
 /**
- * Find an intent or a spec that this branch marks accepted before its pull request merged.
- * @param nextFileName The file of the next stage: `spec.md` for an intent, `plan.md` for a spec.
- * @param defaultBranchText The file on the default branch, or undefined when it is not there.
- * @param hasNextFile Whether the next stage's file is beside it.
+ * Find an intent or a spec whose status would be wrong once its pull request merges.
+ * @param status The status the branch writes, or undefined when there is none.
+ * @param isAdded Whether the branch adds the file, which the default branch does not have yet.
  * @returns At most one message.
  */
-function findAcceptedStatusProblems(
-  nextFileName: string,
-  defaultBranchText: string | undefined,
-  hasNextFile: boolean,
-): string[] {
-  if (defaultBranchText === undefined) {
-    return [
-      `the file says "Status: accepted." and is not on ${defaultBranch}; merging its pull request accepts it, so write "Status: draft."`,
-    ];
+function findStatusProblems(status: string | undefined, isAdded: boolean): string[] {
+  if (isAdded) {
+    return status !== undefined && addedStatuses.has(status)
+      ? []
+      : [
+          `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
+        ];
   }
 
-  return hasNextFile || isAcceptedDocument(defaultBranchText)
-    ? []
-    : [
-        `the file says "Status: accepted." and the folder has no ${nextFileName}; only the pull request that adds ${nextFileName} sets it, so write "Status: draft."`,
-      ];
+  return status === "draft"
+    ? [
+        `a merged file does not go back to "Status: draft."; write accepted, rejected, done, withdrawn, or replaced`,
+      ]
+    : [];
 }
 
 const proofSpec = [
@@ -911,26 +918,26 @@ const selfTestCases: SelfTestCase[] = [
       : [],
   },
   {
-    name: "accepted status on a file that is not on the default branch",
-    expectedMessagePart: `is not on ${defaultBranch}`,
-    problems: findAcceptedStatusProblems(specFileName, undefined, true),
+    name: "a branch that adds a file as accepted",
+    problems: findStatusProblems(readStatus("Author: @a (B). Status: accepted.\n"), true),
   },
   {
-    name: "accepted status without the next stage's file",
-    expectedMessagePart: `has no ${specFileName}`,
-    problems: findAcceptedStatusProblems(specFileName, "Author: A (B). Status: draft.", false),
+    name: "a branch that adds a file as rejected",
+    problems: findStatusProblems(readStatus("Author: @a (B). Status: rejected.\n"), true),
   },
   {
-    name: "accepted status set by the pull request that adds the next stage's file",
-    problems: findAcceptedStatusProblems(specFileName, "Author: A (B). Status: draft.", true),
+    name: "a branch that adds a file as draft",
+    expectedMessagePart: "merging it is the decision",
+    problems: findStatusProblems(readStatus("Author: @a (B). Status: draft.\n"), true),
   },
   {
-    name: "accepted status already on the default branch",
-    problems: findAcceptedStatusProblems(
-      planFileName,
-      "From `intent/health/intent.md`. Status: accepted.",
-      false,
-    ),
+    name: "a branch that marks a merged file done",
+    problems: findStatusProblems(readStatus("From `intent/a/intent.md`. Status: done.\n"), false),
+  },
+  {
+    name: "a branch that sets a merged file back to draft",
+    expectedMessagePart: "does not go back",
+    problems: findStatusProblems(readStatus("From `intent/a/intent.md`. Status: draft.\n"), false),
   },
   {
     name: "a branch that changes code and adds a plan",
@@ -943,7 +950,11 @@ const selfTestCases: SelfTestCase[] = [
   },
   {
     name: "a dependency branch that changes code with no plan",
-    problems: findUnplannedChangeProblems(["package.json"], "dependabot/npm_and_yarn/a"),
+    problems: findUnplannedChangeProblems([manifestFileName], "dependabot/npm_and_yarn/a"),
+  },
+  {
+    name: "the first import of a generated project needs no plan",
+    problems: findUnplannedChangeProblems([manifestFileName, "src/index.ts"], "feat/import", true),
   },
   {
     name: "a branch that changes only intent files",
@@ -1165,7 +1176,13 @@ function findBranchRuleLines(): string[] {
       ),
     );
 
-  return [...findUnplannedChangeProblems(branchChanges.changedPaths, branchName), ...fixPlanLines];
+  const isFirstImport =
+    readDefaultBranchFile(branchChanges.mergeBase, manifestFileName) === undefined;
+
+  return [
+    ...findUnplannedChangeProblems(branchChanges.changedPaths, branchName, isFirstImport),
+    ...fixPlanLines,
+  ];
 }
 
 /**
@@ -1205,45 +1222,30 @@ function findRecordLines(changeFolders: string[]): string[] {
 }
 
 /**
- * Report each intent and spec that this branch marks accepted before its pull request merged.
+ * Report each intent and spec this branch adds or changes whose status would be wrong once it merges.
  * @param changeFolders The `intent/<change>` folders.
  * @returns One line per problem.
  */
-function findAcceptedStatusLines(changeFolders: string[]): string[] {
-  const stages = [
-    [intentFileName, specFileName],
-    [specFileName, planFileName],
-  ] as const;
+function findStatusLines(changeFolders: string[]): string[] {
+  const branchChanges = changeFolders.length > 0 ? findBranchChanges() : undefined;
 
-  const acceptedFiles = changeFolders.flatMap(folder =>
-    stages
-      .map(([fileName, nextFileName]) => ({
-        nextFileName,
-        filePath: path.join(folder, fileName),
-        nextFilePath: path.join(folder, nextFileName),
-      }))
-      .filter(
-        ({filePath}) => existsSync(filePath) && isAcceptedDocument(readFileSync(filePath, "utf8")),
-      ),
-  );
-
-  const branchChanges = acceptedFiles.length > 0 ? findBranchChanges() : undefined;
-
-  if (branchChanges === undefined && acceptedFiles.length > 0) {
-    return [
-      `${defaultBranch} cannot be found, so the "Status: accepted." rule cannot be applied; run "git fetch origin main" to apply it`,
-    ];
+  if (branchChanges === undefined) {
+    return [];
   }
 
-  return branchChanges === undefined
-    ? []
-    : acceptedFiles.flatMap(({filePath, nextFileName, nextFilePath}) =>
-        findAcceptedStatusProblems(
-          nextFileName,
-          readDefaultBranchFile(branchChanges.mergeBase, filePath),
-          existsSync(nextFilePath),
-        ).map(message => `${filePath}: ${message}`),
-      );
+  return changeFolders
+    .flatMap(folder => [intentFileName, specFileName].map(fileName => path.join(folder, fileName)))
+    .filter(filePath => existsSync(filePath))
+    .flatMap(filePath => {
+      const text = readFileSync(filePath, "utf8");
+      const defaultBranchText = readDefaultBranchFile(branchChanges.mergeBase, filePath);
+
+      return defaultBranchText === text.trim()
+        ? []
+        : findStatusProblems(readStatus(text), defaultBranchText === undefined).map(
+            message => `${filePath}: ${message}`,
+          );
+    });
 }
 
 if (selfTestFailures.length > 0) {
@@ -1265,7 +1267,7 @@ if (selfTestFailures.length > 0) {
   const problemLines = [
     ...findPlanLines(planPaths),
     ...findMissingPlanLines(changeFolders),
-    ...findAcceptedStatusLines(changeFolders),
+    ...findStatusLines(changeFolders),
     ...findRecordLines(changeFolders),
     ...(argumentPaths.length === 0 ? findBranchRuleLines() : []),
   ];
