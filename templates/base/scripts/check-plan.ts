@@ -1240,9 +1240,7 @@ function findStatusLines(changeFolders: string[]): string[] {
   const branchChanges = findBranchChanges();
 
   if (branchChanges === undefined) {
-    return [
-      `${defaultBranch} cannot be found, so the "Status:" rule cannot be applied; run "git fetch origin main" to apply it`,
-    ];
+    return [];
   }
 
   const renamedPaths = new Set(
