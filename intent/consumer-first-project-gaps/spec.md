@@ -28,7 +28,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
 11. When the person's pending action has not changed since the previous reply and the person asked a question, the **Now** line says that nothing new is needed and holds no URL. `check-reply-shape.sh` keeps requiring a **Now** line as the last line.
 12. On every GitHub plan, the hooks keep blocking the agent's approve and merge calls, and `pnpm gates:check` keeps covering those cases.
 13. `templates/base/SETUP.md` marks each step that needs a paid GitHub plan and gives the free alternative next to it.
-14. A project generated from each stack and pushed as the first commit of a new private repository on GitHub Free gets green CI on its first run; the build checks this once for each stack on a scratch repository.
+14. A project generated from each stack and pushed as the first commit of a new private repository on GitHub Free gets green CI on its first run; the build checks this once for each stack on a scratch repository, or says in the pull request that it was not run and why.
 15. The pull request has one changeset of type `minor` for `@next-friday/create-app`. Before it opens, the user is told that it publishes 9.14.0, assuming no other changeset is pending.
 
 ## Design
@@ -51,6 +51,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
   - `README.md` gains "Add a Next.js app" with `turbo gen workspace --copy` and "Remove the backoffice".
   - A test in `test/` generates the stack, copies `apps/app`, and checks that `pnpm verify` passes with no root edit.
 - **`plugins/sdlc/adapters/claude-code/evals/sdlc-mode/`** (requirement 9): the two flaky cases name the exact files the model must write. Each branch or push case's `scaffold.sh` creates its own repository and a bare remote under the writable workspace.
+- **The check of requirement 14:** run by hand during the build, not in CI. For each stack the engineer generates a project, pushes it to a new private scratch repository on GitHub Free, and records the workflow run's result in the pull request.
 - **`.changeset/consumer-first-project-gaps.md`** (requirement 15): `minor`.
 - **Rendered copies:** `pnpm plugin:sync` and `pnpm rules:sync` render the changes into `plugins/sdlc/adapters/` and `templates/base/plugins/sdlc/`.
 
@@ -73,7 +74,6 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
    Decision: requirement 6 moves the check to CI only, downloaded with a pinned checksum.
 4. **The scaffold design for branch and push evals is not verified** (decision the files do not settle). Whether the eval sandbox lets a scaffold create a writable repository outside the read-only `.git` is not checked.
    Decision: the build tries requirement 9's scaffold first. A case that still cannot write is deleted, and the pull request lists each deleted case.
-
 5. **Gates only after a setup step** (decision the files do not settle). The intent proposed that a new project's gates switch on after one setup step.
    Decision: every gate stays on from the start, and the blockers of the first run are fixed one by one (requirements 5, 6, and 7), so no setup step is needed before the first push.
 6. **`pnpm plan:check` loosens for the first import** (decision the files do not settle). The intent asks that the first push works and that the person is told how; it does not ask to change the gate.
