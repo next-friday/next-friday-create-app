@@ -17,7 +17,7 @@ Accepted by: @joetakara.
 - `templates/base/SETUP.md` (changed): step 1 covers a repository that already has a README (requirement 5). Each step that needs a paid plan is marked, with the free alternative next to it (requirement 13).
 - `templates/turborepo/knip.json`, `eslint.config.ts`, `prettier.config.ts`, `.github/dependabot.yml`, `.github/workflows/ci.yml`, `package.json` (changed): name apps through `apps/*` where the tool accepts a glob (requirement 8).
 - `templates/turborepo/README.md` (changed): "Add a Next.js app" with `turbo gen workspace --copy`, and "Remove the backoffice" (requirement 8).
-- `test/turborepo-apps.test.ts` (new): generates the `turborepo` stack, copies `apps/app` with `turbo gen workspace --copy`, and checks that no root file needs an edit (requirement 8).
+- `test/stacks.test.ts` (changed): checks that the `turborepo` root files a copied app would touch name apps only through `apps/*` (requirement 8). The repository's testing rule extends the file that already owns the stack contract instead of adding one.
 - `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/writes-spec-from-merged-intent/` and `drafts-intent-and-waits-for-yes/` (changed): prompts and graders name the exact paths (requirement 9).
 - `.../build-continues-from-an-accepted-plan/`, `.../maintain-writes-intent-from-a-finding/`, `.../writes-spec-from-merged-intent/` (changed): each `scaffold.sh` creates its own repository and a bare remote under the workspace, or the case is deleted (requirement 9). `spec-for-unmerged-intent-stops/scaffold.sh` follows requirement 16.
 - `plugins/sdlc/adapters/**` and `templates/base/plugins/sdlc/**` (changed): rendered by `pnpm plugin:sync` and `pnpm rules:sync`.
@@ -28,7 +28,7 @@ Accepted by: @joetakara.
 
 1. `check-plan.ts` and its self-tests (requirements 5, 16). Check: `node plugins/sdlc/source/scripts/check-plan.ts` passes, with the new self-tests.
 2. Playbooks, `SKILL.md`, `intent/README.md`, and the reply-shape cases (requirements 1–4, 10, 11, 16). Check: `pnpm plugin:sync`, then `pnpm plugin:check`, the reply-shape cases, and `pnpm plan:check` in a generated project pass.
-3. Templates (requirements 6, 7, 8, 13, 5's `SETUP.md` part) and `test/turborepo-apps.test.ts`. Before writing it, read `turbo gen workspace` in the installed Turborepo `docs/reference/generate.mdx`. Check: `pnpm vitest run test/turborepo-apps.test.ts` passes, and `zizmor --offline` on each changed `ci.yml` reports the same findings as on `main`.
+3. Templates (requirements 6, 7, 8, 13, 5's `SETUP.md` part) and the test in `test/stacks.test.ts`. Before writing it, read `turbo gen workspace` in the installed Turborepo `docs/reference/generate.mdx`. Check: `pnpm vitest run test/stacks.test.ts` passes, and `zizmor --offline` on each changed `ci.yml` reports the same findings as on `main`.
 4. Evals (requirement 9). These need the engineer's own Claude login, as `AGENTS.md` says. Check: `pnpm evals:run` and `pnpm evals:run:write` report scores; the two named cases pass three runs in a row.
 5. Changeset, and tell the user it publishes `@next-friday/create-app` 9.14.0; then `pnpm verify` at the root and in a generated project of each of the five stacks. Check: every run exits 0.
 
@@ -50,7 +50,7 @@ Accepted by: @joetakara.
 - 5: `check-plan.ts` self-test for a remote default branch with no `package.json`; `SETUP.md` step 1 text.
 - 6: `pnpm verify` in a generated project of each stack runs no `editorconfig-checker`; each `ci.yml` runs it with a checksum.
 - 7: `grep` finds the commit format line in each stack's `AGENTS.md` and `CONTRIBUTING.md`.
-- 8: `test/turborepo-apps.test.ts`.
+- 8: the `apps/*` test in `test/stacks.test.ts`.
 - 9: three passing runs of each named eval case; scaffold cases pass or are deleted and listed.
 - 10: `grep` finds each of the seven rules in `SKILL.md`.
 - 11: the new `check-reply-shape.cases.json` case passes.

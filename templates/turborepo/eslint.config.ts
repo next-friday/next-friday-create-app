@@ -26,7 +26,7 @@ export default defineConfig(
     },
     settings: {
       next: {
-        rootDir: ["apps/app/", "apps/backoffice/"],
+        rootDir: ["apps/*/"],
       },
     },
     rules: nextConfigs["core-web-vitals"].rules,
@@ -35,6 +35,6 @@ export default defineConfig(
     rules: {
       "friday/component-module": "off",
     },
-    files: ["apps/app/app/**/{page,layout}.tsx", "apps/backoffice/src/app/**/{page,layout}.tsx"],
+    files: ["apps/*/app/**/{page,layout}.tsx", "apps/*/src/app/**/{page,layout}.tsx"],
   },
 );
