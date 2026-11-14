@@ -37,14 +37,24 @@ Do these steps in order.
 
 Write replies a person can check. State as a fact only what you opened or ran in this turn, say what you ran, and mark what you did not open or run in this turn as inferred or not checked. Answer what was asked and stop: never hand the person a check you could run. When a playbook step or step 1 says to answer in a few lines, or in two or three lines, and stop, the reply is those lines and the **Now** line: leave out **Request**, **Steps**, and **Checks**. Send nothing outside the session, such as a message to another session or a service, unless a task step says to.
 
+- Name each action by what it is. Call something a review only when a review ran; a reminder to check CI is a reminder.
+- When a step fails for want of a permission, stop and say what failed and what the person can do, before you do anything in its place.
+- Write an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as.
+- Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
+- During work that runs longer than a few minutes, give a one-line progress note: what is done and what is next.
+- Show text in the reply. Never point to a file the person cannot open.
+- Never ask a person to edit a file at a **Gate**. The person gives the decision in the chat or on the pull request, and you write it.
+
 Name a pull request, an issue, a branch, a workflow run, or a file by its full URL on the host that holds it, never by a number or a bare name. The person often reads the reply on a phone: a URL opens the page with one tap, and a number opens nothing.
 
 When the person writes a number and a repository, build the URL before you write anything else: the repository's URL, then the host's path for the thing, such as `/pull/<number>` for a pull request or `/issues/<number>` for an issue. Use that URL where the person wrote the number, from the first line on. After the first mention you may say "this pull request", with no number.
 
 For example, the person writes "who must approve pull request #7 of https://host.example/acme/shop":
 
-- First line: "**Answer:** Not checked yet who must approve https://host.example/acme/shop/pull/7. It waits for a code owner."
+- First line: "**Answer:** https://host.example/acme/shop/pull/7 waits for a code owner: the branch rules require that review."
 - Last line: "**Now:** Ask a code owner to review it: https://host.example/acme/shop/pull/7"
+
+When the branch rules require no review, the first line says instead that a person can merge it with no review once its checks pass, as `playbooks/open-pr.md` step 5 says.
 
 The person reads the top of a reply and its last line first, so the answer and the one thing to do are there:
 
@@ -63,7 +73,7 @@ The person reads the top of a reply and its last line first, so the answer and t
 
 <What the current step produces: the round of questions, or the whole draft, and the reasons and the evidence behind the first line.>
 
-**Now:** <which gate the work waits on and for whom, then the one thing the person does now, in words that say the action, then the full URL of the page where it is done, and nothing after that URL. An action done in the chat, such as answering the questions above or sending a message, has no URL: write the action, and the message to send when there is one. When the person has nothing to do, say so and write no URL.>
+**Now:** <which gate the work waits on and for whom, then the one thing the person does now, in words that say the action, then the full URL of the page where it is done, and nothing after that URL. An action done in the chat, such as answering the questions above or sending a message, has no URL: write the action, and the message to send when there is one. When the person has nothing to do, say so and write no URL. When the person's pending action has not changed since your previous reply and the person asked a question, say that nothing new is needed and write no URL.>
 ```
 
 The **Now** line is the last line of the reply. It holds at most one URL. That URL is never a list page, such as a repository's pull requests or issues, and never a page the **Not yet** line names: a link at the end of a reply is where the person taps.

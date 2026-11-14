@@ -2,11 +2,11 @@
 
 This playbook turns a merged intent into the requirements and design spec.
 
-1. Find the intent: the `intent/<change>/intent.md` the request names. It must be on the default branch and have no `spec.md` beside it. In each case below, say only that, in two or three lines, and stop: write no file and add no review of the intent.
+1. Find the intent. It is the `intent/<change>/intent.md` the request names. It must be on the default branch and have no `spec.md` beside it. In each case below, say only that, in two or three lines, and stop: write no file and add no review of the intent.
    - The request names no intent, or the file does not exist on any branch: list each `intent/*/intent.md` on the default branch that has no `spec.md`, or say that there is none.
    - The file exists only on another branch: say that the intent is not merged yet, and name that branch.
    - `spec.md` already exists: say so and name the file.
-2. Read the four policies, every time, before you write: for each of `brand`, `security`, `compliance`, and `ux`, read the project's `.agents/skills/<area>-policy/SKILL.md` when it exists, and the plugin's default at `../../<area>-policy/SKILL.md`, relative to this playbook, otherwise. Then read the code and the docs the change touches.
+2. Read the four policies, every time, before you write. For each of `brand`, `security`, `compliance`, and `ux`, read the project's `.agents/skills/<area>-policy/SKILL.md` when it exists, and the plugin's default at `../../<area>-policy/SKILL.md`, relative to this playbook, otherwise. Open each of the four files with your file-reading tool, and name in the reply the four paths you opened. Then read the code and the docs the change touches.
 3. Write `intent/<change>/spec.md` from the template below. Use exactly the template's headings.
    - **Request:** under the status line, quote the words of the request that started this spec. End the line with `Skills at <hash>.`, the short hash of the last commit that changed the plugin's files in this repository: `git log -1 --format=%h -- plugins/sdlc`. When the plugin is not in this repository, write `Skills at unknown.`
    - **Requirements:** numbered. Each one states a result a test or a reader can check.
@@ -14,8 +14,8 @@ This playbook turns a merged intent into the requirements and design spec.
    - **Policies:** one line for each of the four policies. State which rules of that policy the change must meet, each as a requirement number, or write "Does not apply" and why.
    - **Areas of concern:** a policy rule the change cannot meet, two policies that contradict, or a decision the files do not settle. Give each one a number and the policy it comes from. Under each, on a line of its own, write `Decision: <the decision you propose>.` Write "None" only when there are none.
    - **Open questions:** each open question from `intent.md`, answered with its evidence or carried forward. Write "None" only when the intent has none.
-4. Commit `spec.md` on a new branch. In the same commit, set the intent's status line to `Status: accepted.`, because its pull request is merged. Review the commit and write its hash as `playbooks/open-pr.md` step 4 says, then push the branch and open a pull request ready for review, as that playbook's opening paragraph says for branches and pull requests. When you cannot open a pull request from this session, say so and give the pushed branch's name.
-5. **Gate: the product owner reviews the spec.** The product owner corrects the `Decision:` line under each area of concern, with its policy owner, then merges the pull request to accept the spec and those decisions as written. To reject it, they ask you to set its status line to `Status: rejected.` with the reason in one line, and merge that, so the decision stays in the history. Change a `Decision:` line when they tell you its text. For a change the spec classes as higher risk, the product owner consults a tech lead before accepting. You do none of these. The spec stays `Status: draft.`: never write `Status: accepted.` in this pull request, because the plan's commit sets it. Report the pull request's URL, keep it green as `playbooks/review.md` says, and wait.
+4. Commit `spec.md` on a new branch. Review the commit and write its hash as `playbooks/open-pr.md` step 4 says, then push the branch and open a pull request ready for review, as that playbook's opening paragraph says for branches and pull requests. When you cannot open a pull request from this session, say so and give the pushed branch's name.
+5. **Gate: the product owner reviews the spec.** The product owner decides each area of concern with its policy owner and gives you each corrected `Decision:` in the chat or on the pull request; you write it and push. Then they merge the pull request to accept the spec and those decisions as written. To reject it, they ask you to set its status line to `Status: rejected.` with the reason in one line, before the merge or in a new pull request after it, and merge that, so the decision stays in the history. For a change the spec classes as higher risk, the product owner consults a tech lead before accepting. You never decide, merge, or reject for them. The spec says `Status: accepted.` from its first commit, so merging the pull request is what accepts it. Report the pull request's URL, keep it green as `playbooks/review.md` says, and wait.
 
 **Hands off to:** `playbooks/build.md`; an engineer with an agent; when the product owner has merged the spec's pull request and the engineer sends `/sdlc:sdlc-mode build` with the spec's path.
 
@@ -24,7 +24,7 @@ This playbook turns a merged intent into the requirements and design spec.
 ```markdown
 # Spec: <title>
 
-From `intent/<change>/intent.md`. Status: draft.
+From `intent/<change>/intent.md`. Status: accepted.
 
 Request: "<the words of the request that started this spec>".
 

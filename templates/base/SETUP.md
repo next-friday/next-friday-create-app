@@ -34,7 +34,17 @@ The project holds the `sdlc` plugin itself, in `plugins/sdlc/claude-code/` and `
    git push --set-upstream origin main
    ```
 
-**Check:** `git log --oneline origin/main` prints one commit.
+   When the GitHub repository already has a commit, such as a README, push the import to a branch and open a pull request instead. `pnpm plan:check` lets this first import through without a plan while `main` has no `package.json`. `-X theirs` keeps the template's copy of a file, such as `README.md`, that both commits add.
+
+   ```sh
+   git branch -m chore/start-from-template
+   git remote add origin https://github.com/OWNER/REPOSITORY.git
+   git fetch origin main
+   git rebase -X theirs origin/main
+   git push --set-upstream origin chore/start-from-template
+   ```
+
+**Check:** `git log --oneline origin/main` prints one commit, or the import's pull request is open.
 
 ## 2. Owners
 
@@ -54,7 +64,7 @@ In `.github/CODEOWNERS`, add these lines in this order. GitHub uses the last mat
 
 Replace every owner above with a GitHub user or team that has write access to the repository. Also replace the owner placeholder in `.github/zizmor.yml`.
 
-Code owners need: write access to the repository for each owner; for a team, a visible team that itself has write access; and, in a private repository, GitHub Pro, Team, or Enterprise ([code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)). Until the ruleset of step 3 requires their review, a code owner is asked for a review and a pull request merges without it.
+Code owners need: write access to the repository for each owner; for a team, a visible team that itself has write access; and, in a private repository, GitHub Pro, Team, or Enterprise (**paid:** in a private repository; **free alternative:** make the repository public) ([code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)). Until the ruleset of step 3 requires their review, a code owner is asked for a review and a pull request merges without it.
 
 Replace `security@example.com` in `SECURITY.md` with the contact the security policy owner names, such as the security email of the company or of the client.
 
@@ -67,15 +77,15 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 - **Actions → General → Workflow permissions:** select **Read repository contents and packages permissions**. Every workflow requests the extra permissions it needs.
 - **General → Pull Requests:** select **Automatically delete head branches**, so a branch is deleted when its pull request merges.
 - **General → Pull Requests → Allow squash merging:** set the default commit message to the pull request title alone ([configure commit squashing](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-squashing-for-pull-requests)). Each commit on `main` is then the pull request title and number, with only co-author trailers in the body; the pull request description holds the why.
-- **Advanced Security:** enable Dependabot alerts and Dependabot security updates. If the organization has [GitHub Secret Protection](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security), also enable secret scanning and push protection; a private repository needs it for both, and it needs a GitHub Team or GitHub Enterprise plan. gitleaks and TruffleHog scan for secrets in CI either way.
+- **Advanced Security:** enable Dependabot alerts and Dependabot security updates. If the organization has [GitHub Secret Protection](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security), also enable secret scanning and push protection; a private repository needs it for both, and it needs a GitHub Team or GitHub Enterprise plan (**paid:** in a private repository; **free alternative:** gitleaks and TruffleHog scan for secrets in CI either way).
 - **Rules → Rulesets:** protect `main` with:
   - squash merges only, a linear history, and no force pushes or deletion;
   - the required checks `All Checks` and `Validate pull request title`;
   - a pull request before merging, with at least one approval, review from Code Owners, and stale approvals dismissed when new commits are pushed. Claude Code Review follows the severity, exclusion, and nit-cap rules in `REVIEW.md` only on a default branch protected this way ([customize Code Review](https://code.claude.com/docs/en/code-review-customize)).
 
-  Rulesets in a private repository need GitHub Pro, Team, or Enterprise; on GitHub Free, make the repository public or upgrade.
+  Rulesets in a private repository need GitHub Pro, Team, or Enterprise (**paid:** in a private repository; **free alternative:** make the repository public). Without a ruleset, a person can merge a pull request with no review, and the agent says so on each pull request.
 
-- **Secrets and variables → Actions → Variables:** in a private repository, set `CODE_SCANNING` to `true` to run CodeQL, Scorecard, and Dependency Review, which need GitHub Code Security there; public repositories run them without it. Set `CONTAINER_IMAGE` to `false` to skip the job that builds and scans the container image, for a project that ships no image.
+- **Secrets and variables → Actions → Variables:** in a private repository, set `CODE_SCANNING` to `true` to run CodeQL, Scorecard, and Dependency Review, which need GitHub Code Security there (**paid:** in a private repository; **free alternative:** public repositories run them without it). Set `CONTAINER_IMAGE` to `false` to skip the job that builds and scans the container image, for a project that ships no image.
 <!-- deploy:railway -->
 - **Secrets and variables → Actions → Variables:** set `DEPLOY_ENABLED` to `true` when each push to `main` that passes CI should deploy to `dev`; the README's deploy section sets up the environments.
 <!-- deploy:end -->
@@ -87,7 +97,7 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 **Who:** an Owner of the Claude organization, with an owner of the GitHub organization.
 
-- **Code Review:** in [**Admin settings → Claude Code**](https://claude.ai/admin-settings/claude-code#code-review), turn on **Allow code review**, install the Claude GitHub App, and add this repository ([set up Code Review](https://code.claude.com/docs/en/code-review-setup)). It needs a Team or Enterprise plan ([availability](https://code.claude.com/docs/en/code-review#availability)). Keep **Review runs** at **After every push**, the default, so every push to a pull request gets a review. Reviews run on Anthropic's infrastructure, so the repository has no review workflow. Anyone with write access can also comment `@claude review` on a pull request to start a review ([comment commands](https://code.claude.com/docs/en/code-review-pull-requests#comment-commands)).
+- **Code Review:** in [**Admin settings → Claude Code**](https://claude.ai/admin-settings/claude-code#code-review), turn on **Allow code review**, install the Claude GitHub App, and add this repository ([set up Code Review](https://code.claude.com/docs/en/code-review-setup)). It needs a Team or Enterprise plan ([availability](https://code.claude.com/docs/en/code-review#availability)) (**paid:** a Claude Team or Enterprise plan; **free alternative:** the `sdlc` plugin's review playbook reviews each pull request from the agent session). Keep **Review runs** at **After every push**, the default, so every push to a pull request gets a review. Reviews run on Anthropic's infrastructure, so the repository has no review workflow. Anyone with write access can also comment `@claude review` on a pull request to start a review ([comment commands](https://code.claude.com/docs/en/code-review-pull-requests#comment-commands)).
 - **Managed settings:** deploy the non-negotiable settings and hooks as [managed settings](https://code.claude.com/docs/en/settings), tailored from the example in `.claude/managed-settings.example.json`. Engineers cannot override them. When `strictKnownMarketplaces` is set, as in the example, add the marketplace `next-friday-plugins` of this project to it, or Claude Code does not register the project's plugin.
 - **Advisor (optional):** on the Anthropic API or Claude Platform on AWS, `/advisor opus` lets a Sonnet session ask Opus at a plan, a recurring error, and before it reports work done ([advisor tool](https://code.claude.com/docs/en/advisor)). It is experimental. The plugin asks for the same advice through an `advise` subagent in every agent tool, with the models `/sdlc:setup-sdlc` sets.
 - **Monitoring:** turn on the [OpenTelemetry export](https://code.claude.com/docs/en/monitoring-usage). It needs an OpenTelemetry collector or backend that the organization runs, and its endpoint. Set `CLAUDE_CODE_ENABLE_TELEMETRY`, the exporters, and `OTEL_EXPORTER_OTLP_ENDPOINT` in managed settings, or each engineer sets them in a shell or in `~/.claude/settings.json`: Claude Code ignores these variables in the repository's `.claude/settings.json`, so the project cannot turn the export on.

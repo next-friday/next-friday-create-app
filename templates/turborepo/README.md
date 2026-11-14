@@ -46,9 +46,28 @@ CI also runs the build, the end-to-end tests, the container image scans, and the
 
 To reuse task output across CI runs, create a Vercel team, add the repository variable `TURBO_TEAM`, and follow [Turborepo on GitHub Actions](https://turborepo.dev/docs/guides/ci-vendors/github-actions) to allow OIDC. The workflow exchanges GitHub OIDC for a short-lived Remote Cache token. If OIDC is unavailable, set the `TURBO_TOKEN` secret instead. Leave both unset to run without a Remote Cache.
 
+## Apps
+
+Root files name the apps through `apps/*`, so adding or removing an app changes no root file except `prettier.config.ts`, whose `tailwindStylesheet` names one stylesheet.
+
+**Add a Next.js app.** Copy `apps/app` with Turborepo's generator, then give the new app its own port in its `dev` script and in its `playwright.config.ts`:
+
+```sh
+pnpm exec turbo gen workspace --copy <the package name in apps/app/package.json> --destination apps/<name> --name <a new package name>
+pnpm install
+```
+
+**Remove the backoffice.** Delete `apps/backoffice`, then remove what only it uses:
+
+- the root `generate:importmap`, `generate:types`, `migrate`, and `migrate:create` scripts in `package.json`;
+- `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL` from `turbo.json`, `.env.example`, and `.github/workflows/ci.yml`, and the `postgres` service in that workflow;
+- the `apps/backoffice/...` entries in `eslint.config.ts`, `.prettierignore`, `.editorconfig-checker.json`, `.dockerignore`, and `.gitignore`.
+
+Then run `pnpm install` and `pnpm verify`.
+
 ## Container
 
-Each app has a Dockerfile. Build both from the workspace root. The images run as the `node` user and listen on `PORT`, or 3000 when it is unset. The backoffice needs `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL`.
+Each app has a Dockerfile. Build each from the workspace root. The images run as the `node` user and listen on `PORT`, or 3000 when it is unset. The backoffice needs `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL`.
 
 ```sh
 docker build --file apps/app/Dockerfile --tag app .

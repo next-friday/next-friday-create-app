@@ -50,4 +50,16 @@ describe("stacks", () => {
       expect(Object.keys(manifest.scripts)).toContain(stackById[stack].developmentScript);
     },
   );
+
+  it.each([
+    "knip.json",
+    "eslint.config.ts",
+    "package.json",
+    ".github/dependabot.yml",
+    ".github/workflows/ci.yml",
+  ])("names the turborepo apps in %s through apps/*, so a copied app needs no edit there", file => {
+    expect(
+      readFileSync(new URL(`../templates/turborepo/${file}`, import.meta.url), "utf8"),
+    ).not.toMatch(/apps\/app\b/u);
+  });
 });

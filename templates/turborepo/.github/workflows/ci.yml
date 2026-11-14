@@ -166,8 +166,18 @@ jobs:
         run: pnpm lint:check
       - name: Check formatting
         run: pnpm format:check
+      - name: Check files against .editorconfig
         env:
-          GITHUB_TOKEN: ${{ github.token }} # editorconfig-checker downloads its binary from GitHub releases; the token avoids the anonymous rate limit.
+          EDITORCONFIG_CHECKER_VERSION: 4.0.2
+          EDITORCONFIG_CHECKER_SHA256: 44efaef3ed14c6ab52eb87481d78e5e5c204796dccf26e2f4598a61ba17f8003
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/editorconfig-checker-linux-amd64.tar.gz"
+          curl --silent --show-error --fail --location --output "$archive" \
+            "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v${EDITORCONFIG_CHECKER_VERSION}/editorconfig-checker-linux-amd64.tar.gz"
+          echo "${EDITORCONFIG_CHECKER_SHA256}  ${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "$archive" --directory "$RUNNER_TEMP" editorconfig-checker
+          "$RUNNER_TEMP/editorconfig-checker"
       - name: Check package.json ordering
         run: pnpm sort-package-json:check
       - name: Check types
@@ -200,12 +210,10 @@ jobs:
         run: |
           python3 -m venv "$RUNNER_TEMP/diff-cover"
           "$RUNNER_TEMP/diff-cover/bin/pip" install --quiet --require-hashes --only-binary=:all: -r .github/requirements/diff-cover.txt
-          if [[ -f apps/app/coverage/cobertura-coverage.xml ]]; then
-            "$RUNNER_TEMP/diff-cover/bin/diff-cover" apps/app/coverage/cobertura-coverage.xml --compare-branch "origin/$BASE_REF" --fail-under 95 --branch-coverage
-          fi
-          if [[ -f apps/backoffice/coverage/cobertura-coverage.xml ]]; then
-            "$RUNNER_TEMP/diff-cover/bin/diff-cover" apps/backoffice/coverage/cobertura-coverage.xml --compare-branch "origin/$BASE_REF" --fail-under 95 --branch-coverage
-          fi
+          for report in apps/*/coverage/cobertura-coverage.xml; do
+            [[ -f "$report" ]] || continue
+            "$RUNNER_TEMP/diff-cover/bin/diff-cover" "$report" --compare-branch "origin/$BASE_REF" --fail-under 95 --branch-coverage
+          done
 
   image:
     name: Container Image (${{ matrix.app }})

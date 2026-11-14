@@ -16,6 +16,14 @@
     "expected": "pass"
   },
   {
+    "name": "good: an unchanged request, so nothing new and no URL",
+    "input": {
+      "stop_hook_active": false,
+      "last_assistant_message": "**Answer:** The merge accepts the spec.\n\n**Now:** Nothing new is needed; the merge of the spec is still the next step."
+    },
+    "expected": "pass"
+  },
+  {
     "name": "not the shape: plain reply with #42",
     "input": {
       "stop_hook_active": false,

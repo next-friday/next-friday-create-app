@@ -1,6 +1,6 @@
 # Spec: Close the gaps a consumer hit creating its first project
 
-From `intent/consumer-first-project-gaps/intent.md`. Status: draft.
+From `intent/consumer-first-project-gaps/intent.md`. Status: accepted.
 
 Request: "เขียน spec ของ consumer-first-project-gaps". Skills at 0d9684f.
 
