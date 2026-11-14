@@ -57,7 +57,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
 - **Requirement 16:**
   - `plugins/sdlc/source/scripts/check-plan.ts`: `findAcceptedStatusProblems` and its self-tests invert. A branch that adds `intent.md` or `spec.md` must write `Status: accepted.` or `Status: rejected.` there; an edit to a file already on the default branch may write `rejected`, `done`, `withdrawn`, or `replaced`. The old refusal of `accepted` off the default branch goes.
   - `playbooks/plan.md` step 7 and `playbooks/design.md` steps 4 and 5 drop "never write `Status: accepted.`" and "the file stays `Status: draft.`". Both templates write `Status: accepted.`, and `playbooks/build.md` step 6 stops setting the spec's status.
-  - Rejection needs one commit before the merge: the agent writes `Status: rejected.` with the reason, and the product owner merges that. `done` is unchanged, and `plan.md` keeps no status line.
+  - To reject, the agent writes `Status: rejected.` with the reason before the merge, or in a new pull request after it, and the product owner merges that. `done` is unchanged, and `plan.md` keeps no status line.
   - `intent/README.md` lines 6 to 9 say the same.
   - The eval scaffolds that write `Status: draft.`, such as `spec-for-unmerged-intent-stops/scaffold.sh`, change to match.
   - `plugins/sdlc/source/hooks/sdlc-status.sh` and `skills/sdlc-status/SKILL.md` need no change, because they read the line or the files as they are.
