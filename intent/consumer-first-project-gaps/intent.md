@@ -6,23 +6,20 @@ Author: @joetakara (Developer Productivity). Status: draft.
 
 A consumer created its first project from `@next-friday/create-app@9.13.1` with an agent. Most people who try the kit are students, junior developers, and individuals on GitHub Free. The consumer hit these gaps:
 
-1. **The agent reports a review gate that GitHub does not enforce.** `playbooks/review.md` step 6 says the pull request waits for a code owner's approval. `SETUP.md` says that until the ruleset of its step 3 exists, a pull request merges without that approval, and that rulesets on a private repository need GitHub Pro, Team, or Enterprise; the generated `.github/CODEOWNERS` names no owner. The consumer's first pull request merged with no review and no check run while the agent said it waited for a code owner.
+1. **The agent reports a review gate that GitHub does not enforce.** `playbooks/review.md` step 6 says the pull request waits for a code owner's approval. `templates/base/SETUP.md` says that until the ruleset of its step 3 exists, a pull request merges without that approval, and that rulesets on a private repository need GitHub Pro, Team, or Enterprise; `templates/base/.github/CODEOWNERS` names no owner. The consumer's first pull request merged with no review and no check run while the agent said it waited for a code owner.
 2. **Workflow files fall to the consumer.** The agent's token had no `workflow` scope, and GitHub refused the workflow files both on `git push` ("refusing to allow an OAuth App to create or update workflow `.github/workflows/ci.yml` without `workflow` scope") and through the GitHub App ("Insufficient scope: required "workflow""). No playbook covers this. The agent pushed without the workflows and handed the consumer a zip to upload by hand. The pull request merged before anyone uploaded it, so the repository has no CI.
-3. **The `turborepo` stack fixes its apps.** It always has a Next.js app and a Payload backoffice that needs PostgreSQL (`src/stacks.ts`). The consumer wanted two Next.js apps; by the consumer's account, that took hand edits across about 25 files, `ci.yml` included. The withdrawn `intent/monorepo-apps` kept the five stacks as they are.
+3. **The `turborepo` stack fixes its apps.** It always has a Next.js app and a Payload backoffice that needs PostgreSQL (`src/stacks.ts`). The consumer wanted two Next.js apps; that takes hand edits across the root config, `ci.yml`, and the docs. The withdrawn `intent/monorepo-apps` kept the five stacks as they are.
 4. **`pnpm verify` needs GitHub at run time.** `format:check` runs `editorconfig-checker` 7.0.0, which downloads its binary from GitHub releases on first run. Where that host is blocked, `pnpm verify` fails.
-5. **The documented first push assumes an empty repository.** `SETUP.md` step 1 pushes the first commit to `main`, and the `pre-push` hook allows only the push that creates `main`. A repository created on GitHub with a README already has `main`, so the first push goes through a branch, where `pnpm plan:check` refuses it until an engineer-accepted `plan.md` exists. Nothing tells the consumer this.
+5. **The documented first push assumes an empty repository.** `templates/base/SETUP.md` step 1 pushes the first commit to `main`, and the `pre-push` hook allows only the push that creates `main`. A repository created on GitHub with a README already has `main`, so the first push goes through a branch, where `pnpm plan:check` refuses it until an engineer-accepted `plan.md` exists. Nothing tells the consumer this.
 6. **Commit messages need a scope nobody mentions.** The commitlint config rejects a commit with no scope (`scope-empty`), and neither the generated `AGENTS.md` nor `CONTRIBUTING.md` says so; the agent's first commit failed on it.
-7. **Two plugin evals are flaky and the branch cases cannot pass.** `writes-spec-from-merged-intent` and `drafts-intent-and-waits-for-yes` fail on some runs because the model writes the wrong file or policy path. In the owner's eval runs, the cases that create a branch or push always failed, because the eval sandbox's `.git` was read-only.
-
-8. **The agent's replies mislead or burden the person.** In the same session:
-   - The agent called its own reminder to check CI "re-checking the pull request", which read as a review that never happened.
-   - It did not warn, before the merge, that the pull request had no CI and that nothing required a review.
-   - It handed the consumer a manual upload instead of saying, before starting, what it could not do.
-   - It wrote an `Accepted by:` handle the engineer had not given; `playbooks/build.md` step 6 says to ask for one.
-   - Its replies ended with the same request for approval about seven times while the person was still asking questions.
-   - It used terms such as ruleset, scope, and changeset without explaining them.
-   - It went silent during long work, and gave the person a scratchpad path instead of showing the text.
-   - The reply shape in `SKILL.md`, which ends every reply with one **Now** action, pushes the repeated request.
+7. **Two plugin evals are flaky and the branch cases cannot pass.** `writes-spec-from-merged-intent` and `drafts-intent-and-waits-for-yes` fail on some runs because the model writes the wrong file or policy path. The cases that create a branch or push fail in the eval sandbox, whose `.git` is read-only.
+8. **The agent's replies mislead or burden the person.** Nothing in the plugin stops these:
+   - An agent can name its own reminder to check CI as re-checking the pull request, which reads as a review.
+   - No step tells it to warn, before a person can merge, that the pull request has no CI or that nothing requires a review.
+   - No step tells it to say, before it starts, which step it cannot do; it hands the person manual work instead.
+   - It can write an `Accepted by:` handle the engineer did not give, although `playbooks/build.md` step 6 says to ask for one.
+   - The reply shape in `SKILL.md` ends every reply with one **Now** action, so a reply repeats the same request for approval while the person is still asking questions.
+   - It uses terms such as ruleset, scope, and changeset without explaining them, goes silent during long work, and points to files the person cannot open instead of showing the text.
 
 ## Proposed outcome
 
@@ -30,7 +27,7 @@ A consumer created its first project from `@next-friday/create-app@9.13.1` with 
 - On every plan, the gates that need no paid feature hold: the chat gates of each playbook, and the hooks that allow, ask, or block, including the ones that block the agent's approve and merge calls.
 - The agent never says a pull request waits for a code owner unless GitHub requires that approval in the repository. When nothing requires a review, the agent says before the merge that a person can merge the pull request with no review. Branch protection that requires a code owner's approval stays an optional upgrade.
 - A consumer whose agent creates the project does not upload workflow files by hand. When an agent cannot add them, it says so before it opens the pull request, and does not report the pull request as ready.
-- A team can create a Turborepo project whose apps are all Next.js, without hand edits.
+- If the product owner reopens the decision of `intent/monorepo-apps` (Open questions): a team can create a Turborepo project whose apps are all Next.js, without hand edits.
 - `pnpm verify` runs with no download at run time.
 - The generated agent instructions say what commitlint requires.
 - The agent's replies tell the person what is true and what to do, without making them ask twice:
