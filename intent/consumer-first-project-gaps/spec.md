@@ -55,9 +55,13 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
   - A test in `test/` generates the stack, copies `apps/app`, and checks that `pnpm verify` passes with no root edit.
 - **`plugins/sdlc/adapters/claude-code/evals/sdlc-mode/`** (requirement 9): the two flaky cases name the exact files the model must write. Each branch or push case's `scaffold.sh` creates its own repository and a bare remote under the writable workspace.
 - **Requirement 16:**
-  - `plugins/sdlc/source/scripts/check-plan.ts` stops refusing `Status: accepted.` on a branch: it refuses `Status: draft.` in an `intent.md` or `spec.md` that the branch adds, and keeps its self-tests in step.
-  - `playbooks/plan.md` and `playbooks/design.md` write `Status: accepted.` in their templates, and `playbooks/design.md` step 4 and `playbooks/build.md` step 6 stop setting the previous file's status.
-  - `intent/README.md` lines 6 and 7 say the same.
+  - `plugins/sdlc/source/scripts/check-plan.ts`: `findAcceptedStatusProblems` and its self-tests invert. A branch that adds `intent.md` or `spec.md` must write `Status: accepted.` there, and the old refusal of `accepted` off the default branch goes.
+  - `playbooks/plan.md` step 7 and `playbooks/design.md` steps 4 and 5 drop "never write `Status: accepted.`" and "the file stays `Status: draft.`". Both templates write `Status: accepted.`, and `playbooks/build.md` step 6 stops setting the spec's status.
+  - Rejection needs one commit before the merge: the agent writes `Status: rejected.` with the reason, and the product owner merges that. `done` is unchanged, and `plan.md` keeps no status line.
+  - `intent/README.md` lines 6 to 9 say the same.
+  - The eval scaffolds that write `Status: draft.`, such as `spec-for-unmerged-intent-stops/scaffold.sh`, change to match.
+  - `plugins/sdlc/source/hooks/sdlc-status.sh` and `skills/sdlc-status/SKILL.md` need no change, because they read the line or the files as they are.
+  - This spec replaces the status rule of `intent/playbook-plays/spec.md`, which stays as the record of the earlier decision.
 - **The check of requirement 14:** run by hand during the build, not in CI. For each stack the engineer generates a project, pushes it to a new private scratch repository on GitHub Free, and records the workflow run's result in the pull request.
 - **`.changeset/consumer-first-project-gaps.md`** (requirement 15): `minor`.
 - **Rendered copies:** `pnpm plugin:sync` and `pnpm rules:sync` render the changes into `plugins/sdlc/adapters/` and `templates/base/plugins/sdlc/`.
@@ -87,7 +91,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
    Decision: requirement 5 skips the no-plan rule only while the remote default branch has no `package.json`, so every later branch still needs an accepted plan.
 
 7. **When the `Status:` line changes** (decision the product owner made in the chat: "status ต้องเปลี่ยนแบบอัตโนมัติ"). Today the next stage's pull request writes `accepted`, so a merged file says `draft` until then (`intent/playbook-plays/spec.md`; the withdrawn `intent/change-status-index` records the confusion).
-   Decision: the pull request that adds the file writes its accepted status, so the merge itself is the change and needs no bot or second pull request. A workflow that commits after the merge was rejected, because the `main` ruleset requires a pull request for every change.
+   Decision: the pull request that adds the file writes its accepted status, so the merge itself is the change and needs no bot or second pull request. A workflow that commits after the merge was rejected, because the `main` ruleset (id 26197141) has a `pull_request` rule.
 
 ## Open questions
 
