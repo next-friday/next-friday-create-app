@@ -31,7 +31,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
 13. `templates/base/SETUP.md` marks each step that needs a paid GitHub plan and gives the free alternative next to it.
 14. A project generated from each stack and pushed as the first commit of a new private repository on GitHub Free gets green CI on its first run; the build checks this once for each stack on a scratch repository, or says in the pull request that it was not run and why.
 15. The pull request has one changeset of type `minor` for `@next-friday/create-app`. Before it opens, the user is told that it publishes 9.14.0, assuming no other changeset is pending.
-16. Depends on area of concern 7. On the default branch, the `Status:` line of every `intent.md` and `spec.md` is true the moment its pull request merges, with no later pull request needed to update it: the pull request that adds the file writes `Status: accepted.`, so merging it accepts the file. Rejection stays as it is: the product owner has the agent write `Status: rejected.` with a one-line reason, and merges that.
+16. Depends on area of concern 7. On the default branch, the `Status:` line of every `intent.md` and `spec.md` is true the moment its pull request merges, with no later pull request needed to update it: the pull request that adds the file writes `Status: accepted.`, so merging it accepts the file. To reject, the product owner has the agent commit `Status: rejected.` with a one-line reason on the same pull request before the merge, or on a new pull request after it.
 
 ## Design
 
@@ -55,7 +55,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
   - A test in `test/` generates the stack, copies `apps/app`, and checks that `pnpm verify` passes with no root edit.
 - **`plugins/sdlc/adapters/claude-code/evals/sdlc-mode/`** (requirement 9): the two flaky cases name the exact files the model must write. Each branch or push case's `scaffold.sh` creates its own repository and a bare remote under the writable workspace.
 - **Requirement 16:**
-  - `plugins/sdlc/source/scripts/check-plan.ts`: `findAcceptedStatusProblems` and its self-tests invert. A branch that adds `intent.md` or `spec.md` must write `Status: accepted.` there, and the old refusal of `accepted` off the default branch goes.
+  - `plugins/sdlc/source/scripts/check-plan.ts`: `findAcceptedStatusProblems` and its self-tests invert. A branch that adds `intent.md` or `spec.md` must write `Status: accepted.` or `Status: rejected.` there; an edit to a file already on the default branch may write `rejected`, `done`, `withdrawn`, or `replaced`. The old refusal of `accepted` off the default branch goes.
   - `playbooks/plan.md` step 7 and `playbooks/design.md` steps 4 and 5 drop "never write `Status: accepted.`" and "the file stays `Status: draft.`". Both templates write `Status: accepted.`, and `playbooks/build.md` step 6 stops setting the spec's status.
   - Rejection needs one commit before the merge: the agent writes `Status: rejected.` with the reason, and the product owner merges that. `done` is unchanged, and `plan.md` keeps no status line.
   - `intent/README.md` lines 6 to 9 say the same.
