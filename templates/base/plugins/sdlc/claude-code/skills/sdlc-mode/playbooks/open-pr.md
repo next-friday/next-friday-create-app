@@ -20,6 +20,6 @@ Branch from the latest `origin/main`, and open the pull request ready for review
 
    When no workflow run started on the pull request's head, the **Not yet** line says that no CI ran and why, such as no workflow files on the branch.
 
-6. Go on in the same turn, without asking: follow `playbooks/review.md`. Put the findings of step 4 in its comment.
+6. Go on in the same turn, without asking. Follow `playbooks/review.md`. Put the findings of step 4 in its comment.
 
 **Hands off to:** `playbooks/review.md`; an agent; in the same turn, as soon as step 5 is done.

@@ -38,7 +38,7 @@ mkdir -p "$(dirname 'intent/dark-mode/intent.md')"
 cat > 'intent/dark-mode/intent.md' << 'EOF'
 # Intent: dark mode
 
-Author: Joe (Developer Productivity). Status: draft.
+Author: Joe (Developer Productivity). Status: accepted.
 
 ## Problem
 

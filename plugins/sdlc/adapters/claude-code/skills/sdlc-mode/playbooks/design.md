@@ -2,11 +2,11 @@
 
 This playbook turns a merged intent into the requirements and design spec.
 
-1. Find the intent: the `intent/<change>/intent.md` the request names. It must be on the default branch and have no `spec.md` beside it. In each case below, say only that, in two or three lines, and stop: write no file and add no review of the intent.
+1. Find the intent. It is the `intent/<change>/intent.md` the request names. It must be on the default branch and have no `spec.md` beside it. In each case below, say only that, in two or three lines, and stop: write no file and add no review of the intent.
    - The request names no intent, or the file does not exist on any branch: list each `intent/*/intent.md` on the default branch that has no `spec.md`, or say that there is none.
    - The file exists only on another branch: say that the intent is not merged yet, and name that branch.
    - `spec.md` already exists: say so and name the file.
-2. Read the four policies, every time, before you write: for each of `brand`, `security`, `compliance`, and `ux`, read the project's `.agents/skills/<area>-policy/SKILL.md` when it exists, and the plugin's default at `../../<area>-policy/SKILL.md`, relative to this playbook, otherwise. Then read the code and the docs the change touches.
+2. Read the four policies, every time, before you write. For each of `brand`, `security`, `compliance`, and `ux`, read the project's `.agents/skills/<area>-policy/SKILL.md` when it exists, and the plugin's default at `../../<area>-policy/SKILL.md`, relative to this playbook, otherwise. Open each of the four files with your file-reading tool, and name in the reply the four paths you opened. Then read the code and the docs the change touches.
 3. Write `intent/<change>/spec.md` from the template below. Use exactly the template's headings.
    - **Request:** under the status line, quote the words of the request that started this spec. End the line with `Skills at <hash>.`, the short hash of the last commit that changed the plugin's files in this repository: `git log -1 --format=%h -- plugins/sdlc`. When the plugin is not in this repository, write `Skills at unknown.`
    - **Requirements:** numbered. Each one states a result a test or a reader can check.

@@ -19,7 +19,7 @@ Accepted by: @joetakara.
 - `templates/turborepo/README.md` (changed): "Add a Next.js app" with `turbo gen workspace --copy`, and "Remove the backoffice" (requirement 8).
 - `test/stacks.test.ts` (changed): checks that the `turborepo` root files a copied app would touch name apps only through `apps/*` (requirement 8). The repository's testing rule extends the file that already owns the stack contract instead of adding one.
 - `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/writes-spec-from-merged-intent/` and `drafts-intent-and-waits-for-yes/` (changed): prompts and graders name the exact paths (requirement 9).
-- `.../build-continues-from-an-accepted-plan/`, `.../maintain-writes-intent-from-a-finding/`, `.../writes-spec-from-merged-intent/` (changed): each `scaffold.sh` creates its own repository and a bare remote under the workspace, or the case is deleted (requirement 9). `spec-for-unmerged-intent-stops/scaffold.sh` follows requirement 16.
+- `.../build-continues-from-an-accepted-plan/` (deleted): the eval sandbox keeps the workspace's `.git` read-only, so `git checkout -b` fails with "cannot lock ref" even with a remote or a separate Git directory set up by the scaffold, and the case cannot pass (requirement 9, area of concern 4). `writes-spec-from-merged-intent` and `maintain-writes-intent-from-a-finding` (changed): each keeps its other graders and drops only the grader that needs a pushed branch, because the rest of each case passes. `spec-for-unmerged-intent-stops/scaffold.sh` follows requirement 16.
 - `plugins/sdlc/adapters/**` and `templates/base/plugins/sdlc/**` (changed): rendered by `pnpm plugin:sync` and `pnpm rules:sync`.
 - `.changeset/consumer-first-project-gaps.md` (new): `minor` for `@next-friday/create-app` (requirement 15).
 - `intent/consumer-first-project-gaps/plan.md` (new) and `spec.md` (changed): the first commit adds this plan and sets the spec to `Status: accepted.`; `Status: done.` in `intent.md` and `spec.md` when the last requirement is met.
@@ -51,7 +51,7 @@ Accepted by: @joetakara.
 - 6: `pnpm verify` in a generated project of each stack runs no `editorconfig-checker`; each `ci.yml` runs it with a checksum.
 - 7: `grep` finds the commit format line in each stack's `AGENTS.md` and `CONTRIBUTING.md`.
 - 8: the `apps/*` test in `test/stacks.test.ts`.
-- 9: three passing runs of each named eval case; scaffold cases pass or are deleted and listed.
+- 9: three runs of each named eval case; the branch case is deleted and the push graders dropped, as Files says.
 - 10: `grep` finds each of the seven rules in `SKILL.md`.
 - 11: the new `check-reply-shape.cases.json` case passes.
 - 12: no hook changes; `pnpm gates:check` passes.
