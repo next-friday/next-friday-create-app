@@ -11,7 +11,7 @@ This playbook takes a defect in behaviour that already exists to a pull request.
    - **Risks:** what the fix could break, and each option you chose not to take and why.
    - **Proof:** the test that fails today and passes once the cause is fixed, and the command that runs it.
 
-   Show the whole plan and name the file only as `intent/<short-description>/plan.md`. In plan mode you cannot write the file. Show the plan as the plan.
+   Show the whole plan, with the line `File: intent/<short-description>/plan.md` above it, where `<short-description>` is the name you chose. In plan mode you cannot write the file. Show the plan as the plan.
 
 5. **Gate: the engineer accepts the plan.** Stop after showing it, as `playbooks/build.md` step 5 says. Write no file before the acceptance.
 6. Create the branch `fix/<short-description>` as `playbooks/open-pr.md` says. In its first commit, write `intent/<short-description>/plan.md` with the `Accepted by:` line set to the handle of the engineer who accepted it, as `playbooks/build.md` step 6 says.
