@@ -31,6 +31,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
 13. `templates/base/SETUP.md` marks each step that needs a paid GitHub plan and gives the free alternative next to it.
 14. A project generated from each stack and pushed as the first commit of a new private repository on GitHub Free gets green CI on its first run; the build checks this once for each stack on a scratch repository, or says in the pull request that it was not run and why.
 15. The pull request has one changeset of type `minor` for `@next-friday/create-app`. Before it opens, the user is told that it publishes 9.14.0, assuming no other changeset is pending.
+16. Depends on area of concern 7. On the default branch, the `Status:` line of every `intent.md` and `spec.md` is true the moment its pull request merges, with no later pull request needed to update it: the pull request that adds the file writes `Status: accepted.`, so merging it accepts the file. Rejection stays as it is: the product owner has the agent write `Status: rejected.` with a one-line reason, and merges that.
 
 ## Design
 
@@ -53,6 +54,10 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
   - `README.md` gains "Add a Next.js app" with `turbo gen workspace --copy` and "Remove the backoffice".
   - A test in `test/` generates the stack, copies `apps/app`, and checks that `pnpm verify` passes with no root edit.
 - **`plugins/sdlc/adapters/claude-code/evals/sdlc-mode/`** (requirement 9): the two flaky cases name the exact files the model must write. Each branch or push case's `scaffold.sh` creates its own repository and a bare remote under the writable workspace.
+- **Requirement 16:**
+  - `plugins/sdlc/source/scripts/check-plan.ts` stops refusing `Status: accepted.` on a branch: it refuses `Status: draft.` in an `intent.md` or `spec.md` that the branch adds, and keeps its self-tests in step.
+  - `playbooks/plan.md` and `playbooks/design.md` write `Status: accepted.` in their templates, and `playbooks/design.md` step 4 and `playbooks/build.md` step 6 stop setting the previous file's status.
+  - `intent/README.md` lines 6 and 7 say the same.
 - **The check of requirement 14:** run by hand during the build, not in CI. For each stack the engineer generates a project, pushes it to a new private scratch repository on GitHub Free, and records the workflow run's result in the pull request.
 - **`.changeset/consumer-first-project-gaps.md`** (requirement 15): `minor`.
 - **Rendered copies:** `pnpm plugin:sync` and `pnpm rules:sync` render the changes into `plugins/sdlc/adapters/` and `templates/base/plugins/sdlc/`.
@@ -80,6 +85,9 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
    Decision: every gate stays on from the start, and the blockers of the first run are fixed one by one (requirements 5, 6, and 7), so no setup step is needed before the first push.
 6. **`pnpm plan:check` loosens for the first import** (decision the files do not settle). The intent asks that the first push works and that the person is told how; it does not ask to change the gate.
    Decision: requirement 5 skips the no-plan rule only while the remote default branch has no `package.json`, so every later branch still needs an accepted plan.
+
+7. **When the `Status:` line changes** (decision the product owner made in the chat: "status ต้องเปลี่ยนแบบอัตโนมัติ"). Today the next stage's pull request writes `accepted`, so a merged file says `draft` until then (`intent/playbook-plays/spec.md`; the withdrawn `intent/change-status-index` records the confusion).
+   Decision: the pull request that adds the file writes its accepted status, so the merge itself is the change and needs no bot or second pull request. A workflow that commits after the merge was rejected, because the `main` ruleset requires a pull request for every change.
 
 ## Open questions
 
