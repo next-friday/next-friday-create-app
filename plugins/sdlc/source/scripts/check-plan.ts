@@ -492,6 +492,7 @@ function findMissingPlanProblems(specText: string, hasPlan: boolean): string[] {
 }
 
 const addedStatuses = new Set(["accepted", "rejected"]);
+const editedStatuses = new Set(["accepted", "done", "rejected", "replaced", "withdrawn"]);
 
 /**
  * Read the status a document gives on its status line.
@@ -520,11 +521,11 @@ function findStatusProblems(status: string | undefined, isAdded: boolean): strin
         ];
   }
 
-  return status === "draft"
-    ? [
-        `a merged file does not go back to "Status: draft."; write accepted, rejected, done, withdrawn, or replaced`,
-      ]
-    : [];
+  return status !== undefined && editedStatuses.has(status)
+    ? []
+    : [
+        `a merged file keeps a status line that says accepted, rejected, done, withdrawn, or replaced; it never goes back to "Status: draft."`,
+      ];
 }
 
 const proofSpec = [
@@ -935,8 +936,13 @@ const selfTestCases: SelfTestCase[] = [
     problems: findStatusProblems(readStatus("From `intent/a/intent.md`. Status: done.\n"), false),
   },
   {
+    name: "a branch that removes a merged file's status line",
+    expectedMessagePart: "keeps a status line",
+    problems: findStatusProblems(readStatus("# Intent: a\n"), false),
+  },
+  {
     name: "a branch that sets a merged file back to draft",
-    expectedMessagePart: "does not go back",
+    expectedMessagePart: "never goes back",
     problems: findStatusProblems(readStatus("From `intent/a/intent.md`. Status: draft.\n"), false),
   },
   {
@@ -1227,11 +1233,24 @@ function findRecordLines(changeFolders: string[]): string[] {
  * @returns One line per problem.
  */
 function findStatusLines(changeFolders: string[]): string[] {
-  const branchChanges = changeFolders.length > 0 ? findBranchChanges() : undefined;
-
-  if (branchChanges === undefined) {
+  if (changeFolders.length === 0) {
     return [];
   }
+
+  const branchChanges = findBranchChanges();
+
+  if (branchChanges === undefined) {
+    return [
+      `${defaultBranch} cannot be found, so the "Status:" rule cannot be applied; run "git fetch origin main" to apply it`,
+    ];
+  }
+
+  const renamedPaths = new Set(
+    runGit(["diff", "--name-status", "--find-renames", `${branchChanges.mergeBase}...HEAD`])
+      .split("\n")
+      .filter(line => line.startsWith("R"))
+      .map(line => line.split("\t").at(-1) ?? ""),
+  );
 
   return changeFolders
     .flatMap(folder => [intentFileName, specFileName].map(fileName => path.join(folder, fileName)))
@@ -1240,11 +1259,12 @@ function findStatusLines(changeFolders: string[]): string[] {
       const text = readFileSync(filePath, "utf8");
       const defaultBranchText = readDefaultBranchFile(branchChanges.mergeBase, filePath);
 
+      const isAdded =
+        defaultBranchText === undefined && !renamedPaths.has(filePath.split(path.sep).join("/"));
+
       return defaultBranchText === text.trim()
         ? []
-        : findStatusProblems(readStatus(text), defaultBranchText === undefined).map(
-            message => `${filePath}: ${message}`,
-          );
+        : findStatusProblems(readStatus(text), isAdded).map(message => `${filePath}: ${message}`);
     });
 }
 

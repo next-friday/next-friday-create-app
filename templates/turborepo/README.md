@@ -67,7 +67,7 @@ Then run `pnpm install` and `pnpm verify`.
 
 ## Container
 
-Each app has a Dockerfile. Build both from the workspace root. The images run as the `node` user and listen on `PORT`, or 3000 when it is unset. The backoffice needs `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL`.
+Each app has a Dockerfile. Build each from the workspace root. The images run as the `node` user and listen on `PORT`, or 3000 when it is unset. The backoffice needs `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL`.
 
 ```sh
 docker build --file apps/app/Dockerfile --tag app .
