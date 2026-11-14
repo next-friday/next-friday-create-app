@@ -24,7 +24,8 @@ Request: "เขียน spec ของ plan-only-folders". Skills at aed01d3.
 - **`plugins/sdlc/source/scripts/check-plan.ts`:**
   - A helper `readBranchName()` reads `GITHUB_HEAD_REF`, falling back to `git branch --show-current`. `findBranchRuleLines` uses it, and so does the new rule (requirement 3).
   - `findPlanFileLines` passes the branch name to `checkPlan`. A folder with no intent and no spec counts as a fix plan only when the title ends in "(fix)" and the branch starts with `fix/`. Otherwise `checkPlan` reports the requirement 2 message in place of the fix-proof checks (requirements 1, 2).
-  - `findStatusProblems` also accepts `done` on an added file when `readDefaultBranchFile` finds the folder's `plan.md` (requirement 5).
+  - `findStatusLines` looks up the folder's `plan.md` with `readDefaultBranchFile` and passes the result to `findStatusProblems`, which then also accepts `done` on an added file (requirement 5).
+  - `findBranchRuleLines` keeps using the same fix-plan test for the test-edit rule, so a fix plan is one folder with the same three facts everywhere.
   - Self-tests cover:
     - a fix title on a `fix/` branch;
     - a fix title on another branch;
@@ -35,8 +36,8 @@ Request: "เขียน spec ของ plan-only-folders". Skills at aed01d3.
 - **`plugins/sdlc/source/skills/sdlc-mode/SKILL.md`:** one reply rule beside the existing permission rule (requirement 6).
 - **`plugins/sdlc/source/skills/sdlc-mode/playbooks/fix.md`:** step 4 or step 6 names the check (requirement 7).
 - **`intent/<folder>/intent.md` and `spec.md`** for the six folders (requirement 8), each written from that folder's pull request:
-  - `intent.md` uses the plan playbook's template: the Author is the pull request's author, with `Status: done.`
-  - `spec.md` uses the design playbook's template, with each area of concern decided as the pull request shipped it.
+  - `intent.md` uses the plan playbook's template: `Author: @<the pull request author's handle> (<team>). Status: done.`, which `findAuthorProblems` requires.
+  - `spec.md` uses the design playbook's template, with a `Decision:` line under each area of concern stating what the pull request shipped, which `findDecisionProblems` requires.
 - **`.changeset/plan-only-folders.md`** (new): `patch` (requirement 10).
 
 ## Policies
@@ -48,12 +49,12 @@ Request: "เขียน spec ของ plan-only-folders". Skills at aed01d3.
 
 ## Areas of concern
 
-1. **Added files that say `Status: done.`** (a decision the files do not settle). The rule shipped in 9.14.0 lets an added intent or spec say only `accepted` or `rejected`, yet the six folders were built before their intents and specs existed.
+1. **Added files that say `Status: done.`** (a decision the files do not settle; no policy). The rule shipped in 9.14.0 lets an added intent or spec say only `accepted` or `rejected`, yet the six folders were built before their intents and specs existed.
    Decision: allow `done` on an added file only when the folder's `plan.md` is already on the default branch (requirement 5).
-2. **The plans keep their "(fix)" titles** (a decision the files do not settle). After requirement 8, these folders hold a spec, so `check-plan.ts` no longer treats them as fix plans. Their titles still end in "(fix)".
+2. **The plans keep their "(fix)" titles** (a decision the files do not settle; no policy). After requirement 8, these folders hold a spec, so `check-plan.ts` no longer treats them as fix plans. Their titles still end in "(fix)".
    Decision: leave each `plan.md` unchanged as the record of what was accepted. A plan is checked only when a branch changes it.
 
 ## Open questions
 
 - **Patch or minor:** patch. The change corrects the check to match `playbooks/fix.md` and adds no behavior that the playbook does not already describe (`.changeset/README.md`).
-- **The branch in CI:** from `GITHUB_HEAD_REF`, which `check-plan.ts:375` and `:1159` already read for the branch rule (requirement 3).
+- **The branch in CI:** from `GITHUB_HEAD_REF`, which `check-plan.ts` declares at line 375 and reads at lines 1159–1163 for the branch rule (requirement 3).
