@@ -8,17 +8,18 @@ Accepted by: @joetakara.
   - a new `agent_docs` filter, with the patterns of spec requirement 4;
   - `heavy` and `ci_policy` exclude those patterns with `!` entries;
   - `templates/**` stays in `ci_policy`.
-- `.github/workflows/ci.yml` (changed):
+- `.github/workflows/ci.yml` (changed). The agent's token has no `workflow` scope, so the branch carries the new file at `.github/workflows-pending/ci.yml`. The product owner moves it into place on GitHub with their own account: they delete the old file, then rename the pending one. After the move, `.github/workflows-pending/` no longer exists. The new file:
   - **`changes` job:** a new output `agent_checks`. `Select verification mode` drops the `push` shortcut and reads `AGENT_DOCS` from the filter. `full_verification` stays true for a root release pull request.
   - **`agent-gates` job:** it runs when `agent_checks` is true, and gains the `Check formatting` step with its `GITHUB_TOKEN`. The step moves from `format`.
     - Requirement 1 asks for `format:check`, while the spec's design names only `agent-gates`. Moving the step satisfies both.
     - The `editorconfig-checker` that `format:check` runs (`package.json:46`) is fine on Markdown, because its download already uses the token.
   - **`format` job:** it keeps `Check package.json ordering` and `full_verification`.
   - **Every other job** keeps `full_verification`.
-  - **`concurrency`:** `cancel-in-progress` becomes `${{ github.event_name == 'pull_request' }}`. Otherwise a later Markdown-only push to `main` would cancel the full run of an earlier code push, which requirement 2 forbids. The templates key the group on `github.run_id` for a push, so they need no change.
+  - **`concurrency`:** the group becomes `${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}`, as in the templates, so a push to `main` never cancels another push. With a per-ref group, a later Markdown-only push could cancel the run of an earlier code push, which requirement 2 forbids. GitHub cancels a waiting run in the same group even without `cancel-in-progress`.
 - `templates/base/.github/file-filters.yml` (changed): the same `agent_docs` filter. `intent/**` and `REVIEW.md` move out of `ci_policy`, and `heavy` and `ci_policy` exclude the `agent_docs` patterns.
 - `templates/{nodejs,nestjs,nextjs,payload,turborepo}/.github/workflows/ci.yml` (changed). Each file is edited on its own, because the text around `checks` and the `needs` lists differs in `payload` and `turborepo`:
   - **`changes` job:**
+    - Its checkout takes `fetch-depth: 0`. On a push, `dorny/paths-filter` compares with the commit before the push and fetches it when it is missing, and that fetch has no credentials under `persist-credentials: false`, so it would fail in a private repository. The root checkout gets the same depth.
     - `Detect relevant changes` runs when `github.event_name != 'schedule'`.
     - `Select verification mode` writes `full_verification` and `agent_checks`, keeps the draft rule, and drops the `push` shortcut.
     - This text is the same in all five files.
@@ -71,7 +72,7 @@ Accepted by: @joetakara.
 ## Risks
 
 - **Step 2 is the riskiest.** It edits the CI of every generated project, so a wrong `if` or `needs` would skip or always run a job, or let a deploy skip the agent checks. `actionlint` catches expression and `needs` errors. CI-only behaviour is proven only on GitHub, which step 5 and step 6 cover.
-- **Push detection in a private generated project is unverified.** On a push, `dorny/paths-filter` fetches history with git, and the checkout runs with `persist-credentials: false`. The fetch may fail in a private repository. The first Markdown-only push in such a project checks it.
+- **A force push to `main`** can remove the commit before the push from the history, and the `changes` job then fails on that push. `main` takes squash merges, not force pushes.
 - **The root workflow push can be refused** (spec area of concern 2). The plan then stops with the branch held, and opens no pull request without the file.
 - **A required check that a workflow skips stays "Pending"** (spec area of concern 1). Only SAST and OSV-Scanner get `paths-ignore`, and `SETUP.md:83` does not require them.
 - **Not taken: one `checks` job with a step-level `if` on every heavy step.** It repeats the condition about 15 times per stack, where a separate `agent-checks` job states it once.

@@ -1,0 +1,451 @@
+name: Verify
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read # Needed by paths-filter to inspect pull request changes.
+    outputs:
+      heavy: ${{ steps.filter.outputs.heavy }}
+      ci_policy: ${{ steps.filter.outputs.ci_policy }}
+      full_verification: ${{ steps.mode.outputs.full_verification }}
+      agent_checks: ${{ steps.mode.outputs.agent_checks }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Detect relevant changes
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          predicate-quantifier: some-with-excludes
+          filters: .github/file-filters.yml
+      - name: Select verification mode
+        id: mode
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAVY: ${{ steps.filter.outputs.heavy }}
+          CI_POLICY: ${{ steps.filter.outputs.ci_policy }}
+          AGENT_DOCS: ${{ steps.filter.outputs.agent_docs }}
+        run: |
+          release_pr=false
+          if [[ "$EVENT_NAME" == "pull_request" && "$HEAD_REF" == "changeset-release/main" && "$PR_AUTHOR" == "github-actions[bot]" ]]; then
+            release_pr=true
+          fi
+
+          full_verification=false
+          if [[ "$release_pr" == "true" || "$HEAVY" == "true" || "$CI_POLICY" == "true" ]]; then
+            full_verification=true
+          fi
+
+          agent_checks=false
+          if [[ "$full_verification" == "true" || "$AGENT_DOCS" == "true" ]]; then
+            agent_checks=true
+          fi
+
+          echo "full_verification=$full_verification" >> "$GITHUB_OUTPUT"
+          echo "agent_checks=$agent_checks" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: Lint
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Check lint
+        run: pnpm lint:check
+
+  agent-gates:
+    name: Agent Gates
+    needs: changes
+    if: needs.changes.outputs.agent_checks == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # Needed by plan:check to read who merged the plan's pull request.
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Check Cursor rules match .agents/rules
+        run: pnpm rules:check
+      - name: Check agent gates
+        run: pnpm gates:check
+      - name: Check changesets
+        run: pnpm changesets:check
+      - name: Check plans
+        env:
+          GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
+        run: pnpm plan:check
+      - name: Check formatting
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # editorconfig-checker downloads its binary from GitHub releases; the token avoids the anonymous rate limit.
+        run: pnpm format:check
+
+  format:
+    name: Format & Manifests
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Check package.json ordering
+        run: pnpm sort-package-json:check
+
+  test:
+    name: Test & Coverage
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # Needed for Codecov OIDC authentication on trusted runs.
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          disable_search: true
+          fail_ci_if_error: false
+          use_oidc: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          files: coverage/lcov.info
+
+  check-types:
+    name: Type Check
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Check types
+        run: pnpm typecheck
+
+  knip:
+    name: Knip
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Run Knip
+        run: pnpm knip
+
+  audit:
+    name: Dependency Audit
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Audit dependencies
+        run: pnpm audit
+
+  package-validation:
+    name: Package Validation
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Build package
+        run: pnpm build
+      - name: Validate package manifest and files
+        run: pnpm check:publint
+
+  consumer-smoke:
+    name: Consumer Smoke
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+        with:
+          runtime: node@24.20.0
+      - name: Build package
+        run: pnpm build
+      - name: Run the packed CLI in a clean npm consumer
+        shell: bash
+        run: |
+          consumer_dir="$(mktemp -d)"
+          pnpm pack --pack-destination "$consumer_dir"
+          cd "$consumer_dir"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund ./*.tgz
+
+          if output="$(npx --no-install next-friday-create-app my-app --stack unknown 2>&1)"; then
+            echo "Expected an unknown stack to fail." >&2
+            exit 1
+          fi
+          grep --fixed-strings 'Unknown stack "unknown". Use one of: nodejs, nestjs, nextjs, payload, turborepo.' <<<"$output"
+
+          for deploy in none railway; do
+            npx --no-install next-friday-create-app "app-$deploy" --stack nodejs --deploy "$deploy" --skip-git --skip-install </dev/null
+          done
+          test ! -e app-none/railway.json
+          test -f app-railway/railway.json
+
+  templates:
+    name: Template (${{ matrix.stack }}, ${{ matrix.deploy }})
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        stack:
+          - nodejs
+          - nestjs
+          - nextjs
+          - payload
+          - turborepo
+        deploy:
+          - none
+          - railway
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+      - name: Build package
+        run: pnpm build
+      - name: Generate the project from the packed CLI
+        env:
+          STACK: ${{ matrix.stack }}
+          DEPLOY: ${{ matrix.deploy }}
+        run: |
+          tarball_dir="$(mktemp -d)"
+          pnpm pack --pack-destination "$tarball_dir"
+          npm exec --yes --package "$(ls "$tarball_dir"/*.tgz)" -- next-friday-create-app "ci-$STACK" --stack "$STACK" --deploy "$DEPLOY" </dev/null
+          if grep --recursive --files-with-matches --exclude-dir=node_modules --exclude-dir=.git "next-friday-template-$STACK" "ci-$STACK"; then
+            echo "The template name was not replaced." >&2
+            exit 1
+          fi
+          if [ "$DEPLOY" = none ] && {
+            grep --recursive --ignore-case --files-with-matches --exclude-dir=node_modules --exclude-dir=.git railway "ci-$STACK" ||
+              find "ci-$STACK" -path "ci-$STACK/node_modules" -prune -o -path "ci-$STACK/.git" -prune -o -iname '*railway*' -print | grep .
+          }; then
+            echo "A project with the deploy target none names Railway in a file or a file name." >&2
+            exit 1
+          fi
+      - name: Install verified actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --silent --show-error --fail --location --output "$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          echo "${ACTIONLINT_SHA256}  ${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "$archive" actionlint
+      - name: Lint the project's workflows
+        working-directory: ci-${{ matrix.stack }}
+        run: |
+          "$GITHUB_WORKSPACE/actionlint" -color
+      - name: Analyze the project's GitHub Actions security
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          inputs: ci-${{ matrix.stack }}/.github
+          config: ci-${{ matrix.stack }}/.github/zizmor.yml
+          persona: pedantic
+          advanced-security: false
+      - name: Verify the project
+        working-directory: ci-${{ matrix.stack }}
+        env:
+          # The payload stack's build loads its config, which requires these; the build never connects to the database.
+          DATABASE_URL: postgres://build-only@localhost/build-only
+          PAYLOAD_SECRET: build-only
+          GITHUB_TOKEN: ${{ github.token }} # editorconfig-checker downloads its binary from GitHub releases; the token avoids the anonymous rate limit.
+        run: |
+          git add --all
+          pnpm verify
+          pnpm build
+
+  compatibility:
+    name: Compatibility (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: changes
+    if: needs.changes.outputs.full_verification == 'true'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: 24.15.0
+          - os: ubuntu-latest
+            node: 24.21.0
+          - os: windows-latest
+            node: 24.21.0
+          - os: macos-latest
+            node: 24.21.0
+          - os: ubuntu-latest
+            node: 26.13.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+        with:
+          runtime: node@${{ matrix.node }}
+      - name: Run package tests
+        run: pnpm test
+
+  triage:
+    name: Triage failed build
+    needs:
+      - lint
+      - agent-gates
+      - format
+      - test
+      - check-types
+      - package-validation
+      - consumer-smoke
+      - templates
+      - compatibility
+      - knip
+      - audit
+    if: failure() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && vars.ANTHROPIC_FEDERATION_RULE_ID != '' && vars.ANTHROPIC_ORGANIZATION_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read # Needed to read the logs of the failed jobs.
+      id-token: write # Needed to authenticate to Anthropic with the workflow's OIDC token.
+      pull-requests: write # Needed to post the summary on the pull request.
+    steps:
+      - name: Collect the build log
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p out
+          for job in $(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs" --paginate --jq '.jobs[] | select(.conclusion == "failure") | .id'); do
+            gh api --allow-escape-sequences "repos/$REPOSITORY/actions/jobs/$job/logs" >> out/build.log
+          done
+      - name: Triage failed build
+        id: triage
+        uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
+        with:
+          anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          prompt: >
+            Read the build log at out/build.log. Identify the most
+            likely cause, say whether the failure looks flaky or real, and write a
+            three-line summary for the PR thread.
+          claude_args: >-
+            --allowedTools "Read"
+            --json-schema '{"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"]}'
+      - name: Post the summary
+        if: steps.triage.outputs.structured_output != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          SUMMARY: ${{ fromJSON(steps.triage.outputs.structured_output).summary }}
+        run: gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"
+
+  ci:
+    name: All Checks
+    if: always()
+    timeout-minutes: 5
+    needs:
+      - changes
+      - lint
+      - agent-gates
+      - format
+      - test
+      - check-types
+      - package-validation
+      - consumer-smoke
+      - templates
+      - compatibility
+      - knip
+      - audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all verification jobs
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
