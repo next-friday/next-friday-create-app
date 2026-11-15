@@ -17,6 +17,11 @@ npm install --global pnpm
 pnpm install
 ```
 
+## Architecture
+
+- `src/payload.config.ts` wires the collections in `src/collections/` to PostgreSQL. The site lives in `src/app/(frontend)/`, and `src/app/health/route.ts` serves `/health`. `next.config.ts` builds `output: "standalone"` and leaves Cache Components off.
+- In development, Payload applies collection changes to the database directly. In production, Payload applies the migrations in `src/migrations/` when it first initialises, which `/health` triggers, so the first health check after a deploy applies them, not when the server starts.
+
 ## Quality standards
 
 - Fix lint, type, and test failures at their root cause.

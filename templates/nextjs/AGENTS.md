@@ -24,7 +24,7 @@ Run all three before reporting any task complete, and paste the output. `pnpm ve
 
 The `verifier` subagent starts the app with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 
-After a change to a page, open that page with the `playwright` MCP server from `.mcp.json`, take a screenshot, look at it, and compare it with the approved mock when there is one; repeat until it matches.
+For a change to a page, the visual check uses the `playwright` MCP server from `.mcp.json`.
 
 ## Architecture
 
@@ -37,7 +37,7 @@ After a change to a page, open that page with the `playwright` MCP server from `
 2. **Component tests need a DOM test environment, and Vitest runs in Node.js.** Add that environment with the first component test.
 3. **Read configuration from environment variables and fail when one is missing.** Document each variable in `.env.example`.
 4. **Work runs through `/sdlc-mode`;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
-5. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions.
+5. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 
 ## Things Claude gets wrong
 

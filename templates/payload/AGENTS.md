@@ -24,30 +24,29 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 
 Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.
 
-The `verifier` subagent starts the app with `pnpm dev`, which needs a PostgreSQL database in `DATABASE_URL` and `PAYLOAD_SECRET` in `.env`. It exercises the changed behavior and the two nearest neighboring flows.
+The `verifier` subagent starts the app with `pnpm dev` and exercises the changed behavior and the two nearest neighboring flows.
 
-After a change to a page, open that page with the `playwright` MCP server from `.mcp.json`, take a screenshot, look at it, and compare it with the approved mock when there is one; repeat until it matches.
+For a change to a page, the visual check uses the `playwright` MCP server from `.mcp.json`.
 
 ## Architecture
 
-- `src/payload.config.ts` wires the collections in `src/collections/` to PostgreSQL. The site lives in `src/app/(frontend)/`, and `src/app/health/route.ts` serves `/health`. `next.config.ts` builds `output: "standalone"` and leaves Cache Components off.
-- In development, Payload applies collection changes to the database directly. In production, Payload applies the migrations in `src/migrations/` when it first initialises, which `/health` triggers, so the first health check after a deploy applies them, not when the server starts.
+`src/payload.config.ts` wires the collections in `src/collections/` to PostgreSQL; the site lives in `src/app/(frontend)/`. `CONTRIBUTING.md` describes the build and how migrations apply.
 
 ## Conventions
 
-1. **Change the schema only through collections, then regenerate and commit.** Payload generates `src/payload-types.ts`, `src/migrations/`, and `src/app/(payload)/admin/importMap.ts`; run `pnpm generate:types`, `pnpm generate:importmap`, and `pnpm migrate:create <name>`. Do not edit those files by hand.
-2. **Put unit tests next to the code as `src/**/*.test.{ts,tsx}` and Playwright end-to-end tests in `test/` as `*.e2e.test.ts`.** Vitest collects only the first pattern.
+1. **Change the schema only through collections, then regenerate and commit.** Payload generates `src/payload-types.ts`, `src/migrations/`, and `src/app/(payload)/admin/importMap.ts` with the commands above; never edit them by hand.
+2. **Put unit tests next to the code as `src/**/*.test.{ts,tsx}`, which Vitest collects, and Playwright end-to-end tests in `test/` as `*.e2e.test.ts`.**
 3. **Component tests need a DOM test environment, and Vitest runs in Node.js.** Add that environment with the first component test.
-4. **Read configuration through `requireEnvironment` in `src/environment.ts`.** Document each variable in `.env.example`.
+4. **Read configuration through `requireEnvironment` in `src/environment.ts`,** and document each variable in `.env.example`.
 5. **Work runs through `/sdlc-mode`;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
-6. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions.
+6. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 
 ## Things Claude gets wrong
 
 When Claude makes a mistake twice, add the correction here.
 
 - **Failing tests**: when a test fails, fix the code, not the test. Never skip, delete, or weaken a test to make a check pass.
-- **Database for `pnpm dev` and end-to-end tests**: both need a PostgreSQL database in `DATABASE_URL` and `PAYLOAD_SECRET` in `.env`; the README lists every variable. Run `pnpm exec playwright install chromium` once before the first `pnpm test:e2e`.
+- **Database for `pnpm dev` and end-to-end tests**: both need a PostgreSQL database in `DATABASE_URL` and `PAYLOAD_SECRET` in `.env`. `CONTRIBUTING.md` says how to run end-to-end tests.
 - **Issues**: open an issue only to hand work to another person, never to give a pull request a number to close. A pull request closes an issue that already exists with `Closes #<issue>`.
 - **What belongs in the repository**: files, commit messages, and pull requests hold the change, its reason, and the checks. Write no date, log, history, mistake count, token figure, or session note into a file.
 - **Sourced requirements**: add a requirement to an intent, spec, or plan only when a person decided it or a named source says it. This includes a requirement a review bot suggests. When no person decided it and no source says it, leave it out and answer the thread with that.
