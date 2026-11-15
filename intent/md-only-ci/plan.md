@@ -8,7 +8,7 @@ Accepted by: @joetakara.
   - a new `agent_docs` filter, with the patterns of spec requirement 4;
   - `heavy` and `ci_policy` exclude those patterns with `!` entries;
   - `templates/**` stays in `ci_policy`.
-- `.github/workflows/ci.yml` (changed). The agent's token has no `workflow` scope, so the branch carries the new file at `.github/workflows-pending/ci.yml`. The product owner moves it into place on GitHub with their own account: they delete the old file, then rename the pending one. After the move, `.github/workflows-pending/` no longer exists. The new file:
+- `.github/workflows/ci.yml` (changed). The agent's token has no `workflow` scope, so the branch carries the new file at `.github/workflows-pending/ci.yml`. The product owner moves it into place on GitHub with their own account: they delete the old file, then rename the pending one. The agent then deletes `.github/workflows-pending/`. The new file:
   - **`changes` job:** a new output `agent_checks`. `Select verification mode` drops the `push` shortcut and reads `AGENT_DOCS` from the filter. `full_verification` stays true for a root release pull request.
   - **`agent-gates` job:** it runs when `agent_checks` is true, and gains the `Check formatting` step with its `GITHUB_TOKEN`. The step moves from `format`.
     - Requirement 1 asks for `format:check`, while the spec's design names only `agent-gates`. Moving the step satisfies both.
