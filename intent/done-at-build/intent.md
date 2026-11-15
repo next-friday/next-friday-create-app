@@ -1,6 +1,6 @@
 # Intent: The build pull request marks its change done
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 

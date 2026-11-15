@@ -156,7 +156,13 @@ function findBranchChanges(): BranchChanges | undefined {
     return {
       mergeBase,
       headCommit: runGit(["rev-parse", "HEAD"]),
-      changedPaths: runGit(["diff", "--name-only", `${mergeBase}...HEAD`])
+      changedPaths: runGit([
+        "-c",
+        "core.quotePath=false",
+        "diff",
+        "--name-only",
+        `${mergeBase}...HEAD`,
+      ])
         .split("\n")
         .filter(changedPath => changedPath !== ""),
     };
@@ -565,6 +571,38 @@ function findStatusProblems(
       ];
 }
 
+const doneMessage =
+  'the build pull request sets "Status: done." here; when a requirement stays unmet, its description names it';
+
+/**
+ * Tell whether a folder holds a build plan: the branch changes code and the folder's existing plan, beside a spec.
+ * @param folder The `intent/<change>` folder.
+ * @param changedPaths The paths the branch changed, with forward slashes.
+ * @param isCodeChanged Whether the branch changes a file outside `intent/`.
+ * @returns True when the build pull request must mark the change done.
+ */
+function isBuildPlan(folder: string, changedPaths: string[], isCodeChanged: boolean): boolean {
+  const planPath = path.join(folder, planFileName);
+
+  return (
+    isCodeChanged &&
+    existsSync(planPath) &&
+    changedPaths.includes(planPath.split(path.sep).join("/")) &&
+    existsSync(path.join(folder, specFileName))
+  );
+}
+
+/**
+ * Find each document of a build plan's folder that does not say done.
+ * @param documents The path and status of the folder's intent and spec; a missing file has no status.
+ * @returns One line per document that does not say `Status: done.`
+ */
+function findDoneProblems(documents: [string, string | undefined][]): string[] {
+  return documents
+    .filter(([, status]) => status !== "done")
+    .map(([filePath]) => `${filePath}: ${doneMessage}`);
+}
+
 const proofSpec = [
   "# Spec: Health check answers 200",
   "",
@@ -636,6 +674,11 @@ const branchWithCode: BranchChanges = {
   changedPaths: ["intent/health/plan.md", "src/health.ts"],
 };
 
+const intentBranch: BranchChanges = {
+  ...branchWithCode,
+  changedPaths: ["intent/health/plan.md"],
+};
+
 /**
  * Create a change folder that holds the named files, for a self-test.
  * @param fileNames The files to create in the folder.
@@ -654,6 +697,8 @@ function createChangeFolder(fileNames: string[]): string {
 const fixPlanFolder = createChangeFolder([planFileName]);
 const intentOnlyFolder = createChangeFolder([intentFileName, planFileName]);
 const specOnlyFolder = createChangeFolder([specFileName, planFileName]);
+const buildFolder = createChangeFolder([intentFileName, specFileName, planFileName]);
+const deletedPlanFolder = createChangeFolder([intentFileName, specFileName]);
 const fixBranch = "fix/health";
 const notDecisionMessage = "merging it is the decision";
 const doneLine = "Status: done.";
@@ -675,6 +720,62 @@ const statusCases: [string, string, boolean, boolean, string?][] = [
   ["marks a merged file done", doneLine, false, false],
   ["removes a merged status line", "# Intent: a", false, false, "keeps a status line"],
   ["sets a merged file to draft", draftLine, false, false, "never goes back"],
+];
+
+type DoneCase = [string, string, BranchChanges, string | undefined, string | undefined, string?];
+
+const donePart = 'sets "Status: done." here';
+
+const selfTestPlanPaths = [buildFolder, intentOnlyFolder, deletedPlanFolder].map(folder =>
+  path.join(folder, planFileName).split(path.sep).join("/"),
+);
+
+const doneCases: DoneCase[] = [
+  ["a build branch without done fails", buildFolder, branchWithCode, "done", "accepted", donePart],
+  ["a build branch with done passes", buildFolder, branchWithCode, "done", "done"],
+  ["a folder already done passes", buildFolder, branchWithCode, "done", "done"],
+  ["a missing intent.md fails", buildFolder, branchWithCode, undefined, "done", donePart],
+  ["a branch that changes only intent/ passes", buildFolder, intentBranch, "accepted", "accepted"],
+  ["a folder with no spec.md passes", intentOnlyFolder, branchWithCode, "accepted", "accepted"],
+  ["a deleted plan passes", deletedPlanFolder, branchWithCode, "accepted", "accepted"],
+];
+
+const acceptedLineCases: [string, string][] = [
+  ["the accepting engineer is missing", ""],
+  ["the accepting engineer is the placeholder", placeholderLine],
+  ["the accepting engineer is empty", `${acceptedByPrefix}.`],
+  ["the accepting line is not directly under the title", `From the spec.\n\n${engineerLine}`],
+];
+
+const proofCases: [string, string, string?][] = [
+  [
+    "Proof leaves requirements unnamed",
+    "Requirements 1, 2 and 4: proven.",
+    "does not name requirement 3, 5",
+  ],
+  ["Proof names numbers alone and in a list", "1, 2, 3 and 4: proven.\n\n5: proven."],
+  ["Proof names a range with an en dash", "Requirements 1–5: proven."],
+  ["Proof names a range with a hyphen", "Requirements 1-5: proven."],
+  ["Proof names a range with the word to", "Requirements 1 to 5: proven."],
+  ["a version in a label does not count", "Requirement 1.2.3: proven.", allUnnamedPart],
+  [
+    "a number after the colon does not count",
+    "1: also covers 2, 3 and 4-5 on 2026-11-11.",
+    "does not name requirement 2, 3, 4, 5",
+  ],
+  ["a line without a label names nothing", "Requirements 1-5 are proven.", allUnnamedPart],
+  [
+    "Proof names requirements with and in a list item",
+    "- Requirements 1 and 2: proven.\n- 3, 4, 5: proven.",
+  ],
+  [
+    "Proof names requirements in the first table cell",
+    "| Requirement | Check |\n| :- | :- |\n| 1–5 | proven |",
+  ],
+  [
+    "a huge range is bounded by the largest requirement number and does not throw",
+    "1 to 99999999999999: proven.",
+  ],
 ];
 
 const selfTestCases: SelfTestCase[] = [
@@ -708,42 +809,15 @@ const selfTestCases: SelfTestCase[] = [
       }),
     ),
   },
-  {
+  ...acceptedLineCases.map(([name, accepted]) => ({
+    name,
     expectedMessagePart: acceptedByPrefix,
-    name: "the accepting engineer is missing",
     problems: checkAgainstProofSpec(
       buildPlan({
-        accepted: "",
+        accepted,
       }),
     ),
-  },
-  {
-    expectedMessagePart: acceptedByPrefix,
-    name: "the accepting engineer is the placeholder",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        accepted: placeholderLine,
-      }),
-    ),
-  },
-  {
-    expectedMessagePart: acceptedByPrefix,
-    name: "the accepting engineer is empty",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        accepted: `${acceptedByPrefix}.`,
-      }),
-    ),
-  },
-  {
-    expectedMessagePart: acceptedByPrefix,
-    name: "the accepting line is not directly under the title",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        accepted: `From the spec.\n\n${engineerLine}`,
-      }),
-    ),
-  },
+  })),
   {
     name: "a placeholder is allowed when acceptance is not required",
     problems: checkAgainstProofSpec(
@@ -758,47 +832,15 @@ const selfTestCases: SelfTestCase[] = [
     expectedMessagePart: `no ${specFileName} beside the plan`,
     problems: checkPlan(buildPlan({}), undefined, true),
   },
-  {
-    expectedMessagePart: "does not name requirement 3, 5",
-    name: "Proof leaves requirements unnamed",
+  ...proofCases.map(([name, proof, expectedMessagePart]) => ({
+    name,
+    expectedMessagePart,
     problems: checkAgainstProofSpec(
       buildPlan({
-        proof: "Requirements 1, 2 and 4: proven.",
+        proof,
       }),
     ),
-  },
-  {
-    name: "Proof names numbers alone and in a list",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "1, 2, 3 and 4: proven.\n\n5: proven.",
-      }),
-    ),
-  },
-  {
-    name: "Proof names a range with an en dash",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "Requirements 1–5: proven.",
-      }),
-    ),
-  },
-  {
-    name: "Proof names a range with a hyphen",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "Requirements 1-5: proven.",
-      }),
-    ),
-  },
-  {
-    name: "Proof names a range with the word to",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "Requirements 1 to 5: proven.",
-      }),
-    ),
-  },
+  })),
   {
     name: "CRLF line endings",
     problems: checkAgainstProofSpec(buildPlan({}).replaceAll("\n", "\r\n")),
@@ -816,57 +858,6 @@ const selfTestCases: SelfTestCase[] = [
       }),
       "## Requirements\n\n### A\n\n1. A.\n2. B.\n\n### B\n\n1. C.\n2. D.\n",
       true,
-    ),
-  },
-  {
-    expectedMessagePart: allUnnamedPart,
-    name: "a version in a label does not count",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "Requirement 1.2.3: proven.",
-      }),
-    ),
-  },
-  {
-    name: "a number after the colon does not count",
-    expectedMessagePart: "does not name requirement 2, 3, 4, 5",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "1: also covers 2, 3 and 4-5 on 2026-11-11.",
-      }),
-    ),
-  },
-  {
-    expectedMessagePart: allUnnamedPart,
-    name: "a line without a label names nothing",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "Requirements 1-5 are proven.",
-      }),
-    ),
-  },
-  {
-    name: "Proof names requirements with and in a list item",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "- Requirements 1 and 2: proven.\n- 3, 4, 5: proven.",
-      }),
-    ),
-  },
-  {
-    name: "Proof names requirements in the first table cell",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "| Requirement | Check |\n| :- | :- |\n| 1–5 | proven |",
-      }),
-    ),
-  },
-  {
-    name: "a huge range is bounded by the largest requirement number and does not throw",
-    problems: checkAgainstProofSpec(
-      buildPlan({
-        proof: "1 to 99999999999999: proven.",
-      }),
     ),
   },
   {
@@ -957,12 +948,7 @@ const selfTestCases: SelfTestCase[] = [
   },
   {
     name: "a branch that changes only intent files skips acceptance",
-    problems: requiresAcceptance({
-      ...branchWithCode,
-      changedPaths: ["intent/health/plan.md"],
-    })
-      ? [acceptanceRequiredProblem]
-      : [],
+    problems: requiresAcceptance(intentBranch) ? [acceptanceRequiredProblem] : [],
   },
   {
     name: "no merge base skips acceptance",
@@ -996,6 +982,26 @@ const selfTestCases: SelfTestCase[] = [
     expectedMessagePart,
     problems: findStatusProblems(readStatus(`${statusLine}\n`), isAdded, isPlanMerged),
   })),
+  ...doneCases.map(([name, folder, branch, intent, spec, expectedMessagePart]) => ({
+    name,
+    expectedMessagePart,
+    problems: isBuildPlan(folder, selfTestPlanPaths, requiresAcceptance(branch))
+      ? findDoneProblems([
+          [intentFileName, intent],
+          [specFileName, spec],
+        ])
+      : [],
+  })),
+  {
+    name: "a build branch with neither file done reports both",
+    problems:
+      findDoneProblems([
+        [intentFileName, "accepted"],
+        [specFileName, "accepted"],
+      ]).length === 2
+        ? []
+        : ["expected one line for each file"],
+  },
   {
     name: "a branch that changes code and adds a plan",
     problems: findUnplannedChangeProblems(["src/a.ts", "intent/a/plan.md"], "feat/a"),
@@ -1082,7 +1088,13 @@ const selfTestFailures = selfTestCases
   .filter(testCase => isSelfTestFailure(testCase))
   .map(({name}) => name);
 
-for (const folder of [fixPlanFolder, intentOnlyFolder, specOnlyFolder]) {
+for (const folder of [
+  fixPlanFolder,
+  intentOnlyFolder,
+  specOnlyFolder,
+  buildFolder,
+  deletedPlanFolder,
+]) {
   rmSync(folder, {
     recursive: true,
     force: true,
@@ -1090,12 +1102,12 @@ for (const folder of [fixPlanFolder, intentOnlyFolder, specOnlyFolder]) {
 }
 
 /**
- * Read a spec when it exists.
- * @param specPath Path of the `spec.md`.
+ * Read a file when it exists.
+ * @param filePath Path of the file.
  * @returns The content, or undefined when the file does not exist.
  */
-function readSpec(specPath: string): string | undefined {
-  return existsSync(specPath) ? readFileSync(specPath, "utf8") : undefined;
+function readOptionalFile(filePath: string): string | undefined {
+  return existsSync(filePath) ? readFileSync(filePath, "utf8") : undefined;
 }
 
 /**
@@ -1122,7 +1134,7 @@ function findMissingPlanLines(changeFolders: string[]): string[] {
   return changeFolders
     .filter(folder => !existsSync(path.join(folder, planFileName)))
     .flatMap(folder =>
-      findMissingPlanProblems(readSpec(path.join(folder, specFileName)) ?? "", false).map(
+      findMissingPlanProblems(readOptionalFile(path.join(folder, specFileName)) ?? "", false).map(
         message => `${path.join(folder, planFileName)}: ${message}`,
       ),
     );
@@ -1143,7 +1155,7 @@ function findPlanFileLines(
   const folder = path.dirname(planPath);
   const planText = readFileSync(planPath, "utf8");
   const isFixPlan = isFixPlanFolder(folder);
-  const specText = readSpec(path.join(folder, specFileName));
+  const specText = readOptionalFile(path.join(folder, specFileName));
   const planOnly = isFixPlan && branchName !== undefined ? [branchName] : [];
 
   return [
@@ -1261,7 +1273,7 @@ function findRecordLines(changeFolders: string[]): string[] {
   return changeFolders.flatMap(folder => {
     const specPath = path.join(folder, specFileName);
     const intentPath = path.join(folder, intentFileName);
-    const specText = readSpec(specPath);
+    const specText = readOptionalFile(specPath);
 
     const specProblems =
       specText === undefined ||
@@ -1326,6 +1338,28 @@ function findStatusLines(changeFolders: string[]): string[] {
     });
 }
 
+/**
+ * Report each build plan whose folder does not say done in its intent and spec.
+ * @param changeFolders The `intent/<change>` folders.
+ * @returns One line per problem.
+ */
+function findDoneLines(changeFolders: string[]): string[] {
+  const branchChanges = changeFolders.length > 0 ? findBranchChanges() : undefined;
+  const isCodeChanged = requiresAcceptance(branchChanges);
+
+  return changeFolders
+    .filter(folder => isBuildPlan(folder, branchChanges?.changedPaths ?? [], isCodeChanged))
+    .flatMap(folder =>
+      findDoneProblems(
+        [intentFileName, specFileName].map((fileName): [string, string | undefined] => {
+          const filePath = path.join(folder, fileName);
+
+          return [filePath, readStatus(readOptionalFile(filePath) ?? "")];
+        }),
+      ),
+    );
+}
+
 if (selfTestFailures.length > 0) {
   const failureLines = selfTestFailures.map(name => `- ${name}`);
 
@@ -1347,7 +1381,9 @@ if (selfTestFailures.length > 0) {
     ...findMissingPlanLines(changeFolders),
     ...findStatusLines(changeFolders),
     ...findRecordLines(changeFolders),
-    ...(argumentPaths.length === 0 ? findBranchRuleLines() : []),
+    ...(argumentPaths.length === 0
+      ? [...findBranchRuleLines(), ...findDoneLines(changeFolders)]
+      : []),
   ];
 
   if (problemLines.length > 0) {

@@ -1,6 +1,6 @@
 # Spec: The build pull request marks its change done
 
-From `intent/done-at-build/intent.md`. Status: accepted.
+From `intent/done-at-build/intent.md`. Status: done.
 
 Request: "เขียน spec ของ done-at-build". Skills at 9a2eaa2.
 
