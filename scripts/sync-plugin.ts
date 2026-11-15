@@ -11,8 +11,17 @@ import {
 import path from "node:path";
 import {tmpdir} from "node:os";
 
+import {
+  findEscapingReferences,
+  findMissingReferences,
+  findVendorNames,
+  findVersionKey,
+  pluginRoot,
+} from "./plugin-file-checks.ts";
+
 type AgentConfig = {
   description: string;
+  model?: string;
   readonly?: boolean;
   tools?: string[];
 };
@@ -65,7 +74,6 @@ type SelfTestCase = {
   problems: string[];
 };
 
-const pluginRoot = "plugins/sdlc";
 const sourceRoot = path.join(pluginRoot, "source");
 const adaptersRoot = path.join(pluginRoot, "adapters");
 const evalPluginRoot = path.join(adaptersRoot, "claude-code");
@@ -101,10 +109,13 @@ const manifestFields = {
 /**
  * Find the subagent frontmatter fields Claude Code reads.
  * @param agent Subagent configuration.
- * @returns The `tools` field when the subagent lists tools.
+ * @returns The `tools` field when the subagent lists tools, then the `model` field when it sets a model.
  */
 function findClaudeAgentFields(agent: AgentConfig): string[] {
-  return agent.tools === undefined ? [] : [`tools: ${agent.tools.join(", ")}`];
+  return [
+    ...(agent.tools === undefined ? [] : [`tools: ${agent.tools.join(", ")}`]),
+    ...(agent.model === undefined ? [] : [`model: ${agent.model}`]),
+  ];
 }
 
 /**
@@ -222,9 +233,6 @@ const agentTools: AgentTool[] = [
   },
 ];
 
-const referencePattern = /\]\(([^\s)]+)\)|(?<![\w./-])(\.\.?\/[^\s"'<>)\]`]*)/g;
-const urlScheme = /^[a-z][\d+.a-z-]*:/i;
-
 /**
  * List every text file under a directory, as paths relative to it.
  * @param directory Directory to read; a missing directory has no files.
@@ -265,99 +273,6 @@ function renderAgent(name: string, fields: string[], agent: AgentConfig, body: s
     ``,
     body,
   ].join("\n");
-}
-
-/**
- * Tell whether a reference leaves the plugin directory.
- * @param filePath Path of the file that holds the reference, from the repository root.
- * @param target Link target or path token.
- * @returns True for an absolute path, or a relative one that resolves outside the plugin directory.
- */
-function isEscapingReference(filePath: string, target: string): boolean {
-  const root = path.resolve(pluginRoot);
-  const resolved = path.resolve(path.dirname(filePath), target.split("#", 1)[0] ?? "");
-
-  return (
-    target.startsWith("/") || (resolved !== root && !resolved.startsWith(`${root}${path.sep}`))
-  );
-}
-
-/**
- * List the relative paths a text names, as a link target or as a path that starts with `./` or `../`.
- * @param text File content.
- * @returns Each link target and path token that is neither a URL nor an anchor.
- */
-function listReferences(text: string): string[] {
-  return Array.from(
-    text.matchAll(referencePattern),
-    ([, link, token]) => link ?? token ?? "",
-  ).filter(target => !urlScheme.test(target) && !target.startsWith("#"));
-}
-
-/**
- * Find the references in a file that resolve outside the plugin directory.
- * @param filePath Path of the file from the repository root.
- * @param text File content.
- * @returns One message per reference that leaves the plugin directory.
- */
-function findEscapingReferences(filePath: string, text: string): string[] {
-  return listReferences(text)
-    .filter(target => isEscapingReference(filePath, target))
-    .map(target => `${filePath}: ${target} leaves ${pluginRoot}/`);
-}
-
-/**
- * Find the references in a rendered file that name no rendered file.
- * @param filePath Path of the rendered file from the repository root.
- * @param text File content.
- * @param renderedFiles Path of every rendered file, from the repository root.
- * @returns One message per reference that is neither a rendered file nor a folder that holds one.
- */
-function findMissingReferences(filePath: string, text: string, renderedFiles: string[]): string[] {
-  const renderedPaths = renderedFiles.map(file => path.resolve(file));
-
-  return listReferences(text)
-    .filter(target => {
-      const resolved = path.resolve(path.dirname(filePath), target.split("#", 1)[0] ?? "");
-
-      return renderedPaths.every(
-        file => !(file === resolved || file.startsWith(`${resolved}${path.sep}`)),
-      );
-    })
-    .map(target => `${filePath}: ${target} names no rendered file`);
-}
-
-/**
- * Find the names a file must not contain.
- * @param filePath Path of the file from the repository root.
- * @param text File content.
- * @param names Agent tool names from `vendor-names.json`.
- * @returns One message per name found.
- */
-function findVendorNames(filePath: string, text: string, names: string[]): string[] {
-  const lowerText = text.toLowerCase();
-
-  return names
-    .filter(name => {
-      const parts = lowerText.split(name.toLowerCase());
-
-      return parts
-        .slice(0, -1)
-        .some((before, index) => !/\w$/.test(before) && !/^\w/.test(parts[index + 1] ?? ""));
-    })
-    .map(name => `${filePath}: names "${name}"`);
-}
-
-/**
- * Find a `version` key in the plugin manifest.
- * @param filePath Path of the manifest from the repository root.
- * @param text Manifest content.
- * @returns A message when the manifest holds a version.
- */
-function findVersionKey(filePath: string, text: string): string[] {
-  const {version} = JSON.parse(text) as {version?: string};
-
-  return version === undefined ? [] : [`${filePath}: holds a version key`];
 }
 
 /**
@@ -942,6 +857,7 @@ const sampleSource: HarnessSource = {
       {
         ...subagent,
         body: "body",
+        model: "haiku",
         readonly: true,
         tools: ["Read"],
       },
@@ -1106,7 +1022,7 @@ const selfTestCases: SelfTestCase[] = [
       path.join("t", ".claude", "skills", "sdlc-mode", "hooks", "h.sh"),
       path.join("t", ".claude", "agents", "a.md"),
       path.join("t", ".cursor", "agents", "a.md"),
-      "---\nname: a\ndescription: d\ntools: Read\n---\n\nbody",
+      "---\nname: a\ndescription: d\ntools: Read\nmodel: haiku\n---\n\nbody",
       "---\nname: a\ndescription: d\nreadonly: true\n---\n\nbody",
     ],
     problems: (() => {

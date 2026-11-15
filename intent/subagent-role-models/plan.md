@@ -5,7 +5,8 @@ Accepted by: @joetakara.
 ## Files that change
 
 - `plugins/sdlc/adapters/agents.json` (changed): the `verifier` gains `"model": "haiku"`, the `explore` default of `setup-sdlc` step 3.
-- `scripts/sync-plugin.ts` (changed): `AgentConfig` gains `model?: string`; `findClaudeAgentFields` renders `tools`, then `model` when the subagent sets one, and its doc comment says so; a self-test case "a Claude Code subagent renders its model" proves it.
+- `scripts/sync-plugin.ts` (changed): `AgentConfig` gains `model?: string`; `findClaudeAgentFields` renders `tools`, then `model` when the subagent sets one, and its doc comment says so; the sample subagent of the self-test "a project holds the skills, the hook scripts, and each tool's subagents" sets a model, and the expected Claude Code file holds it.
+- `scripts/plugin-file-checks.ts` (new): the reference, vendor-name, and version-key checks move here from `scripts/sync-plugin.ts`, unchanged, with `pluginRoot`, because the new lines put `sync-plugin.ts` over the 1,000-line limit of `sonarjs/max-lines`.
 - `.claude/agents/verifier.md`, `templates/base/.claude/agents/verifier.md`, and `plugins/sdlc/adapters/claude-code/agents/verifier.md` (changed, rendered by `pnpm plugin:sync`): the frontmatter holds `model: haiku`. The Cursor copies do not change.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/plan.md` (changed): step 4 writes the intent in a folder that does not exist yet, and a later round of the same work gets its own folder.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/design.md` (changed): step 1, when `spec.md` already exists, says that new work starts from an intent in a new folder.
@@ -21,7 +22,7 @@ The causes:
 - **Verifier model:** `sdlc-mode/SKILL.md` step 4 tells the session to pass the role's model on each subagent call, but nothing in the subagent definition names the `explore` default. `grep -c model` prints 0 for `agents.json`, `.claude/agents/verifier.md`, and `templates/base/.claude/agents/verifier.md`. A call that carries no `model`, such as one made outside `sdlc-mode` step 4, starts the `verifier` on the session's model. No such call was observed in this session.
 - **Intent folder:** `plan.md` step 4 says only that `<change>` is a short kebab-case name, and no playbook reads `intent/README.md`, which says each change has its own folder. When a merged intent says one folder holds every round and that its earlier spec and plan were removed, the agent follows it: the new eval case fails 4 runs of 6 today, rewriting `intent.md` and deleting `spec.md` and `plan.md`. `design.md` step 1 then stops at the existing `spec.md` with no next step, and https://github.com/soddee/soddee-b2b-platform/pull/26 deleted the done spec and plan to get past it.
 
-1. Add the self-test case to `scripts/sync-plugin.ts` and run `pnpm plugin:check`: it fails, because the renderer drops `model`.
+1. Set a model on the self-test's sample subagent and expect it in the Claude Code file, and run `pnpm plugin:check`: it fails, because the renderer drops `model`.
 2. Render `model`, add it to `agents.json`, and run `pnpm plugin:sync` then `pnpm plugin:check` and `pnpm typecheck`: both pass, and each Claude Code `verifier.md` holds `model: haiku`.
 3. Change `plan.md` step 4, `design.md` step 1, and the reply shape, then `pnpm plugin:sync`. Run `--case new-round-gets-a-new-intent-folder` three times: 9 of 9.
 4. Run `pnpm verify`, `pnpm evals:run`, and `pnpm evals:run:write`, and report their scores. Generate a project of each stack in `src/stacks.ts` and run its `pnpm verify`.
@@ -36,5 +37,5 @@ The causes:
 
 ## Proof
 
-- The self-test "a Claude Code subagent renders its model" fails today and passes after step 2: `pnpm plugin:check`.
+- The self-test "a project holds the skills, the hook scripts, and each tool's subagents" fails without the renderer's `model` line and passes with it: `pnpm plugin:check`.
 - The eval case `new-round-gets-a-new-intent-folder` fails 4 of 6 today and passes 9 of 9 after step 3: `claude plugin eval plugins/sdlc/adapters/claude-code --scaffold --allow-tools Write Edit Bash --case new-round-gets-a-new-intent-folder -j 3 --trust-plugin --ablation none`.
