@@ -10,10 +10,11 @@ Accepted by: @joetakara.
     - `isCodeChanged` is true;
     - `<folder>/plan.md` exists, and its path, normalised with `split(path.sep).join("/")` as `findStatusLines` does, is in `changedPaths`;
     - `<folder>/spec.md` exists.
-  - A new `findDoneProblems(statuses)` takes `[path, status]` pairs for the intent and the spec of a folder that `isBuildPlan` accepts. A missing file is read as status `undefined` through an `existsSync` guard, as `readSpec` does. For each pair that is not `done`, it returns `<path>: the build pull request sets "Status: done." here; when a requirement stays unmet, its description names it` (requirements 1, 2, 6).
+  - A new `findDoneProblems(statuses)` takes `[path, status]` pairs for the intent and the spec of a folder that `isBuildPlan` accepts. A missing file is read as status `undefined` through `readOptionalFile`, the existing `readSpec` renamed because it now reads intents as well as specs. For each pair that is not `done`, it returns `<path>: the build pull request sets "Status: done." here; when a requirement stays unmet, its description names it` (requirements 1, 2, 6).
   - A new `findDoneLines(changeFolders)` reads `findBranchChanges()` once. It sets `isCodeChanged` from `requiresAcceptance` and returns the lines.
   - The main block runs `findDoneLines` only when no paths are given, as it runs `findBranchRuleLines`.
-  - A new `doneCases` table holds the seven cases of requirement 8; the self-test list maps it to `isBuildPlan` and `findDoneProblems`. Each case expects at most one line, because `isSelfTestFailure` expects exactly one problem when a message part is set. The "without done" case therefore leaves only the spec not done. The cleanup loop removes the new folders too.
+  - A new `doneCases` table holds the seven cases of requirement 8; the self-test list maps it to `isBuildPlan` and `findDoneProblems`. Each case expects at most one line, because `isSelfTestFailure` expects exactly one problem when a message part is set. The "without done" case therefore leaves only the spec not done. Each case builds its branch from changed paths and runs `requiresAcceptance`, so the "only intent/" case tests the path rule. One more case checks that a folder with neither file done gets two lines. The cleanup loop removes the new folders too.
+  - `findBranchChanges` runs `git diff` with `core.quotePath=false`, so a change folder with a non-ASCII name, such as a Thai one, keeps its path; without it git quotes the path, the rule misses the plan, and `requiresAcceptance` counts the plan as code.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/build.md` (changed): the last sentence of step 8 becomes the text of requirement 7.
 - `templates/base/scripts/check-plan.ts`, `plugins/sdlc/adapters/**`, `templates/base/plugins/sdlc/**` (changed): rendered by `pnpm plugin:sync`, which copies every file in `plugins/sdlc/source/scripts/` (`scripts/sync-plugin.ts:671`).
 - `.changeset/done-at-build.md` (new): `patch` for `@next-friday/create-app` (requirement 11).
@@ -23,7 +24,7 @@ Accepted by: @joetakara.
 ## Order of work
 
 1. Move the Proof-only and `Accepted by:`-only self-tests into `proofCases` and `acceptedLineCases`. Check: `node plugins/sdlc/source/scripts/check-plan.ts` still reports 66 self-tests, and `pnpm lint:check` passes.
-2. Add `isBuildPlan`, `findDoneProblems`, `findDoneLines`, the main block line, and `doneCases`. Commit `plan.md` and the code: `findBranchChanges` reads commits only. Check: the script reports 73 self-tests. On this branch, with `intent.md` and `spec.md` still `accepted`, it prints the requirement 2 line for both files. `pnpm lint:check` passes.
+2. Add `isBuildPlan`, `findDoneProblems`, `findDoneLines`, the main block line, and `doneCases`. Commit `plan.md` and the code: `findBranchChanges` reads commits only. Check: the script reports 74 self-tests. On this branch, with `intent.md` and `spec.md` still `accepted`, it prints the requirement 2 line for both files. `pnpm lint:check` passes.
 3. Change `build.md` step 8, then run `pnpm plugin:sync`. Check: `pnpm plugin:check` passes, and `grep -rln "fails the push without it" plugins/sdlc templates/base/plugins/sdlc` finds the sentence in every rendered copy.
 4. Add the changeset, then set `Status: done.` in `intent.md` and `spec.md`. Check: `pnpm plan:check` and `pnpm changesets:check` pass.
 5. Run `pnpm verify` at the root. Then generate a project from each stack in `src/stacks.ts`, as `AGENTS.md` says, and run its `pnpm verify`. Check: every run exits 0.
@@ -32,10 +33,14 @@ Accepted by: @joetakara.
 
 ## Risks
 
+- `check-plan.ts` reaches exactly 1000 counted lines, the `sonarjs/max-lines` limit. The next rule added to it needs room made first.
+- The rule reads `intent.md` and `spec.md` from the working tree, as `findStatusLines` does. A `Status: done.` that is set but not committed passes the local `pre-push` and fails in CI, which reads the committed tree.
 - The riskiest steps are 2 and 1. `plan:check` runs on every push, in this repository and in every generated project:
   - a wrong `isBuildPlan` would block every branch, or none;
   - a broken table would drop a self-test.
-    The unchanged self-test count after step 1, the seven new cases, and the failing run on this branch in step 2 cover these.
+
+  The unchanged self-test count after step 1, the new cases, and the failing run on this branch in step 2 cover these.
+
 - A branch that adds `spec.md` together with a plan and code can never pass. An added file must say accepted or rejected (`check-plan.ts:551`), but this rule demands done. `build.md` step 1 already needs the spec merged before the build, so the plan only states it.
 - Without `origin/main`, for example in a generated project before its first fetch, the rule says nothing, because `requiresAcceptance` is false. The other branch rules behave the same, and CI fetches the default branch.
 - An open branch that adds a plan beside a spec and changes code fails once it merges `main`. Every folder with a `plan.md` in this repository says `done` today.
@@ -52,7 +57,7 @@ Accepted by: @joetakara.
 - 5: the self-test "a folder already done passes". It uses the same statuses as "with done", because requirement 5 needs no extra code (spec Design).
 - 6: the "with done" self-test passes with no check of the requirements. The `build.md` step 8 sentence names the description rule (grep in step 3).
 - 7: the grep in step 3.
-- 8: the self-test count rises from 66 to 73, and `doneCases` names the seven cases.
+- 8: the self-test count rises from 66 to 74: the seven cases of `doneCases` and the two-line case.
 - 9: `pnpm verify` at the root and in each generated stack.
 - 10: the scores of `pnpm evals:run` and `pnpm evals:run:write` in the pull request.
 - 11: `pnpm changesets:check`, and the version from step 7 told to the user.

@@ -156,7 +156,13 @@ function findBranchChanges(): BranchChanges | undefined {
     return {
       mergeBase,
       headCommit: runGit(["rev-parse", "HEAD"]),
-      changedPaths: runGit(["diff", "--name-only", `${mergeBase}...HEAD`])
+      changedPaths: runGit([
+        "-c",
+        "core.quotePath=false",
+        "diff",
+        "--name-only",
+        `${mergeBase}...HEAD`,
+      ])
         .split("\n")
         .filter(changedPath => changedPath !== ""),
     };
@@ -668,6 +674,11 @@ const branchWithCode: BranchChanges = {
   changedPaths: ["intent/health/plan.md", "src/health.ts"],
 };
 
+const intentBranch: BranchChanges = {
+  ...branchWithCode,
+  changedPaths: ["intent/health/plan.md"],
+};
+
 /**
  * Create a change folder that holds the named files, for a self-test.
  * @param fileNames The files to create in the folder.
@@ -686,7 +697,7 @@ function createChangeFolder(fileNames: string[]): string {
 const fixPlanFolder = createChangeFolder([planFileName]);
 const intentOnlyFolder = createChangeFolder([intentFileName, planFileName]);
 const specOnlyFolder = createChangeFolder([specFileName, planFileName]);
-const buildPlanFolder = createChangeFolder([intentFileName, specFileName, planFileName]);
+const buildFolder = createChangeFolder([intentFileName, specFileName, planFileName]);
 const deletedPlanFolder = createChangeFolder([intentFileName, specFileName]);
 const fixBranch = "fix/health";
 const notDecisionMessage = "merging it is the decision";
@@ -711,20 +722,22 @@ const statusCases: [string, string, boolean, boolean, string?][] = [
   ["sets a merged file to draft", draftLine, false, false, "never goes back"],
 ];
 
+type DoneCase = [string, string, BranchChanges, string | undefined, string | undefined, string?];
+
 const donePart = 'sets "Status: done." here';
 
-const selfTestPlanPaths = [buildPlanFolder, intentOnlyFolder, deletedPlanFolder].map(folder =>
+const selfTestPlanPaths = [buildFolder, intentOnlyFolder, deletedPlanFolder].map(folder =>
   path.join(folder, planFileName).split(path.sep).join("/"),
 );
 
-const doneCases: [string, string, boolean, string | undefined, string | undefined, string?][] = [
-  ["a build branch without done fails", buildPlanFolder, true, "done", "accepted", donePart],
-  ["a build branch with done passes", buildPlanFolder, true, "done", "done"],
-  ["a folder already done passes", buildPlanFolder, true, "done", "done"],
-  ["a missing intent.md fails", buildPlanFolder, true, undefined, "done", donePart],
-  ["a branch that changes only intent/ passes", buildPlanFolder, false, "accepted", "accepted"],
-  ["a folder with no spec.md passes", intentOnlyFolder, true, "accepted", "accepted"],
-  ["a deleted plan passes", deletedPlanFolder, true, "accepted", "accepted"],
+const doneCases: DoneCase[] = [
+  ["a build branch without done fails", buildFolder, branchWithCode, "done", "accepted", donePart],
+  ["a build branch with done passes", buildFolder, branchWithCode, "done", "done"],
+  ["a folder already done passes", buildFolder, branchWithCode, "done", "done"],
+  ["a missing intent.md fails", buildFolder, branchWithCode, undefined, "done", donePart],
+  ["a branch that changes only intent/ passes", buildFolder, intentBranch, "accepted", "accepted"],
+  ["a folder with no spec.md passes", intentOnlyFolder, branchWithCode, "accepted", "accepted"],
+  ["a deleted plan passes", deletedPlanFolder, branchWithCode, "accepted", "accepted"],
 ];
 
 const acceptedLineCases: [string, string][] = [
@@ -935,12 +948,7 @@ const selfTestCases: SelfTestCase[] = [
   },
   {
     name: "a branch that changes only intent files skips acceptance",
-    problems: requiresAcceptance({
-      ...branchWithCode,
-      changedPaths: ["intent/health/plan.md"],
-    })
-      ? [acceptanceRequiredProblem]
-      : [],
+    problems: requiresAcceptance(intentBranch) ? [acceptanceRequiredProblem] : [],
   },
   {
     name: "no merge base skips acceptance",
@@ -974,16 +982,26 @@ const selfTestCases: SelfTestCase[] = [
     expectedMessagePart,
     problems: findStatusProblems(readStatus(`${statusLine}\n`), isAdded, isPlanMerged),
   })),
-  ...doneCases.map(([name, folder, isCodeChanged, intent, spec, expectedMessagePart]) => ({
+  ...doneCases.map(([name, folder, branch, intent, spec, expectedMessagePart]) => ({
     name,
     expectedMessagePart,
-    problems: isBuildPlan(folder, selfTestPlanPaths, isCodeChanged)
+    problems: isBuildPlan(folder, selfTestPlanPaths, requiresAcceptance(branch))
       ? findDoneProblems([
           [intentFileName, intent],
           [specFileName, spec],
         ])
       : [],
   })),
+  {
+    name: "a build branch with neither file done reports both",
+    problems:
+      findDoneProblems([
+        [intentFileName, "accepted"],
+        [specFileName, "accepted"],
+      ]).length === 2
+        ? []
+        : ["expected one line for each file"],
+  },
   {
     name: "a branch that changes code and adds a plan",
     problems: findUnplannedChangeProblems(["src/a.ts", "intent/a/plan.md"], "feat/a"),
@@ -1074,7 +1092,7 @@ for (const folder of [
   fixPlanFolder,
   intentOnlyFolder,
   specOnlyFolder,
-  buildPlanFolder,
+  buildFolder,
   deletedPlanFolder,
 ]) {
   rmSync(folder, {
@@ -1084,12 +1102,12 @@ for (const folder of [
 }
 
 /**
- * Read a spec when it exists.
- * @param specPath Path of the `spec.md`.
+ * Read a file when it exists.
+ * @param filePath Path of the file.
  * @returns The content, or undefined when the file does not exist.
  */
-function readSpec(specPath: string): string | undefined {
-  return existsSync(specPath) ? readFileSync(specPath, "utf8") : undefined;
+function readOptionalFile(filePath: string): string | undefined {
+  return existsSync(filePath) ? readFileSync(filePath, "utf8") : undefined;
 }
 
 /**
@@ -1116,7 +1134,7 @@ function findMissingPlanLines(changeFolders: string[]): string[] {
   return changeFolders
     .filter(folder => !existsSync(path.join(folder, planFileName)))
     .flatMap(folder =>
-      findMissingPlanProblems(readSpec(path.join(folder, specFileName)) ?? "", false).map(
+      findMissingPlanProblems(readOptionalFile(path.join(folder, specFileName)) ?? "", false).map(
         message => `${path.join(folder, planFileName)}: ${message}`,
       ),
     );
@@ -1137,7 +1155,7 @@ function findPlanFileLines(
   const folder = path.dirname(planPath);
   const planText = readFileSync(planPath, "utf8");
   const isFixPlan = isFixPlanFolder(folder);
-  const specText = readSpec(path.join(folder, specFileName));
+  const specText = readOptionalFile(path.join(folder, specFileName));
   const planOnly = isFixPlan && branchName !== undefined ? [branchName] : [];
 
   return [
@@ -1255,7 +1273,7 @@ function findRecordLines(changeFolders: string[]): string[] {
   return changeFolders.flatMap(folder => {
     const specPath = path.join(folder, specFileName);
     const intentPath = path.join(folder, intentFileName);
-    const specText = readSpec(specPath);
+    const specText = readOptionalFile(specPath);
 
     const specProblems =
       specText === undefined ||
@@ -1336,7 +1354,7 @@ function findDoneLines(changeFolders: string[]): string[] {
         [intentFileName, specFileName].map((fileName): [string, string | undefined] => {
           const filePath = path.join(folder, fileName);
 
-          return [filePath, readStatus(readSpec(filePath) ?? "")];
+          return [filePath, readStatus(readOptionalFile(filePath) ?? "")];
         }),
       ),
     );
