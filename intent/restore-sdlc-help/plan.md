@@ -13,23 +13,27 @@ Test change accepted by: @joetakara.
 - `plugins/sdlc/adapters/tool-words.json` (changed): the `question-tool` word for Claude Code, `AskUserQuestion`.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/plan.md` (changed): the intent interview settles the problem, who is affected, the outcome and what success looks like, the constraints, and what is out of scope, one question at a time.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/build.md` (changed): the plan interview asks one question at a time; the build stops when an area of concern has no `Decision:` line instead of proposing one; a changeset only when the project has `.changeset/`.
-- `plugins/sdlc/source/skills/sdlc-mode/playbooks/small.md` (changed): a defect never qualifies and never goes on a `small/fix-` branch; it reads the four policies and runs the `verifier` before it reports done.
-- `plugins/sdlc/source/skills/sdlc-mode/playbooks/fix.md` (changed): it reads the four policies, asks one question at a time, and runs the `verifier` before it reports done.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/small.md` (changed): a defect never qualifies and never goes on a `small/fix-` branch; it reads the four policies, runs the `verifier`, and for UI work does the visual check of `build.md` before it reports done.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/fix.md` (changed): every defect qualifies, and a new dependency, schema change, or public-interface change goes under **Risks**; it reads the four policies and `lessons/` for an earlier incident of the same class, asks one question at a time, and runs the `verifier`, plus the visual check for UI work, before it reports done.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/design.md` (changed): the `Skills at` hash also counts `.agents/skills`.
-- `plugins/sdlc/source/skills/sdlc-mode/playbooks/maintain.md` (changed): a route other than `pull_request` is a runbook that the agent names and never runs; only a session a release manager started with `RELEASE_APPROVAL` runs one.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/maintain.md` (changed): a route other than `pull_request` is a runbook that the agent names and never runs; only a session a release manager started with `RELEASE_APPROVAL` runs one; the diagnosis reads `lessons/` first.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/deploy.md` (changed): it reads the deploy section of `SETUP.md` and the deploy workflow the team added, and keeps the production gate.
 - `plugins/sdlc/source/skills/*-policy/SKILL.md` (changed): each description names the events that load it.
 - `plugins/sdlc/source/agents/verifier.md` (changed): the verifier also exercises the two flows nearest to the change.
 - `plugins/sdlc/source/hooks/sdlc-status.sh` and `sdlc-status.cases.json` (changed): rejected and withdrawn changes are not listed, nor a fix folder whose plan is on `origin`'s default branch.
 - `plugins/sdlc/source/scripts/check-plan.ts` (changed): a `small/fix-` branch needs a plan.
 - `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/interviews-before-writing-intent/`, `build-interviews-before-planning/`, and `reported-problem-starts-the-plan/` (changed): the graders expect one question, not a numbered round.
-- `plugins/sdlc/README.md` (changed): seven skills, a help skill among them, and the status hook's new rules.
+- `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/deploy-stops-at-the-production-gate/fixture.md` and `scaffold.sh` (changed): the project holds a team-added release workflow and a `SETUP.md` deploy section, with no `DEPLOY_ENABLED`; the graders are unchanged.
+- `plugins/sdlc/README.md` (changed): seven skills, a help skill among them, the status hook's new rules, and `--case` for a change with a full run before a release.
 - Every file `pnpm plugin:sync` renders from the files above, in `.claude/`, `.cursor/agents/`, `templates/base/`, and `plugins/sdlc/adapters/claude-code/`.
 - `.agents/review.md`, `REVIEW.md`, and the `review.md` and `REVIEW.md` of `templates/base`, `templates/payload`, and `templates/turborepo` (changed): the policy default is the harness file at `.claude/skills/<area>-policy/SKILL.md`, and the root drops the deploy layer.
 - `bands.yaml` and `templates/base/bands.yaml` (changed): no `baseline:` key; the metric command supplies the window.
 - `templates/base/.github/workflows/control-band.yml` (changed): the detection report goes to the log and the job summary, the diagnosis goes to the job summary, and a runbook is named, never run.
-- `templates/base/.github/workflows/spec-on-intent-merge.yml` (changed): only `Status: accepted.` starts a spec.
+- `templates/base/.github/workflows/spec-on-intent-merge.yml` (changed): only `Status: accepted.` starts a spec, and `--allowedTools` grants `Task`, `Bash(git rev-parse *)`, and `Bash(gh api repos/*/rules/branches/*)` for the review subagent, the reviewed hash, and the branch rules.
+- `templates/base/lessons/README.md` (changed): read `lessons/` for an earlier incident of the same class; the fix's failing test is the incident's regression case.
 - `templates/base/SETUP.md` (changed): the two jobs that start work, the runbook rule, who writes intents, the product owner's Claude seat, the job summary, and one short **Deploy** section.
-- `templates/<stack>/AGENTS.md` (changed): shorter; the production gate and the reply rules move out, and they gain the failing-test rule and the parallel-session rule. `AGENTS.md` at the root gains both rules too.
+- `templates/<stack>/AGENTS.md` (changed): shorter; the production gate and the reply rules move out, and they gain the failing-test rule and the parallel-session rule, which ends with adding a session only while every stream can be reviewed. `AGENTS.md` at the root gains both rules too.
+- `templates/payload/CONTRIBUTING.md` and `templates/turborepo/CONTRIBUTING.md` (changed): an **Architecture** section takes the long architecture prose from that stack's `AGENTS.md`.
 - `src/arguments.ts`, `src/create.ts` (changed), `src/deploy-targets.ts`, `src/deploy-sections.ts`, `test/deploy-sections.test.ts`, `templates/deploy-railway/` (deleted), `test/arguments.test.ts`, `test/create.test.ts` (changed): the `--deploy` option and the Railway layer are gone, and the first commit's `Command:` line names no deploy target.
 - `templates/<stack>/README.md`, `CONTRIBUTING.md`, `.github/workflows/ci.yml` (changed): the `deploy:railway` sections and markers are gone.
 - `README.md`, `CONTRIBUTING.md`, `.github/workflows/ci.yml` (changed): no deploy option, no deploy layer, and one Template job per stack.
