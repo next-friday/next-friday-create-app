@@ -20,16 +20,28 @@ cat > package.json << 'PACKAGE'
   }
 }
 PACKAGE
-cat > .github/workflows/deploy.yml << 'WORKFLOW'
-name: Deploy
+cat > SETUP.md << 'SETUP'
+# Setup
+
+## Deploy
+
+The project ships no deploy workflow; the team set up its own in `.github/workflows/release.yml`.
+It deploys to `staging`, then to `prod`, where a release manager approves the run.
+SETUP
+cat > .github/workflows/release.yml << 'WORKFLOW'
+name: Release
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [staging, prod]
 jobs:
   deploy:
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
-      - run: echo deploy
+      - run: echo "deploy to ${{ inputs.environment }}"
 WORKFLOW
 git add -A
 git commit -q -m "chore: add project"
