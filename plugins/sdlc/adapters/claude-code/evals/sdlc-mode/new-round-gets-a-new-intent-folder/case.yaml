@@ -1,0 +1,31 @@
+schema_version: "1.1"
+name: new-round-gets-a-new-intent-folder
+expected_outcome: |
+  The folder intent/export-sync/ holds a done intent, its spec, and its accepted plan. The person asks for a new round of the same work. The agent writes the new intent in a new folder, shows the draft, and keeps the done intent, spec, and plan as they are.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: no-done-file-is-deleted
+    type: tool_used
+    tool: Bash
+    input_match: '\b(?:rm|git\s+rm|mv|git\s+mv)\s[^"]*intent/export-sync/'
+    min: 0
+    max: 0
+  - name: no-done-file-is-written
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":\s*"[^"]*intent/export-sync/'
+    min: 0
+    max: 0
+  - name: new-intent-in-a-new-folder
+    type: regex
+    target: files
+    pattern: '^intent/(?!export-sync/)[^/]+/intent\.md$'
+    flags: m
+    match: contains
+  - name: done-files-are-not-edited
+    type: tool_used
+    tool: Edit
+    input_match: '"file_path":\s*"[^"]*intent/export-sync/'
+    min: 0
+    max: 0

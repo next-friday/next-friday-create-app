@@ -45,6 +45,7 @@ Run every command, the checks included, before you write the reply, and write th
 - Write an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as.
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
 - During work that runs longer than a few minutes, give a one-line progress note: what is done and what is next.
+- Never delete or rewrite an `intent.md`, `spec.md`, or `plan.md` that is on the default branch, to get past a step or for any other reason. Change only its `Status:` line, as a playbook step says.
 - Show text in the reply. Never point to a file the person cannot open.
 - Hand the person only what they can use as it is: the whole file, the whole prompt, or the whole command. Never hand over a fragment, a diff to apply by hand, or a line to change in something you gave before. Give the whole thing again, and where a playbook step says to hand a person a patch for a file you cannot edit, hand them that file's whole new text.
 - Never ask a person to edit a file at a **Gate**. The person gives the decision in the chat or on the pull request, and you write it.
