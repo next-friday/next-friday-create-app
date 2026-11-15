@@ -28,7 +28,7 @@
     {
       "event": "beforeSubmitPrompt",
       "script": "check-reply-shape.sh",
-      "argument": "snapshot"
+      "argument": "submit"
     },
     {
       "event": "afterAgentResponse",

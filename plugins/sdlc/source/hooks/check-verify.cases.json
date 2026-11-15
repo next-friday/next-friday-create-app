@@ -33,11 +33,23 @@
     "expected": "block"
   },
   {
+    "name": "a change and a failing verify, the first tool's entry run by the second tool: no output",
+    "input": {
+      "stop_hook_active": false,
+      "cursor_version": "1.7.2"
+    },
+    "fileContents": {
+      "package.json": "{\"name\": \"case\", \"private\": true, \"scripts\": {\"verify\": \"node -e \\\"console.log('broken check');process.exit(1)\\\"\"}}\n"
+    },
+    "expected": "pass"
+  },
+  {
     "name": "the second tool: a failing verify sends a follow-up",
     "argument": "followup",
     "input": {
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "fileContents": {
       "package.json": "{\"name\": \"case\", \"private\": true, \"scripts\": {\"verify\": \"node -e \\\"console.log('broken check');process.exit(1)\\\"\"}}\n"
@@ -49,7 +61,8 @@
     "argument": "followup",
     "input": {
       "status": "completed",
-      "loop_count": 1
+      "loop_count": 1,
+      "cursor_version": "1.7.2"
     },
     "fileContents": {
       "package.json": "{\"name\": \"case\", \"private\": true, \"scripts\": {\"verify\": \"node -e \\\"console.log('broken check');process.exit(1)\\\"\"}}\n"

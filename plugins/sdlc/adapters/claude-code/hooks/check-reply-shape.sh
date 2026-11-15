@@ -2,6 +2,10 @@
 command -v jq > /dev/null || exit 0
 mode=${1:-}
 input=$(cat)
+# An agent tool that also runs the other tool's hook entries names itself in `cursor_version`; its own entries pass another argument.
+case $mode in
+  '' | snapshot) printf '%s' "$input" | jq -e 'has("cursor_version")' > /dev/null 2>&1 && exit 0 ;;
+esac
 state_directory=${TMPDIR:-/tmp}/sdlc-reply-shape
 conversation=$(printf '%s' "$input" | jq -r '.conversation_id // .session_id // ""')
 conversation=${conversation:+$(printf '%s' "$conversation" | cksum | tr ' ' '-')}
@@ -37,7 +41,7 @@ changed_since_snapshot() {
 }
 
 case $mode in
-  snapshot)
+  snapshot | submit)
     changed_since_snapshot
     exit 0
     ;;

@@ -1,0 +1,5 @@
+---
+"@next-friday/create-app": minor
+---
+
+A generated project loads the `sdlc` harness from its own folders, so it works in a Claude Code cloud session, which installs no plugin a repository enables. The eight skills are in `.claude/skills/`, which Claude Code and Cursor both load; the `verifier` subagent is in `.claude/agents/` and `.cursor/agents/`; and `.claude/settings.json` and `.cursor/hooks.json` run the hook scripts from `.claude/skills/sdlc-mode/hooks/`, each once per session. The commands lose their plugin prefix: send `/sdlc-mode` in place of `/sdlc:sdlc-mode`, and likewise `/sdlc-help`, `/sdlc-status`, and `/setup-sdlc`. The project no longer holds `plugins/sdlc/`, the local marketplace, the Cursor `workspaceOpen` hook, or the `Plugin evals` workflow, and the CI jobs that send `/sdlc-mode` pass no `--plugin-dir`. `SETUP.md` lists the sessions in which part of the harness does not load. A project generated before this version keeps its plugin copy until it takes the change through its own pull request.

@@ -4,20 +4,29 @@ This project runs an AI-native software development loop in Claude Code and Curs
 
 ## How a change flows
 
-Send a request with `/sdlc:sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/sdlc:sdlc-help` says how to keep `/sdlc:sdlc-mode` on for a session in Claude Code and Cursor, and `/sdlc:setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `plugins/sdlc/claude-code/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/sdlc-help` says how to keep `/sdlc-mode` on for a session in Claude Code and Cursor, and `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                       |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| Plan     | The originator; the product owner accepts by merging                             | `/sdlc:sdlc-mode` with the idea writes `intent/<change>/intent.md`                                                        |
-| Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc:sdlc-mode` with the intent's path, writes `spec.md`                                     |
-| Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc:sdlc-mode build` writes `plan.md` and the code in one pull request; `pnpm plan:check` and the push hook check them |
+| Plan     | The originator; the product owner accepts by merging                             | `/sdlc-mode` with the idea writes `intent/<change>/intent.md`                                                        |
+| Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc-mode` with the intent's path, writes `spec.md`                                     |
+| Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-mode build` writes `plan.md` and the code in one pull request; `pnpm plan:check` and the push hook check them |
 | Test     | The agent, before it reports done                                                | The `Stop` hook runs `pnpm verify`; the `verifier` subagent runs the app                                                  |
 | Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` drives the pull request to green; the production gate hook blocks a deploy without approval         |
-| Maintain | A service owner triages                                                          | `Control band` and `/sdlc:sdlc-mode` with a finding write a new `intent.md`                                               |
+| Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                               |
 
-`/sdlc:sdlc-status` shows where each change stands, and a session starts with the same list.
+`/sdlc-status` shows where each change stands, and a session starts with the same list.
 
-The project holds the `sdlc` plugin itself, in `plugins/sdlc/claude-code/` and `plugins/sdlc/cursor/`, so there is nothing to install. In Claude Code, `.claude/settings.json` registers the project folder as the marketplace `next-friday-plugins` (`.claude-plugin/marketplace.json`) and enables `sdlc@next-friday-plugins`; it applies once a person has trusted the folder. In Cursor, the `workspaceOpen` hook in `.cursor/hooks.json` hands `plugins/sdlc/cursor` to Cursor when it opens the workspace. The copy is the plugin's version: to take a later one, change the `source` entry of `.claude-plugin/marketplace.json`.
+The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads, and which Cursor loads too: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). The `verifier` subagent is in `.claude/agents/` for Claude Code and in `.cursor/agents/` for Cursor. The hook scripts are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them in Claude Code, and `.cursor/hooks.json` runs them in Cursor. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
+
+Part of the harness does not load in these cases. The checks of `pre-push` and of CI still apply to every person, whichever tool they use.
+
+- **A Claude Code cloud session with several repositories,** in an Anthropic-hosted environment, runs no hook: it "reads only the `enabledPlugins` and `extraKnownMarketplaces` keys from each repository's `.claude/settings.json`, not permission rules, hooks, `env`, or other keys" ([Claude Code: Settings](https://code.claude.com/docs/en/settings)).
+- **A cloud thread in a Claude project** loads neither the skills nor the hooks: "In a project's cloud thread, skills committed to a repository's `.claude/skills/` aren't available" ([Claude Code: Skills](https://code.claude.com/docs/en/skills)), and there "none of a repository's `.claude/settings.json` permission rules, hooks, or `env` apply, however many repositories the project has" ([Claude Code: Settings](https://code.claude.com/docs/en/settings)).
+- **A Cursor cloud agent on Cursor's own machines** runs no `sessionStart` hook, so the status list does not show when it starts: "Deferred while cloud agents can still start in a read-only environment" ([Cursor: Hooks](https://cursor.com/docs/hooks)).
+- **A Cursor cloud agent in its early read-only turns** runs no hook: "Hooks do not run during those turns. They start once the agent has a writable environment" (same page).
+- **Cursor with Include Third-Party Plugins, Skills, and Other Configs turned off:** "Claude Code hooks load when **Include Third-Party Plugins, Skills, and Other Configs** is enabled" ([Cursor: Third Party Hooks](https://cursor.com/docs/reference/third-party-hooks)), and its name covers skills. Leave it on, as it is by default.
+- **Another agent tool** gets the skills by their path, and no subagent and no hooks.
 
 ## 1. First commit and push
 
@@ -55,7 +64,9 @@ In `.github/CODEOWNERS`, add these lines in this order. GitHub uses the last mat
 ```text
 * @your-org/your-team
 /intent/ @the-product-owner
-/plugins/sdlc/ @the-lead-who-signs-off-the-intent-template
+/.claude/skills/ @the-lead-who-signs-off-the-intent-template
+/.claude/agents/ @the-lead-who-signs-off-the-intent-template
+/.cursor/agents/ @the-lead-who-signs-off-the-intent-template
 /.agents/skills/brand-policy/ @the-brand-policy-owner
 /.agents/skills/security-policy/ @the-security-policy-owner
 /.agents/skills/compliance-policy/ @the-compliance-policy-owner
@@ -97,9 +108,9 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 **Who:** an Owner of the Claude organization, with an owner of the GitHub organization.
 
-- **Code Review:** in [**Admin settings → Claude Code**](https://claude.ai/admin-settings/claude-code#code-review), turn on **Allow code review**, install the Claude GitHub App, and add this repository ([set up Code Review](https://code.claude.com/docs/en/code-review-setup)). It needs a Team or Enterprise plan ([availability](https://code.claude.com/docs/en/code-review#availability)) (**paid:** a Claude Team or Enterprise plan; **free alternative:** the `sdlc` plugin's review playbook reviews each pull request from the agent session). Keep **Review runs** at **After every push**, the default, so every push to a pull request gets a review. Reviews run on Anthropic's infrastructure, so the repository has no review workflow. Anyone with write access can also comment `@claude review` on a pull request to start a review ([comment commands](https://code.claude.com/docs/en/code-review-pull-requests#comment-commands)).
-- **Managed settings:** deploy the non-negotiable settings and hooks as [managed settings](https://code.claude.com/docs/en/settings), tailored from the example in `.claude/managed-settings.example.json`. Engineers cannot override them. When `strictKnownMarketplaces` is set, as in the example, add the marketplace `next-friday-plugins` of this project to it, or Claude Code does not register the project's plugin.
-- **Advisor (optional):** on the Anthropic API or Claude Platform on AWS, `/advisor opus` lets a Sonnet session ask Opus at a plan, a recurring error, and before it reports work done ([advisor tool](https://code.claude.com/docs/en/advisor)). It is experimental. The plugin asks for the same advice through an `advise` subagent in every agent tool, with the models `/sdlc:setup-sdlc` sets.
+- **Code Review:** in [**Admin settings → Claude Code**](https://claude.ai/admin-settings/claude-code#code-review), turn on **Allow code review**, install the Claude GitHub App, and add this repository ([set up Code Review](https://code.claude.com/docs/en/code-review-setup)). It needs a Team or Enterprise plan ([availability](https://code.claude.com/docs/en/code-review#availability)) (**paid:** a Claude Team or Enterprise plan; **free alternative:** the review playbook of `/sdlc-mode` reviews each pull request from the agent session). Keep **Review runs** at **After every push**, the default, so every push to a pull request gets a review. Reviews run on Anthropic's infrastructure, so the repository has no review workflow. Anyone with write access can also comment `@claude review` on a pull request to start a review ([comment commands](https://code.claude.com/docs/en/code-review-pull-requests#comment-commands)).
+- **Managed settings:** deploy the non-negotiable settings and hooks as [managed settings](https://code.claude.com/docs/en/settings), tailored from the example in `.claude/managed-settings.example.json`. Engineers cannot override them.
+- **Advisor (optional):** on the Anthropic API or Claude Platform on AWS, `/advisor opus` lets a Sonnet session ask Opus at a plan, a recurring error, and before it reports work done ([advisor tool](https://code.claude.com/docs/en/advisor)). It is experimental. The harness asks for the same advice through an `advise` subagent in every agent tool, with the models `/setup-sdlc` sets.
 - **Monitoring:** turn on the [OpenTelemetry export](https://code.claude.com/docs/en/monitoring-usage). It needs an OpenTelemetry collector or backend that the organization runs, and its endpoint. Set `CLAUDE_CODE_ENABLE_TELEMETRY`, the exporters, and `OTEL_EXPORTER_OTLP_ENDPOINT` in managed settings, or each engineer sets them in a shell or in `~/.claude/settings.json`: Claude Code ignores these variables in the repository's `.claude/settings.json`, so the project cannot turn the export on.
 
 **Check:** the test pull request gets a **Claude Code Review** check run within a few minutes.
@@ -118,7 +129,7 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 - **Sources of truth (engineering lead):** for each artifact, name one system as the source of truth: this repository, an existing tool such as Jira, or, as the minimum, a link both ways (the record id in the file and the commit SHA in the record).
 - **Higher risk (engineering lead):** decide which changes count as higher risk. A tech lead or architect approves their specs and plans.
-- **Policies (each policy owner, with an engineer):** the plugin ships a default for each area, `plugins/sdlc/claude-code/skills/<area>-policy/SKILL.md` (security: OWASP ASVS 5.0.0 Level 1; UX: WCAG 2.2 Level AA; compliance: the OECD privacy principles; brand: one declared source for every brand value). Review it. To replace a default, add the organization's own rules in `.agents/skills/<area>-policy/SKILL.md` in the project: that file wins over the plugin's default, and the `CODEOWNERS` line of step 2 for that area makes the policy owner its code owner. Do not edit the plugin's copy. Then run `pnpm rules:sync`, which renders the project's own policy skill for Claude Code and Cursor. Test that the skill triggers: ask for the relevant task in different ways and confirm the skill loads each time.
+- **Policies (each policy owner, with an engineer):** the harness ships a default for each area, `.claude/skills/<area>-policy/SKILL.md` (security: OWASP ASVS 5.0.0 Level 1; UX: WCAG 2.2 Level AA; compliance: the OECD privacy principles; brand: one declared source for every brand value). Review it. To replace a default, add the organization's own rules in `.agents/skills/<area>-policy/SKILL.md` in the project: the playbooks read that file in place of the default, and the `CODEOWNERS` line of step 2 for that area makes the policy owner its code owner. Do not edit the default. Test it: ask for a spec that touches the area, and confirm that the reply names `.agents/skills/<area>-policy/SKILL.md` among the policies it read.
 - **Production gate (engineering leadership, with change management and compliance):** name the release managers and add them as required reviewers on the `prod` environment, as the README's deploy section describes. `.agents/hooks/agent-production-gate.sh` blocks an agent's shell commands that dispatch a `prod`
   <!-- deploy:railway -->
   deploy, run a Railway command with `prod` as its environment,
@@ -132,7 +143,7 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 ## 7. Later, as the guardrails mature
 
-- Send the intent's path with `/sdlc:sdlc-mode` by hand first. Then turn on `Spec on intent merge` (step 8).
+- Send the intent's path with `/sdlc-mode` by hand first. Then turn on `Spec on intent merge` (step 8).
 - Make auto mode the default for routine work: a tight `spec.md`, a small blast radius, and code the tests already cover.
 - Set the metric in `bands.yaml`, then turn on `Control band` (step 8).
 
@@ -142,13 +153,10 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 Each workflow below stays off until the repository variable `CLAUDE_CI_ENABLED` is `true`; until then nothing runs, on a schedule or otherwise, and nothing calls a model. When it is on, each needs one secret: `CLAUDE_CODE_OAUTH_TOKEN`, a Claude subscription token from `claude setup-token`, or `ANTHROPIC_API_KEY`, an API key. Either works; with neither set the job fails and says so. The jobs run the small model with a turn cap. Jobs that write install the Claude GitHub App from step 4 on the repository, and every change they make arrives as a pull request.
 
-The jobs that send `/sdlc:sdlc-mode` load the plugin from `plugins/sdlc/claude-code` with `--plugin-dir`, because the folder of a CI job is not a trusted folder and `.claude/settings.json` applies only in a trusted one.
-
-- **`Spec on intent merge`:** when an `intent.md` reaches `main` with `Status: draft.` or `Status: accepted.` and no `spec.md` beside it, which is how the product owner accepts it, runs `/sdlc:sdlc-mode intent/<change>/intent.md`, so that `spec.md` arrives as a pull request for the product owner.
+- **`Spec on intent merge`:** when an `intent.md` reaches `main` with `Status: draft.` or `Status: accepted.` and no `spec.md` beside it, which is how the product owner accepts it, runs `/sdlc-mode intent/<change>/intent.md`, so that `spec.md` arrives as a pull request for the product owner.
 - **`Claude fix loop`:** when a person with write access comments `@claude` on a line of a pull request from this repository, Claude addresses the comment and pushes to that branch. It cannot approve or merge.
 - **`triage` job of `Verify`:** when a pull request from this repository fails a check, reads the failed logs with the `Read` tool only and posts a three-line summary.
-- **`Control band`:** every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `pnpm bands:check metric-values.json`. A tier whose action is `diagnose` or `propose` runs `/sdlc:sdlc-mode` with the finding, and the `pull_request` route opens an intent pull request. It never acts on production.
-- **`Plugin evals`:** on a pull request from this repository that changes a file under `plugins/sdlc/` or `.agents/`, runs `claude plugin eval plugins/sdlc/claude-code` on the small model and keeps `results.json` as an artifact of the run. It fails when a case scores under the repository variable `EVAL_PASS_THRESHOLD` (default `0.8`). It starts no further run once the list-price estimate reaches `EVAL_MAX_COST_USD` (default `20`, in US dollars), and then fails with partial results, as it does when the credential is rejected. One run of the suite makes many model calls billed to the account: each case runs three times, some cases run again without the plugin, and judge graders call a model too. Before you turn it on, run the same command once on a machine; a case that fails there makes every such pull request red.
+- **`Control band`:** every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `pnpm bands:check metric-values.json`. A tier whose action is `diagnose` or `propose` runs `/sdlc-mode` with the finding, and the `pull_request` route opens an intent pull request. It never acts on production.
 
 On a machine, `pnpm loop:measure` reports the loop's measures. It is not part of `pnpm verify`.
 

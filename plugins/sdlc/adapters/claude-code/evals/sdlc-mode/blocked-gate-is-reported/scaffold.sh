@@ -8,7 +8,7 @@ cat > AGENTS.md << 'MD'
 
 ## Conventions
 
-1. **Work runs through `/sdlc:sdlc-mode`.** The `sdlc` plugin holds the skills, playbooks, and checks that say when work starts, where it stops for a person, and how a reply is written.
+1. **Work runs through `/sdlc-mode`.** The `sdlc` plugin holds the skills, playbooks, and checks that say when work starts, where it stops for a person, and how a reply is written.
 MD
 mkdir -p src intent
 printf '# Intent\n\nEach change has its own folder, `intent/<change>/`.\n' > intent/README.md

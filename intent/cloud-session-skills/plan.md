@@ -4,7 +4,7 @@ Accepted by: @joetakara.
 
 ## Files that change
 
-Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes the file from `plugins/sdlc/source/`; no one edits it by hand. A rendered or deleted tree is named here by its folder. The push hook compares literal paths, so the commit that writes or deletes such a tree adds its paths to this section in the same commit.
+Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes the file from `plugins/sdlc/source/`; no one edits it by hand. A rendered or deleted tree is named here by its folder. The push hook compares literal paths and lets through a commit that also changes this file, so the commit that writes or deletes such a tree changes this file too.
 
 **The harness source**
 
@@ -36,7 +36,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
   - `--check` fails, with a message that names the file and the entry and says that a person commits it, when one of the four protected files lacks an entry, or holds `extraKnownMarketplaces`, `enabledPlugins`, or a `workspaceOpen` hook, or when `templates/base/.cursor/hooks/load-project-plugins.sh` exists. The script never writes those files.
   - `--check` fails when a relative path that a rendered skill or playbook names does not exist in its project folder.
   - `--check` counts as stale any file under a rendered `.claude/skills/`, `.claude/agents/`, or `.cursor/agents/` that the source does not produce.
-  - `runHookCase` takes a case's snapshot with `submit` when the case's input holds `cursor_version`, and with the argument the case names when it names one.
+  - `runHookCase` takes a case's snapshot with the argument the case names in `snapshotArgument`, or else with `submit` when the case's input holds `cursor_version`, or else with `snapshot`.
   - Removed, with their self-tests: the Cursor adapter, the plugin copy under `templates/base/plugins/sdlc/`, `renderTemplateMarketplace`, both reads of a marketplace file, `findSettingsProblems`, and `renderToolWords`. `findToolWords` stays, and now finds a tool word left in any rendered file.
   - Its self-tests cover the tool-words render, the project render, the protected-file check, and the reference check.
 

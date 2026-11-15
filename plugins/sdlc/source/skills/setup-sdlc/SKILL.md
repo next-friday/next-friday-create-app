@@ -1,6 +1,6 @@
 ---
 name: setup-sdlc
-description: Sets the model and reasoning effort for the main work, for exploring, and for advice, from a budget, and reports which steps of SETUP.md are done. Run it with /sdlc:setup-sdlc.
+description: Sets the model and reasoning effort for the main work, for exploring, and for advice, from a budget, and reports which steps of SETUP.md are done. Run it with /setup-sdlc.
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,7 @@ disable-model-invocation: true
 Do these steps in order. Run again with the same answers, the skill writes the same file and redoes no step that is done.
 
 1. **List the models the session offers:** the models it can run or start a subagent on, spelled as the session spells them. When it can list none, ask the person to paste the names and wait. Write no model the session does not offer.
-2. **Read {{rules-file}}** when it exists: the rule in the person's home directory that the agent tool loads in every session. Its `budget:` line is the current budget, and a role line whose model is on the list keeps that model. A line for a role that is not in step 3 is from an older version: drop it. When the session cannot read the rule, take the lines the request gives as its content, and otherwise start from the defaults.
+2. **Read the rule** when it exists: the rule in the person's home directory that the agent tool loads in every session. Its path is the `rules-file` line of this agent tool's words: read the files in [`../sdlc-mode/tool-words/`](../sdlc-mode/tool-words/), and take the one whose first line names the agent tool this session runs in. With no file for the agent tool, say that this skill has no words for it, write no rule, and go to step 6. The rule's `budget:` line is the current budget, and a role line whose model is on the list keeps that model. A line for a role that is not in step 3 is from an older version: drop it. When the session cannot read the rule, take the lines the request gives as its content, and otherwise start from the defaults.
 3. **Choose each role's model.** A role without a kept model gets its default. A default the session does not offer becomes the offered model of the same family, the newest when there are several. When the family has none, ask about that role in the question of step 4.
 
    | Role      | Default  | Does                                                                                                      |
@@ -27,7 +27,7 @@ Do these steps in order. Run again with the same answers, the skill writes the s
    | `medium`    | `high`   |
    | `small`     | `medium` |
 
-5. **Write {{rules-file}}** as the whole file, overwriting it, with a newline after the last line, and never in the project: each person's sessions offer different models. {{rules-header}} Then write these lines and no others. {{role-format}} For the budget `medium` in a session that offers `sonnet`, `haiku`, and `opus`:
+5. **Write the rule** at the path of the `rules-file` line, as the whole file, overwriting it, with a newline after the last line, and never in the project: each person's sessions offer different models. Start it as the `rules-header` line says. Then write these lines and no others, each role's model as the `role-format` line says. For the budget `medium` in a session that offers `sonnet`, `haiku`, and `opus`:
 
    ```markdown
    # SDLC models
@@ -40,7 +40,7 @@ Do these steps in order. Run again with the same answers, the skill writes the s
 
    When the session cannot write the rule, show the whole rule and its path in the reply, and say that the person saves it there; write it nowhere else.
 
-   A session cannot change its own model, so say how to choose the `main` model for the next session: {{model-switch}}.{{advisor}}
+   A session cannot change its own model, so say how to choose the `main` model for the next session: the `model-switch` line gives it. When the words hold an `advisor` line, do what it says too.
 
 6. **Read `SETUP.md`** at the project root. When there is none, say "This project has no `SETUP.md`" and go to step 9. Otherwise decide for each step whether it is done by checking the repository: run the step's **Check** when it only reads files or local git state, and read the files the step names. Report each step as `done`, `not done`, or `a person checks this` when the repository cannot show it, such as a setting on a website, an account, or someone's decision. For example:
 

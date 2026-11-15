@@ -403,7 +403,7 @@ function readBranchName(environment: Record<string, string | undefined> = proces
  */
 function findPlanOnlyProblems(planText: string, branchName: string): string[] {
   const isFixTitle = (splitLines(planText).at(0) ?? "").trimEnd().endsWith(fixTitleSuffix);
-  const message = `the folder has no ${intentFileName} and no ${specFileName}; only a bug fix, titled "${fixTitleSuffix}" on a "${fixBranchPrefix}" branch, may skip them. Start from an intent with /sdlc:sdlc-mode`;
+  const message = `the folder has no ${intentFileName} and no ${specFileName}; only a bug fix, titled "${fixTitleSuffix}" on a "${fixBranchPrefix}" branch, may skip them. Start from an intent with /sdlc-mode`;
 
   return isFixTitle && branchName.startsWith(fixBranchPrefix) ? [] : [message];
 }

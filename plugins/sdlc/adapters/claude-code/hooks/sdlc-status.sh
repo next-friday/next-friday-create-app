@@ -1,6 +1,8 @@
 #!/bin/sh
 command -v jq > /dev/null || exit 0
 input=$(cat)
+# An agent tool that also runs the other tool's hook entries names itself in `cursor_version`; its own entries pass an argument.
+[ -z "${1:-}" ] && printf '%s' "$input" | jq -e 'has("cursor_version")' > /dev/null 2>&1 && exit 0
 project=$(printf '%s' "$input" | jq -r '.cwd // .workspace_roots[0] // ""')
 [ -n "$project" ] && [ -d "$project/intent" ] || exit 0
 
@@ -32,7 +34,7 @@ for folder in "$project"/intent/*/; do
 done
 
 [ -n "$lines" ] || exit 0
-summary="Changes in intent/ that are not done (send /sdlc:sdlc-mode to work on one):
+summary="Changes in intent/ that are not done (send /sdlc-mode to work on one):
 $lines"
 
 if [ "$1" = json ]; then

@@ -40,6 +40,15 @@
     "expected": "block"
   },
   {
+    "name": "a: #42 in prose, the first tool's entry run by the second tool: no output",
+    "input": {
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Who approves #42?\n\n**Now:** Waiting. ",
+      "cursor_version": "1.7.2"
+    },
+    "expected": "pass"
+  },
+  {
     "name": "a: PR 7",
     "input": {
       "stop_hook_active": false,
@@ -220,7 +229,8 @@
     "argument": "save",
     "input": {
       "conversation_id": "c1",
-      "text": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
+      "text": "**Result:** Who approves #42?\n\n**Now:** Waiting. ",
+      "cursor_version": "1.7.2"
     },
     "expected": "pass"
   },
@@ -230,7 +240,8 @@
     "input": {
       "conversation_id": "c1",
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "block",
     "savedReply": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
@@ -241,7 +252,8 @@
     "input": {
       "conversation_id": "c1",
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "pass",
     "savedReply": "**Result:** Explain the gate.\n\nText.\n\n**Now:** Done, waits for nobody."
@@ -252,7 +264,8 @@
     "input": {
       "conversation_id": "c1",
       "status": "completed",
-      "loop_count": 1
+      "loop_count": 1,
+      "cursor_version": "1.7.2"
     },
     "expected": "pass",
     "savedReply": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
@@ -263,7 +276,8 @@
     "input": {
       "conversation_id": "c1",
       "status": "aborted",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "pass",
     "savedReply": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
@@ -274,7 +288,8 @@
     "input": {
       "conversation_id": "c1",
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "pass"
   },
@@ -386,9 +401,24 @@
     "input": {
       "conversation_id": "c-one",
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "block"
+  },
+  {
+    "name": "checks: the other tool, a snapshot asked for with the first tool's argument is not taken",
+    "argument": "followup",
+    "savedReply": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits.",
+    "changedFiles": ["src/version.ts"],
+    "input": {
+      "conversation_id": "c-four",
+      "status": "completed",
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
+    },
+    "expected": "pass",
+    "snapshotArgument": "snapshot"
   },
   {
     "name": "checks: the other tool, a file outside intent/ changed and a Checks section",
@@ -398,7 +428,8 @@
     "input": {
       "conversation_id": "c-two",
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "pass"
   },
@@ -410,7 +441,8 @@
     "input": {
       "conversation_id": "c-three",
       "status": "completed",
-      "loop_count": 0
+      "loop_count": 0,
+      "cursor_version": "1.7.2"
     },
     "expected": "pass"
   },

@@ -1,6 +1,6 @@
 ---
 name: sdlc-mode
-description: The front door for work in this project. Matches a request to a playbook and runs it to the next human gate. Run it with /sdlc:sdlc-mode.
+description: The front door for work in this project. Matches a request to a playbook and runs it to the next human gate. Run it with /sdlc-mode.
 disable-model-invocation: true
 ---
 
@@ -23,13 +23,13 @@ Do these steps in order.
    | A pull request to open for the current branch                                                                           | Follow [`playbooks/open-pr.md`](playbooks/open-pr.md).                                                                         |
    | Anything else                                                                                                           | Say which of the rows above is closest and why it does not fit, answer what you can as `playbooks/question.md` says, and stop. |
 
-   When a request both asks a question and reports a problem, use `question` and offer `plan` in one line. A problem reported with `/sdlc:sdlc-mode` is the person's ask for `plan`.
+   When a request both asks a question and reports a problem, use `question` and offer `plan` in one line. A problem reported with `/sdlc-mode` is the person's ask for `plan`.
 
-   Do not start work a person did not ask for. When a message reports a problem without asking for work, answer in a few lines and give, on the **Now** line, the message that would start it: `/sdlc:sdlc-mode` followed by their own words.
+   Do not start work a person did not ask for. When a message reports a problem without asking for work, answer in a few lines and give, on the **Now** line, the message that would start it: `/sdlc-mode` followed by their own words.
 
 2. **Open the task list** when the session offers a task-list tool. Its first items are the matched playbook's numbered steps, each as its first sentence, the text up to the first full stop followed by a space, copied word for word, before any other task. A step you do not do stays in the list with `skip: <reason>`. Use `skip` only for a step you decide never to do. A step marked **Gate** is never skipped. When the session offers no such tool, the steps go in the reply instead, under **Steps**, and are never left out, except for `question` and a reply that stops in a few lines, as the reply shape says. When a playbook's **Hands off to** line chains another playbook, add that playbook's steps when you start it.
 3. **Do the playbook's steps yourself,** stopping only at a step marked **Gate**, or before an action that cannot be undone. At a step marked **Gate**, wait for the person it names. When a playbook's **Hands off to** line says an agent runs the next file "in the same turn", read that file and continue without asking; otherwise stop at the Gate. Mark each step done in the task list as you finish it.
-4. **Start each subagent on its role's model.** The rule `~/.claude/rules/sdlc-models.md`, which `/sdlc:setup-sdlc` writes, names a model and an effort for each role; read the file when its lines are not in this session. Reading or searching more than a few files goes to a subagent on the `explore` model, and so does the `verifier`. The `advise` model reviews at the moments `playbooks/build.md` and `playbooks/fix.md` name. Pass the model and the effort through the `model` and `effort` fields of the subagent call; `model` takes `opus`, `sonnet`, `haiku`, or `fable`, so write a role's model in that form. With no rule, a rule the session cannot read, or no line for the role, start the subagent on this session's model and say so in the reply.
+4. **Start each subagent on its role's model.** Read the files in [`tool-words/`](tool-words/): the one whose first line names the agent tool this session runs in holds that tool's words. Its `rules-file` line is the path of the rule that `/setup-sdlc` writes, which names a model and an effort for each role; read the rule when its lines are not in this session. Reading or searching more than a few files goes to a subagent on the `explore` model, and so does the `verifier`. The `advise` model reviews at the moments `playbooks/build.md` and `playbooks/fix.md` name. Pass the model and the effort as its `subagent-model` line says. With no file for the agent tool, no rule, a rule the session cannot read, or no line for the role, start the subagent on this session's model and say so in the reply.
 5. **Learn from a correction.** When a person corrects a mistake you made, and the same mistake was corrected before, in this conversation, in a review, or in the project's agent instructions, add one line that states the correct behaviour to the list of corrections in the project's agent instructions, in the pull request of the current task. When the mistake is in a playbook's steps, change that step in the same pull request.
 6. **Write the reply in the shape below.**
 

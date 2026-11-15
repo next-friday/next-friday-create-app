@@ -1,6 +1,8 @@
 #!/bin/sh
 command -v jq > /dev/null || exit 0
 input=$(cat)
+# An agent tool that also runs the other tool's hook entries names itself in `cursor_version`; its own entries pass an argument.
+[ -z "${1:-}" ] && printf '%s' "$input" | jq -e 'has("cursor_version")' > /dev/null 2>&1 && exit 0
 
 allow() {
   [ "$1" = json ] && printf '%s\n' '{"permission":"allow"}'

@@ -36,15 +36,26 @@ type HookCase = {
   input: Record<string, unknown>;
   name: string;
   savedReply?: string;
+  snapshotArgument?: string;
 };
 
-type Adapter = {
+type ToolWords = {
+  name: string;
+  words: Record<string, string>;
+};
+
+type AgentTool = {
   agentFields: (agent: AgentConfig) => string[];
-  directory: string;
-  hasAuthoredEvals: boolean;
-  manifest: Record<string, string>;
-  manifestPath: string;
-  renderHooks?: (hooks: HookConfig[]) => string;
+  agentsDirectory: string;
+  hookFilePath: string;
+  key: string;
+  renderHookEntry: (hook: HookConfig) => Record<string, unknown>;
+};
+
+type HarnessSource = {
+  agents: Map<string, AgentConfig & {body: string}>;
+  hookScripts: Map<string, string>;
+  skills: Map<string, string>;
 };
 
 type SelfTestCase = {
@@ -56,6 +67,9 @@ type SelfTestCase = {
 const pluginRoot = "plugins/sdlc";
 const sourceRoot = path.join(pluginRoot, "source");
 const adaptersRoot = path.join(pluginRoot, "adapters");
+const evalPluginRoot = path.join(adaptersRoot, "claude-code");
+const evalPluginManifestPath = path.join(evalPluginRoot, ".claude-plugin", "plugin.json");
+const evalCasesDirectory = path.join(evalPluginRoot, "evals");
 const vendorNamesPath = path.join(adaptersRoot, "vendor-names.json");
 const subagentConfigPath = path.join(adaptersRoot, "agents.json");
 const toolWordsPath = path.join(adaptersRoot, "tool-words.json");
@@ -63,13 +77,14 @@ const hookConfigPath = path.join(adaptersRoot, "hooks.json");
 const hooksDirectory = path.join(sourceRoot, "hooks");
 const hookCasesSuffix = ".cases.json";
 const hookTimeoutSeconds = 10;
-const claudeMarketplacePath = ".claude-plugin/marketplace.json";
 const templateRoot = path.join("templates", "base");
-const templatePluginRoot = path.join(templateRoot, pluginRoot);
+const projectRoots = ["", templateRoot];
 const sourceScriptsDirectory = path.join(sourceRoot, "scripts");
 const templateScriptsDirectory = path.join(templateRoot, "scripts");
-const settingsPath = ".claude/settings.json";
-const marketplacePaths = [claudeMarketplacePath, ".cursor-plugin/marketplace.json"];
+const projectSkillsDirectory = ".claude/skills";
+const toolWordsDirectory = "sdlc-mode/tool-words";
+const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-mode/hooks`;
+const pluginLoaderScript = path.join(templateRoot, ".cursor", "hooks", "load-project-plugins.sh");
 const textExtensions = new Set([".json", ".md", ".sh", ".ts", ".yaml", ".yml"]);
 const ignoredDirectories = new Set(["results"]);
 
@@ -83,7 +98,7 @@ const manifestFields = {
 };
 
 /**
- * Find the subagent frontmatter fields the Claude Code adapter reads.
+ * Find the subagent frontmatter fields Claude Code reads.
  * @param agent Subagent configuration.
  * @returns The `tools` field when the subagent lists tools.
  */
@@ -92,7 +107,7 @@ function findClaudeAgentFields(agent: AgentConfig): string[] {
 }
 
 /**
- * Find the subagent frontmatter fields the Cursor adapter reads.
+ * Find the subagent frontmatter fields Cursor reads.
  * @param agent Subagent configuration.
  * @returns The `readonly` field when the subagent sets it.
  */
@@ -102,66 +117,52 @@ function findCursorAgentFields(agent: AgentConfig): string[] {
 
 /**
  * Build the shell command that runs a hook script through `sh`.
- * @param pluginRootVariable The variable the tool sets to the plugin directory.
- * @param hook The event, script, and argument that `hooks.json` names for the adapter.
+ * @param scriptPath The script's path as the tool's shell resolves it, quoted where it holds a variable.
+ * @param hook The hook that `hooks.json` names.
  * @returns The command, with the argument after the script when the hook has one.
  */
-function renderHookCommand(pluginRootVariable: string, hook: HookConfig): string {
-  const argument = hook.argument === undefined ? "" : ` ${hook.argument}`;
-
-  return `sh "\${${pluginRootVariable}}/hooks/${hook.script}"${argument}`;
+function renderHookCommand(scriptPath: string, hook: HookConfig): string {
+  return ["sh", scriptPath, ...(hook.argument === undefined ? [] : [hook.argument])].join(" ");
 }
 
 /**
- * Render the hook file the Claude Code adapter loads from `hooks/hooks.json`.
- * @param hooks The hooks that `hooks.json` names for the adapter.
- * @returns The file content, which runs each script through `sh`.
+ * Render one hook as Claude Code reads it under an event, in a plugin's hook file or in a project's settings.
+ * @param hook A hook that `hooks.json` names for Claude Code.
+ * @param scriptPath The script's path as the shell resolves it.
+ * @returns The entry, which runs the script through `sh`.
  */
-function renderClaudeHooks(hooks: HookConfig[]): string {
-  return `${JSON.stringify(
-    {
-      hooks: groupHooksByEvent(hooks, hook => ({
-        ...(hook.matcher !== undefined && {
-          matcher: hook.matcher,
-        }),
-        hooks: [
-          {
-            type: "command",
-            timeout: hook.timeout ?? hookTimeoutSeconds,
-            command: renderHookCommand("CLAUDE_PLUGIN_ROOT", hook),
-          },
-        ],
-      })),
-    },
-    undefined,
-    2,
-  )}\n`;
+function renderClaudeHookEntry(hook: HookConfig, scriptPath: string): Record<string, unknown> {
+  return {
+    ...(hook.matcher !== undefined && {
+      matcher: hook.matcher,
+    }),
+    hooks: [
+      {
+        type: "command",
+        timeout: hook.timeout ?? hookTimeoutSeconds,
+        command: renderHookCommand(scriptPath, hook),
+      },
+    ],
+  };
 }
 
 /**
- * Render the hook file the Cursor adapter loads from `hooks/hooks.json`.
- * @param hooks The hooks that `hooks.json` names for the adapter.
- * @returns The file content, which runs each script through `sh` and caps the follow-ups of a `stop` hook.
+ * Render one hook as Cursor reads it under an event of a project's hook file.
+ * @param hook A hook that `hooks.json` names for Cursor.
+ * @returns The entry, which runs the script through `sh` from the project root and caps the follow-ups of a `stop` hook.
  */
-function renderCursorHooks(hooks: HookConfig[]): string {
-  return `${JSON.stringify(
-    {
-      version: 1,
-      hooks: groupHooksByEvent(hooks, hook => ({
-        command: renderHookCommand("CURSOR_PLUGIN_ROOT", hook),
-        ...(hook.loopLimit !== undefined && {
-          loop_limit: hook.loopLimit,
-        }),
-      })),
-    },
-    undefined,
-    2,
-  )}\n`;
+function renderCursorHookEntry(hook: HookConfig): Record<string, unknown> {
+  return {
+    command: renderHookCommand(`${projectHooksDirectory}/${hook.script}`, hook),
+    ...(hook.loopLimit !== undefined && {
+      loop_limit: hook.loopLimit,
+    }),
+  };
 }
 
 /**
- * Group the hooks of one adapter by event, in the order `hooks.json` lists them, so two scripts can share an event.
- * @param hooks The hooks that `hooks.json` names for the adapter.
+ * Group hooks by event, in the order `hooks.json` lists them, so two scripts can share an event.
+ * @param hooks The hooks that `hooks.json` names for one agent tool.
  * @param render Renders one hook as its tool expects it.
  * @returns Each event and its rendered hooks.
  */
@@ -178,27 +179,45 @@ function groupHooksByEvent(
   return grouped;
 }
 
-const adapters: Adapter[] = [
+/**
+ * Render one hook of the plugin that `claude plugin eval` loads.
+ * @param hook A hook that `hooks.json` names for Claude Code.
+ * @returns The entry, which runs the script from the plugin's `hooks` folder.
+ */
+function renderEvalPluginHookEntry(hook: HookConfig): Record<string, unknown> {
+  return renderClaudeHookEntry(hook, `"\${CLAUDE_PLUGIN_ROOT}/hooks/${hook.script}"`);
+}
+
+/**
+ * Render the hook file of the plugin that `claude plugin eval` loads, at `hooks/hooks.json`.
+ * @param hooks The hooks that `hooks.json` names for Claude Code.
+ * @returns The file content, with the hooks of each event in the order `hooks.json` lists them.
+ */
+function renderEvalPluginHooks(hooks: HookConfig[]): string {
+  return `${JSON.stringify(
+    {
+      hooks: groupHooksByEvent(hooks, renderEvalPluginHookEntry),
+    },
+    undefined,
+    2,
+  )}\n`;
+}
+
+const agentTools: AgentTool[] = [
   {
-    manifest: manifestFields,
     agentFields: findClaudeAgentFields,
-    renderHooks: renderClaudeHooks,
-    directory: "claude-code",
-    manifestPath: ".claude-plugin/plugin.json",
-    hasAuthoredEvals: true,
+    key: "claude-code",
+    agentsDirectory: ".claude/agents",
+    hookFilePath: ".claude/settings.json",
+    renderHookEntry: hook =>
+      renderClaudeHookEntry(hook, `"$CLAUDE_PROJECT_DIR"/${projectHooksDirectory}/${hook.script}`),
   },
   {
     agentFields: findCursorAgentFields,
-    renderHooks: renderCursorHooks,
-    directory: "cursor",
-    manifestPath: ".cursor-plugin/plugin.json",
-    hasAuthoredEvals: false,
-    manifest: {
-      ...manifestFields,
-      skills: "./skills/",
-      agents: "./agents/",
-      hooks: "./hooks/hooks.json",
-    },
+    renderHookEntry: renderCursorHookEntry,
+    key: "cursor",
+    agentsDirectory: ".cursor/agents",
+    hookFilePath: ".cursor/hooks.json",
   },
 ];
 
@@ -263,16 +282,48 @@ function isEscapingReference(filePath: string, target: string): boolean {
 }
 
 /**
+ * List the relative paths a text names, as a link target or as a path that starts with `./` or `../`.
+ * @param text File content.
+ * @returns Each link target and path token that is neither a URL nor an anchor.
+ */
+function listReferences(text: string): string[] {
+  return Array.from(
+    text.matchAll(referencePattern),
+    ([, link, token]) => link ?? token ?? "",
+  ).filter(target => !urlScheme.test(target) && !target.startsWith("#"));
+}
+
+/**
  * Find the references in a file that resolve outside the plugin directory.
  * @param filePath Path of the file from the repository root.
  * @param text File content.
  * @returns One message per reference that leaves the plugin directory.
  */
 function findEscapingReferences(filePath: string, text: string): string[] {
-  return Array.from(text.matchAll(referencePattern), ([, link, token]) => link ?? token ?? "")
-    .filter(target => !urlScheme.test(target) && !target.startsWith("#"))
+  return listReferences(text)
     .filter(target => isEscapingReference(filePath, target))
     .map(target => `${filePath}: ${target} leaves ${pluginRoot}/`);
+}
+
+/**
+ * Find the references in a rendered file that name no rendered file.
+ * @param filePath Path of the rendered file from the repository root.
+ * @param text File content.
+ * @param renderedFiles Path of every rendered file, from the repository root.
+ * @returns One message per reference that is neither a rendered file nor a folder that holds one.
+ */
+function findMissingReferences(filePath: string, text: string, renderedFiles: string[]): string[] {
+  const renderedPaths = renderedFiles.map(file => path.resolve(file));
+
+  return listReferences(text)
+    .filter(target => {
+      const resolved = path.resolve(path.dirname(filePath), target.split("#", 1)[0] ?? "");
+
+      return renderedPaths.every(
+        file => !(file === resolved || file.startsWith(`${resolved}${path.sep}`)),
+      );
+    })
+    .map(target => `${filePath}: ${target} names no rendered file`);
 }
 
 /**
@@ -297,52 +348,89 @@ function findVendorNames(filePath: string, text: string, names: string[]): strin
 }
 
 /**
- * Find a `version` key in a manifest or in a marketplace file.
+ * Find a `version` key in the plugin manifest.
  * @param filePath Path of the manifest from the repository root.
  * @param text Manifest content.
- * @returns A message when the file holds a version at its top level, in `metadata`, or in a plugin entry.
+ * @returns A message when the manifest holds a version.
  */
 function findVersionKey(filePath: string, text: string): string[] {
-  const {
-    metadata,
-    version,
-    plugins = [],
-  } = JSON.parse(text) as {
-    metadata?: {version?: string};
-    plugins?: {version?: string}[];
-    version?: string;
-  };
+  const {version} = JSON.parse(text) as {version?: string};
 
-  const hasVersion = [version, metadata?.version, ...plugins.map(entry => entry.version)].some(
-    value => value !== undefined,
-  );
-
-  return hasVersion ? [`${filePath}: holds a version key`] : [];
+  return version === undefined ? [] : [`${filePath}: holds a version key`];
 }
 
 /**
- * Find what the repository's Claude Code settings lack to load the plugin from this tree.
- * @param settingsText Content of the settings file, or undefined when the file is missing.
- * @param pluginKey The plugin as `<plugin>@<marketplace>`.
- * @param marketplaceName The marketplace name.
- * @returns A message when the settings do not enable the plugin and register its marketplace.
+ * Order the keys of every object in a JSON value, so that two values with the same content have the same text.
+ * @param value A parsed JSON value.
+ * @returns The value with each object's keys in order.
  */
-function findSettingsProblems(
-  settingsText: string | undefined,
-  pluginKey: string,
-  marketplaceName: string,
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(item => sortKeys(item));
+  }
+
+  return value !== null && typeof value === "object"
+    ? Object.fromEntries(
+        Object.entries(value)
+          .toSorted(([first], [second]) => first.localeCompare(second))
+          .map(([key, item]) => [key, sortKeys(item)]),
+      )
+    : value;
+}
+
+/**
+ * Find the hook entries a protected file lacks. A person commits that file, so the script only reports.
+ * @param filePath Path of the file from the repository root.
+ * @param hooks The hooks that `hooks.json` names for the file's agent tool.
+ * @param render Renders one hook as the file holds it under the hook's event.
+ * @param fileText Content of the file; a missing file holds no entry.
+ * @returns One message per hook whose entry is not under its event.
+ */
+function findMissingHookEntries(
+  filePath: string,
+  hooks: HookConfig[],
+  render: (hook: HookConfig) => Record<string, unknown>,
+  fileText = "{}",
 ): string[] {
-  const {enabledPlugins, extraKnownMarketplaces} = JSON.parse(settingsText ?? "{}") as {
-    enabledPlugins?: Record<string, boolean>;
-    extraKnownMarketplaces?: Record<string, unknown>;
+  const {hooks: heldHooks = {}} = JSON.parse(fileText) as {
+    hooks?: Record<string, unknown[]>;
   };
 
-  return enabledPlugins?.[pluginKey] === true &&
-    extraKnownMarketplaces?.[marketplaceName] !== undefined
-    ? []
-    : [
-        `${settingsPath}: must enable "${pluginKey}" under enabledPlugins and name "${marketplaceName}" under extraKnownMarketplaces; a person commits this file`,
-      ];
+  return hooks
+    .map(hook => ({
+      entry: JSON.stringify(sortKeys(render(hook))),
+      event: hook.event,
+    }))
+    .filter(({entry, event}) =>
+      (heldHooks[event] ?? []).every(held => JSON.stringify(sortKeys(held)) !== entry),
+    )
+    .map(
+      ({entry, event}) =>
+        `${filePath}: lacks the ${event} hook entry ${entry}; a person commits this file`,
+    );
+}
+
+/**
+ * Find what a protected file still holds of loading the harness as a plugin.
+ * @param filePath Path of the file from the repository root.
+ * @param fileText Content of the file; a missing file holds none of them.
+ * @returns One message for each of `extraKnownMarketplaces`, `enabledPlugins`, and a `workspaceOpen` hook that the file holds.
+ */
+function findPluginLoaderKeys(filePath: string, fileText = "{}"): string[] {
+  const {enabledPlugins, extraKnownMarketplaces, hooks} = JSON.parse(fileText) as {
+    enabledPlugins?: unknown;
+    extraKnownMarketplaces?: unknown;
+    hooks?: {workspaceOpen?: unknown};
+  };
+
+  return [
+    ...(extraKnownMarketplaces === undefined ? [] : ["extraKnownMarketplaces"]),
+    ...(enabledPlugins === undefined ? [] : ["enabledPlugins"]),
+    ...(hooks?.workspaceOpen === undefined ? [] : ["a workspaceOpen hook"]),
+  ].map(
+    key =>
+      `${filePath}: holds ${key}, which loaded the harness as a plugin; a person removes it and commits this file`,
+  );
 }
 
 /**
@@ -442,7 +530,7 @@ function createCaseRepository(parentDirectory: string): string {
 /**
  * Run a hook script on one case in a private state directory.
  * @param script Path of the script from the repository root.
- * @param hookCase The case. A saved reply is stored first by the script's `save` argument. Changed files make the case run in a new Git repository: the script takes its `snapshot`, the files are written, and the case input gains the repository as `cwd` and `workspace_roots`.
+ * @param hookCase The case. A saved reply is stored first by the script's `save` argument. Changed files make the case run in a new Git repository: the script takes its snapshot, the files are written, and the case input gains the repository as `cwd` and `workspace_roots`. The snapshot is asked for with the argument the case names, or else with `submit` when the input holds `cursor_version`, or else with `snapshot`.
  * @returns The standard output of the script on the case input.
  */
 function runHookCase(script: string, hookCase: HookCase): string {
@@ -499,7 +587,15 @@ function runHookCase(script: string, hookCase: HookCase): string {
     };
 
     writeCaseFiles(input.cwd, hookCase.filesBeforeTurn ?? [], "before\n");
-    runHookScript(script, "snapshot", caseInput, stateDirectory);
+
+    runHookScript(
+      script,
+      hookCase.snapshotArgument ??
+        (hookCase.input.cursor_version === undefined ? "snapshot" : "submit"),
+      caseInput,
+      stateDirectory,
+    );
+
     writeCaseFiles(input.cwd, hookCase.changedFiles, "changed\n");
 
     if (hookCase.committed === true) {
@@ -614,85 +710,21 @@ function findHookProblems(): string[] {
 }
 
 /**
- * Find where a generated project holds a rendered adapter file.
- * @param adapterFile Path of the file in an adapter, from the repository root.
- * @returns The path of its copy under the template, which has no `adapters` directory.
+ * Render the file that holds one agent tool's words, which a skill names by their line.
+ * @param toolWords The tool's display name and its words from `tool-words.json`.
+ * @returns The file content: a heading that names the tool, then one list item for each word.
  */
-function findTemplateCopyPath(adapterFile: string): string {
-  return path.join(templatePluginRoot, path.relative(adaptersRoot, adapterFile));
+function renderToolWordsFile(toolWords: ToolWords): string {
+  return [
+    `# ${toolWords.name}`,
+    "",
+    ...Object.entries(toolWords.words).map(([word, text]) => `- \`${word}\`: ${text}`),
+    "",
+  ].join("\n");
 }
 
 /**
- * Render the marketplace file of a generated project from the repository's own.
- * @param marketplaceText Content of the repository's `.claude-plugin/marketplace.json`.
- * @returns The content with each plugin's source pointing at the adapter copy a generated project holds.
- */
-function renderTemplateMarketplace(marketplaceText: string): string {
-  const marketplace = JSON.parse(marketplaceText) as {plugins: {source: string}[]};
-
-  return `${JSON.stringify(
-    {
-      ...marketplace,
-      plugins: marketplace.plugins.map(entry => ({
-        ...entry,
-        source: `./${path.join(pluginRoot, path.basename(entry.source))}`,
-      })),
-    },
-    undefined,
-    2,
-  )}\n`;
-}
-
-/**
- * Render what a generated project holds of the plugin: the adapters with their eval cases, the marketplace file, and the three scripts.
- * @param adapterFiles The expected content of each adapter file, from `renderAdapters`.
- * @returns The expected content of each file under `templates/base/`, by path from the repository root.
- */
-function renderTemplateCopy(adapterFiles: Map<string, string>): Map<string, string> {
-  return new Map([
-    ...[...adapterFiles].map(([file, content]): [string, string] => [
-      findTemplateCopyPath(file),
-      content,
-    ]),
-    ...adapters
-      .filter(({hasAuthoredEvals}) => hasAuthoredEvals)
-      .map(({directory}) => path.join(adaptersRoot, directory, "evals"))
-      .flatMap(evalsDirectory =>
-        listFiles(evalsDirectory, true).map((file): [string, string] => {
-          const evalFile = path.join(evalsDirectory, file);
-
-          return [findTemplateCopyPath(evalFile), readFileSync(evalFile, "utf8")];
-        }),
-      ),
-    [
-      path.join(templateRoot, claudeMarketplacePath),
-      renderTemplateMarketplace(readFileSync(claudeMarketplacePath, "utf8")),
-    ],
-    ...listFiles(sourceScriptsDirectory, false).map((file): [string, string] => [
-      path.join(templateScriptsDirectory, file),
-      readFileSync(path.join(sourceScriptsDirectory, file), "utf8"),
-    ]),
-  ]);
-}
-
-/**
- * Replace each tool word of the source with the text one agent tool needs, such as a path in the person's home directory.
- * @param text Source text.
- * @param words Each tool word, such as `{{rules-file}}`, and its text for one agent tool.
- * @returns The text with every tool word replaced.
- */
-function renderToolWords(text: string, words: Record<string, string>): string {
-  let rendered = text;
-
-  for (const [word, value] of Object.entries(words)) {
-    rendered = rendered.split(word).join(value);
-  }
-
-  return rendered;
-}
-
-/**
- * Find tool words a render left in place, because the tool's map in `tool-words.json` lacks them.
+ * Find tool words left in a rendered file. A skill names a word's line in the tool-words file of its agent tool.
  * @param filePath Path of the rendered file.
  * @param text Rendered text.
  * @returns One problem for each tool word left in the text.
@@ -700,76 +732,188 @@ function renderToolWords(text: string, words: Record<string, string>): string {
 function findToolWords(filePath: string, text: string): string[] {
   return Array.from(
     text.matchAll(/\{\{[a-z]+(?:-[a-z]+)*\}\}/gu),
-    ([word]) => `${filePath}: holds the tool word ${word}; add it to ${toolWordsPath}`,
+    ([word]) =>
+      `${filePath}: holds the tool word ${word}; name its line of the tool-words file instead`,
   );
 }
 
 /**
- * Render every adapter from the source.
- * @returns The expected content of each adapter file, by path from the repository root.
+ * Read the harness from the source: the skills with each agent tool's words, the hook scripts that `hooks.json` names, and the subagents.
+ * @param hooksConfig The hooks that `hooks.json` names for each agent tool.
+ * @returns The content of each skill file by its path under a skills folder, of each hook script by its name, and each subagent's configuration and body by its name.
  */
-function renderAdapters(): Map<string, string> {
-  const expected = new Map<string, string>();
+function readHarnessSource(hooksConfig: Record<string, HookConfig[]>): HarnessSource {
   const skillsDirectory = path.join(sourceRoot, "skills");
-  const agentsDirectory = path.join(sourceRoot, "agents");
+  const toolWords = JSON.parse(readFileSync(toolWordsPath, "utf8")) as Record<string, ToolWords>;
 
   const agentsConfig = JSON.parse(readFileSync(subagentConfigPath, "utf8")) as Record<
     string,
     AgentConfig
   >;
 
-  const hooksConfig = JSON.parse(readFileSync(hookConfigPath, "utf8")) as Record<
-    string,
-    HookConfig[]
-  >;
+  const scripts = new Set(
+    Object.values(hooksConfig).flatMap(hooks => hooks.map(hook => hook.script)),
+  );
 
-  const toolWords = JSON.parse(readFileSync(toolWordsPath, "utf8")) as Record<
-    string,
-    Record<string, string>
-  >;
+  return {
+    agents: new Map(
+      Object.entries(agentsConfig).map(([name, agent]) => [
+        name,
+        {
+          ...agent,
+          body: readFileSync(path.join(sourceRoot, "agents", `${name}.md`), "utf8"),
+        },
+      ]),
+    ),
+    hookScripts: new Map(
+      [...scripts].map(script => [script, readFileSync(path.join(hooksDirectory, script), "utf8")]),
+    ),
+    skills: new Map([
+      ...listFiles(skillsDirectory, false).map((file): [string, string] => [
+        file,
+        readFileSync(path.join(skillsDirectory, file), "utf8"),
+      ]),
+      ...Object.entries(toolWords).map(([tool, words]): [string, string] => [
+        path.join(toolWordsDirectory, `${tool}.md`),
+        renderToolWordsFile(words),
+      ]),
+    ]),
+  };
+}
 
-  for (const adapter of adapters) {
-    const adapterRoot = path.join(adaptersRoot, adapter.directory);
+/**
+ * Render the subagents of one agent tool.
+ * @param directory The folder that holds the subagents, from the repository root.
+ * @param source The harness source.
+ * @param agentFields Finds the frontmatter fields the agent tool reads.
+ * @returns The expected content of each subagent file, by path from the repository root.
+ */
+function renderAgents(
+  directory: string,
+  source: HarnessSource,
+  agentFields: (agent: AgentConfig) => string[],
+): [string, string][] {
+  return [...source.agents].map(([name, agent]) => [
+    path.join(directory, `${name}.md`),
+    renderAgent(name, agentFields(agent), agent, agent.body),
+  ]);
+}
 
-    expected.set(
-      path.join(adapterRoot, adapter.manifestPath),
-      `${JSON.stringify(adapter.manifest, undefined, 2)}\n`,
-    );
+/**
+ * Render the plugin that `claude plugin eval` loads: the manifest, the skills, the hooks in the plugin's own layout, and the subagents.
+ * @param source The harness source.
+ * @param hooks The hooks that `hooks.json` names for Claude Code.
+ * @returns The expected content of each file of the plugin, by path from the repository root.
+ */
+function renderEvalPlugin(source: HarnessSource, hooks: HookConfig[]): [string, string][] {
+  return [
+    [evalPluginManifestPath, `${JSON.stringify(manifestFields, undefined, 2)}\n`],
+    ...[...source.skills].map(([file, content]): [string, string] => [
+      path.join(evalPluginRoot, "skills", file),
+      content,
+    ]),
+    [path.join(evalPluginRoot, "hooks", "hooks.json"), renderEvalPluginHooks(hooks)],
+    ...[...new Set(hooks.map(({script}) => script))].map((script): [string, string] => [
+      path.join(evalPluginRoot, "hooks", script),
+      source.hookScripts.get(script) ?? "",
+    ]),
+    ...renderAgents(path.join(evalPluginRoot, "agents"), source, findClaudeAgentFields),
+  ];
+}
 
-    const words = toolWords[adapter.directory] ?? {};
+/**
+ * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills with the hook scripts beside the front-door skill, and each tool's subagents.
+ * @param projectRoot The project's folder from the repository root, empty for the repository itself.
+ * @param source The harness source.
+ * @returns The expected content of each file, by path from the repository root.
+ */
+function renderProject(projectRoot: string, source: HarnessSource): [string, string][] {
+  return [
+    ...[...source.skills].map(([file, content]): [string, string] => [
+      path.join(projectRoot, projectSkillsDirectory, file),
+      content,
+    ]),
+    ...[...source.hookScripts].map(([script, content]): [string, string] => [
+      path.join(projectRoot, projectHooksDirectory, script),
+      content,
+    ]),
+    ...agentTools.flatMap(({agentFields, agentsDirectory}) =>
+      renderAgents(path.join(projectRoot, agentsDirectory), source, agentFields),
+    ),
+  ];
+}
 
-    for (const file of listFiles(skillsDirectory, false)) {
-      const text = readFileSync(path.join(skillsDirectory, file), "utf8");
+/**
+ * Render the scripts a generated project runs its checks with.
+ * @returns The expected content of each script under `templates/base/scripts/`, by path from the repository root.
+ */
+function renderTemplateScripts(): [string, string][] {
+  return listFiles(sourceScriptsDirectory, false).map(file => [
+    path.join(templateScriptsDirectory, file),
+    readFileSync(path.join(sourceScriptsDirectory, file), "utf8"),
+  ]);
+}
 
-      expected.set(path.join(adapterRoot, "skills", file), renderToolWords(text, words));
-    }
+/**
+ * List the folders that hold only rendered files.
+ * @returns Each folder, from the repository root: the plugin that `claude plugin eval` loads, and each project's skills and subagents.
+ */
+function listRenderedDirectories(): string[] {
+  return [
+    evalPluginRoot,
+    ...projectRoots.flatMap(projectRoot => [
+      path.join(projectRoot, projectSkillsDirectory),
+      ...agentTools.map(({agentsDirectory}) => path.join(projectRoot, agentsDirectory)),
+    ]),
+  ];
+}
 
-    const hooks = hooksConfig[adapter.directory];
+/**
+ * Find the files that differ from what the source renders.
+ * @param expected The expected content of each rendered file, by path.
+ * @param heldFiles Path of each file the rendered folders hold.
+ * @param read Reads a file, and returns undefined when there is none.
+ * @returns Each expected file that is missing or holds other content, then each held file the source does not produce.
+ */
+function findStaleFiles(
+  expected: Map<string, string>,
+  heldFiles: string[],
+  read: (file: string) => string | undefined,
+): string[] {
+  return [
+    ...[...expected].filter(([file, content]) => read(file) !== content).map(([file]) => file),
+    ...heldFiles.filter(file => !expected.has(file)),
+  ];
+}
 
-    if (hooks !== undefined && adapter.renderHooks !== undefined) {
-      expected.set(path.join(adapterRoot, "hooks", "hooks.json"), adapter.renderHooks(hooks));
+/**
+ * Read a file that may not be there.
+ * @param file Path of the file from the repository root.
+ * @returns The content, or undefined when there is no such file.
+ */
+function readHeldFile(file: string): string | undefined {
+  return existsSync(file) ? readFileSync(file, "utf8") : undefined;
+}
 
-      const scripts = new Set(hooks.map(hook => hook.script));
+/**
+ * Write each stale file as the source renders it, and remove the ones the source does not produce.
+ * @param staleFiles The files `findStaleFiles` lists.
+ * @param expected The expected content of each rendered file, by path.
+ */
+function writeRenderedFiles(staleFiles: string[], expected: Map<string, string>): void {
+  for (const file of staleFiles) {
+    const content = expected.get(file);
 
-      for (const script of scripts) {
-        expected.set(
-          path.join(adapterRoot, "hooks", script),
-          readFileSync(path.join(hooksDirectory, script), "utf8"),
-        );
-      }
-    }
+    if (content === undefined) {
+      rmSync(file);
+    } else {
+      mkdirSync(path.dirname(file), {
+        recursive: true,
+      });
 
-    for (const [name, agent] of Object.entries(agentsConfig)) {
-      const body = readFileSync(path.join(agentsDirectory, `${name}.md`), "utf8");
-
-      expected.set(
-        path.join(adapterRoot, "agents", `${name}.md`),
-        renderAgent(name, adapter.agentFields(agent), agent, body),
-      );
+      writeFileSync(file, content);
     }
   }
-
-  return expected;
 }
 
 const subagent: AgentConfig = {
@@ -777,9 +921,50 @@ const subagent: AgentConfig = {
 };
 
 const versionProblem = "m.json: holds a version key";
-const testPluginKey = "p@m";
-const testMarketplaceName = "m";
-const settingsProblem = `${settingsPath}: must enable "${testPluginKey}" under enabledPlugins and name "${testMarketplaceName}" under extraKnownMarketplaces; a person commits this file`;
+
+const sampleSource: HarnessSource = {
+  agents: new Map([
+    [
+      "a",
+      {
+        ...subagent,
+        body: "body",
+        readonly: true,
+        tools: ["Read"],
+      },
+    ],
+  ]),
+  hookScripts: new Map([["h.sh", "exit 0\n"]]),
+  skills: new Map([[path.join("s", "SKILL.md"), "skill\n"]]),
+};
+
+const sampleHook: HookConfig = {
+  event: "Stop",
+  script: "h.sh",
+};
+
+const twoStopHooks: HookConfig[] = ["a.sh", "b.sh"].map(script => ({
+  script,
+  event: "Stop",
+}));
+
+const sampleHookEntry = '{"hooks":[{"command":"sh h.sh","type":"command"}]}';
+
+/**
+ * Render the sample hook the way a self-test's protected file holds it.
+ * @returns The entry of `sampleHookEntry`, with its keys in another order.
+ */
+function renderSampleHookEntry(): Record<string, unknown> {
+  return {
+    hooks: [
+      {
+        type: "command",
+        command: "sh h.sh",
+      },
+    ],
+  };
+}
+
 const blockingOutput = '{"decision":"block"}';
 
 const hookCases: HookCase[] = [
@@ -828,24 +1013,6 @@ function runArgumentStub(hookCase: HookCase): string {
 
 const selfTestCases: SelfTestCase[] = [
   {
-    name: "an adapter file is copied under the template without the adapters directory",
-    expected: [path.join(templatePluginRoot, "claude-code/skills/a/SKILL.md")],
-    problems: [findTemplateCopyPath(path.join(adaptersRoot, "claude-code/skills/a/SKILL.md"))],
-  },
-  {
-    name: "the template marketplace points at the copy a generated project holds",
-    expected: ['{"name":"m","plugins":[{"name":"p","source":"./plugins/sdlc/claude-code"}]}'],
-    problems: [
-      JSON.stringify(
-        JSON.parse(
-          renderTemplateMarketplace(
-            '{"name":"m","plugins":[{"name":"p","source":"./plugins/sdlc/adapters/claude-code"}]}',
-          ),
-        ),
-      ),
-    ],
-  },
-  {
     name: "a link into the plugin passes",
     expected: [],
     problems: findEscapingReferences(
@@ -877,18 +1044,123 @@ const selfTestCases: SelfTestCase[] = [
     problems: findEscapingReferences(path.join(pluginRoot, "a.md"), "[x](/etc/passwd)"),
   },
   {
-    name: "a tool word is replaced with its text for the tool",
-    expected: ["see ~/rules"],
+    name: "a reference to a rendered file or to a folder that holds one passes",
+    expected: [],
+    problems: findMissingReferences(
+      path.join("p", "skills", "a", "SKILL.md"),
+      "[b](playbooks/b.md), `../c/` and `../..`, and [d](https://example.com/x)",
+      [
+        path.join("p", "skills", "a", "playbooks", "b.md"),
+        path.join("p", "skills", "c", "SKILL.md"),
+      ],
+    ),
+  },
+  {
+    name: "a reference to a file the source does not render fails",
+    expected: [
+      `${path.join("p", "skills", "a", "SKILL.md")}: ../c/SKILL.md names no rendered file`,
+    ],
+    problems: findMissingReferences(
+      path.join("p", "skills", "a", "SKILL.md"),
+      "see `../c/SKILL.md`",
+      [path.join("p", "skills", "a", "SKILL.md")],
+    ),
+  },
+  {
+    name: "an agent tool's words render under a heading that names the tool",
+    expected: ["# Tool\n\n- `rules-file`: `~/rules`\n- `model-switch`: the picker\n"],
     problems: [
-      renderToolWords("see {{rules-file}}", {
-        "{{rules-file}}": "~/rules",
+      renderToolWordsFile({
+        name: "Tool",
+        words: {
+          "rules-file": "`~/rules`",
+          "model-switch": "the picker",
+        },
       }),
     ],
   },
   {
-    name: "a tool word that the tool's map lacks fails",
-    expected: [`a.md: holds the tool word {{model-switch}}; add it to ${toolWordsPath}`],
-    problems: findToolWords("a.md", renderToolWords("use {{model-switch}}", {})),
+    name: "a tool word left in a rendered file fails",
+    expected: [
+      "a.md: holds the tool word {{model-switch}}; name its line of the tool-words file instead",
+    ],
+    problems: findToolWords("a.md", "use {{model-switch}}"),
+  },
+  {
+    name: "a project holds the skills, the hook scripts, and each tool's subagents",
+    expected: [
+      path.join("t", ".claude", "skills", "s", "SKILL.md"),
+      path.join("t", ".claude", "skills", "sdlc-mode", "hooks", "h.sh"),
+      path.join("t", ".claude", "agents", "a.md"),
+      path.join("t", ".cursor", "agents", "a.md"),
+      "---\nname: a\ndescription: d\ntools: Read\n---\n\nbody",
+      "---\nname: a\ndescription: d\nreadonly: true\n---\n\nbody",
+    ],
+    problems: (() => {
+      const files = renderProject("t", sampleSource);
+
+      return [...files.map(([file]) => file), ...files.slice(2).map(([, content]) => content)];
+    })(),
+  },
+  {
+    name: "a rendered file with other content, a missing one, and an extra one are stale",
+    expected: ["b.md", "c.md", "d.md"],
+    problems: findStaleFiles(
+      new Map([
+        ["a.md", "a"],
+        ["b.md", "b"],
+        ["c.md", "c"],
+      ]),
+      ["a.md", "b.md", "d.md"],
+      file =>
+        ({
+          "a.md": "a",
+          "b.md": "edited",
+          "d.md": "d",
+        })[file],
+    ),
+  },
+  {
+    name: "a protected file that holds the hook entry passes, whatever the order of its keys",
+    expected: [],
+    problems: findMissingHookEntries(
+      "f.json",
+      [sampleHook],
+      renderSampleHookEntry,
+      `{"hooks": {"Stop": [{"hooks": [{"command": "other"}]}, ${sampleHookEntry}]}}`,
+    ),
+  },
+  {
+    name: "a protected file that holds the hook entry under another event fails",
+    expected: [`f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`],
+    problems: findMissingHookEntries(
+      "f.json",
+      [sampleHook],
+      renderSampleHookEntry,
+      `{"hooks": {"SessionStart": [${sampleHookEntry}]}}`,
+    ),
+  },
+  {
+    name: "a missing protected file lacks every hook entry",
+    expected: [`f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`],
+    problems: findMissingHookEntries("f.json", [sampleHook], renderSampleHookEntry),
+  },
+  {
+    name: "a protected file that still loads the harness as a plugin fails",
+    expected: [
+      "f.json: holds extraKnownMarketplaces, which loaded the harness as a plugin; a person removes it and commits this file",
+      "f.json: holds enabledPlugins, which loaded the harness as a plugin; a person removes it and commits this file",
+      "f.json: holds a workspaceOpen hook, which loaded the harness as a plugin; a person removes it and commits this file",
+    ],
+    problems: findPluginLoaderKeys(
+      "f.json",
+      '{"extraKnownMarketplaces": {}, "enabledPlugins": {}, "hooks": {"workspaceOpen": []}}',
+    ),
+  },
+  {
+    name: "a protected file with other keys and other hooks passes",
+    expected: [],
+    problems: findPluginLoaderKeys("f.json", '{"permissions": {}, "hooks": {"stop": []}}'),
   },
   {
     name: "a listed name fails in any case and an unlisted one passes",
@@ -906,56 +1178,9 @@ const selfTestCases: SelfTestCase[] = [
     problems: findVersionKey("m.json", '{"name": "sample", "version": "1.0.0"}'),
   },
   {
-    name: "a marketplace entry with a version fails",
-    expected: [versionProblem],
-    problems: findVersionKey("m.json", '{"plugins": [{"name": "sample", "version": "1.0.0"}]}'),
-  },
-  {
-    name: "a marketplace with a version in its metadata fails",
-    expected: [versionProblem],
-    problems: findVersionKey("m.json", '{"metadata": {"version": "1.0.0"}, "plugins": []}'),
-  },
-  {
-    name: "a marketplace with a version at its top level fails",
-    expected: [versionProblem],
-    problems: findVersionKey("m.json", '{"version": "1.0.0", "plugins": [{"name": "sample"}]}'),
-  },
-  {
     name: "a manifest without a version passes",
     expected: [],
-    problems: findVersionKey("m.json", '{"name": "sample", "plugins": [{"name": "sample"}]}'),
-  },
-  {
-    name: "settings that enable the plugin and name the marketplace pass",
-    expected: [],
-    problems: findSettingsProblems(
-      '{"enabledPlugins": {"p@m": true}, "extraKnownMarketplaces": {"m": {}}}',
-      testPluginKey,
-      testMarketplaceName,
-    ),
-  },
-  {
-    name: "settings without the marketplace fail",
-    expected: [settingsProblem],
-    problems: findSettingsProblems(
-      '{"enabledPlugins": {"p@m": true}}',
-      testPluginKey,
-      testMarketplaceName,
-    ),
-  },
-  {
-    name: "settings with the plugin disabled fail",
-    expected: [settingsProblem],
-    problems: findSettingsProblems(
-      '{"enabledPlugins": {"p@m": false}, "extraKnownMarketplaces": {"m": {}}}',
-      testPluginKey,
-      testMarketplaceName,
-    ),
-  },
-  {
-    name: "a missing settings file fails",
-    expected: [settingsProblem],
-    problems: findSettingsProblems(undefined, testPluginKey, testMarketplaceName),
+    problems: findVersionKey("m.json", '{"name": "sample"}'),
   },
   {
     name: "a hook case that passes or blocks as expected passes",
@@ -997,81 +1222,35 @@ const selfTestCases: SelfTestCase[] = [
     ),
   },
   {
-    name: "a hook renders its event and script through sh",
-    expected: [`sh "\${CLAUDE_PLUGIN_ROOT}/hooks/h.sh"`],
-    problems: [
-      (
-        JSON.parse(
-          renderClaudeHooks([
-            {
-              event: "Stop",
-              script: "h.sh",
-            },
-          ]),
-        ) as {
-          hooks: {Stop: {hooks: {command: string}[]}[]};
-        }
-      ).hooks.Stop[0]?.hooks[0]?.command ?? "",
-    ],
-  },
-  {
-    name: "two hooks on one event both render, with a matcher and a timeout",
-    expected: [`Bash 900 sh "\${CLAUDE_PLUGIN_ROOT}/hooks/b.sh"`, "2"],
-    problems: (() => {
-      const {hooks} = JSON.parse(
-        renderClaudeHooks([
-          {
-            event: "PreToolUse",
-            script: "a.sh",
-          },
-          {
-            event: "PreToolUse",
-            script: "b.sh",
-            matcher: "Bash",
-            timeout: 900,
-          },
-        ]),
-      ) as {
-        hooks: {PreToolUse: {hooks: {command: string; timeout: number}[]; matcher?: string}[]};
-      };
-
-      const second = hooks.PreToolUse[1];
-
-      return [
-        `${second?.matcher ?? ""} ${String(second?.hooks[0]?.timeout)} ${second?.hooks[0]?.command ?? ""}`,
-        String(hooks.PreToolUse.length),
-      ];
-    })(),
-  },
-  {
-    name: "a hook renders its argument and loop limit for Cursor",
+    name: "the eval plugin's hook file holds two hooks of one event, each run from the plugin's folder",
     expected: [
-      JSON.stringify({
-        version: 1,
-        hooks: {
-          stop: [
-            {
-              command: `sh "\${CURSOR_PLUGIN_ROOT}/hooks/h.sh" followup`,
-              loop_limit: 1,
-            },
-          ],
-        },
-      }),
+      `{"hooks":{"Stop":[${["a.sh", "b.sh"]
+        .map(
+          script =>
+            `{"hooks":[{"type":"command","timeout":10,"command":"sh \\"\${CLAUDE_PLUGIN_ROOT}/hooks/${script}\\""}]}`,
+        )
+        .join(",")}]}}`,
     ],
-    problems: [
+    problems: [JSON.stringify(JSON.parse(renderEvalPluginHooks(twoStopHooks)))],
+  },
+  {
+    name: "a hook renders for each tool's protected file with its argument, matcher, timeout, and loop limit",
+    expected: [
+      '{"matcher":"Bash","hooks":[{"type":"command","timeout":900,"command":"sh \\"$CLAUDE_PROJECT_DIR\\"/.claude/skills/sdlc-mode/hooks/h.sh snapshot"}]}',
+      '{"command":"sh .claude/skills/sdlc-mode/hooks/h.sh followup","loop_limit":1}',
+    ],
+    problems: agentTools.map(({renderHookEntry}) =>
       JSON.stringify(
-        JSON.parse(
-          renderCursorHooks([
-            {
-              event: "stop",
-              script: "h.sh",
-              argument: "followup",
-              loopLimit: 1,
-            },
-          ]),
-        ),
+        renderHookEntry({
+          event: "e",
+          script: "h.sh",
+          matcher: "Bash",
+          loopLimit: 1,
+          timeout: 900,
+          argument: renderHookEntry === renderCursorHookEntry ? "followup" : "snapshot",
+        }),
       ),
-    ],
+    ),
   },
   {
     name: "a subagent renders its tool's fields",
@@ -1091,48 +1270,38 @@ if (selfTestFailures.length > 0) {
   process.exitCode = 1;
 } else {
   const isCheckOnly = process.argv.includes("--check");
-  const adapterFiles = renderAdapters();
-  const expected = new Map([...adapterFiles, ...renderTemplateCopy(adapterFiles)]);
 
-  const orphans = [
-    ...adapters.flatMap(({directory, hasAuthoredEvals}) => {
-      const adapterRoot = path.join(adaptersRoot, directory);
+  const hooksConfig = JSON.parse(readFileSync(hookConfigPath, "utf8")) as Record<
+    string,
+    HookConfig[]
+  >;
 
-      return listFiles(adapterRoot, false)
-        .map(file => path.join(adapterRoot, file))
-        .filter(
-          file =>
-            !expected.has(file) &&
-            !(hasAuthoredEvals && file.startsWith(path.join(adapterRoot, "evals"))),
-        );
-    }),
-    ...[templatePluginRoot, path.join(templateRoot, path.dirname(claudeMarketplacePath))].flatMap(
-      directory =>
-        listFiles(directory, false)
-          .map(file => path.join(directory, file))
-          .filter(file => !expected.has(file)),
-    ),
-  ];
+  const source = readHarnessSource(hooksConfig);
 
-  const staleFiles = [
-    ...[...expected]
-      .filter(([file, content]) => !existsSync(file) || readFileSync(file, "utf8") !== content)
-      .map(([file]) => file),
-    ...orphans,
-  ];
+  const expected = new Map([
+    ...renderEvalPlugin(source, hooksConfig["claude-code"] ?? []),
+    ...projectRoots.flatMap(projectRoot => renderProject(projectRoot, source)),
+    ...renderTemplateScripts(),
+  ]);
+
+  const staleFiles = findStaleFiles(
+    expected,
+    listRenderedDirectories()
+      .flatMap(directory => listFiles(directory, false).map(file => path.join(directory, file)))
+      .filter(file => !file.startsWith(`${evalCasesDirectory}${path.sep}`)),
+    readHeldFile,
+  );
 
   if (isCheckOnly) {
     const vendorNames = JSON.parse(readFileSync(vendorNamesPath, "utf8")) as string[];
-
-    const {name: marketplaceName} = JSON.parse(readFileSync(claudeMarketplacePath, "utf8")) as {
-      name: string;
-    };
+    const renderedFiles = [...expected].map(([file]) => file);
 
     const problems = [
       ...staleFiles.map(file => `${file}: is stale; run \`pnpm plugin:sync\``),
+      ...[...expected].flatMap(([file, content]) => findToolWords(file, content)),
       ...[...expected]
         .filter(([file]) => file.includes(`${path.sep}skills${path.sep}`))
-        .flatMap(([file, content]) => findToolWords(file, content)),
+        .flatMap(([file, content]) => findMissingReferences(file, content, renderedFiles)),
       ...listFiles(pluginRoot, true)
         .filter(file => textExtensions.has(path.extname(file)))
         .map(file => path.join(pluginRoot, file))
@@ -1141,19 +1310,21 @@ if (selfTestFailures.length > 0) {
         .map(file => path.join(sourceRoot, file))
         .flatMap(file => findVendorNames(file, readFileSync(file, "utf8"), vendorNames)),
       ...findHookProblems(),
-      ...[
-        ...adapters.map(({directory, manifestPath}) =>
-          path.join(adaptersRoot, directory, manifestPath),
-        ),
-        ...marketplacePaths,
-      ]
-        .filter(file => existsSync(file))
-        .flatMap(file => findVersionKey(file, readFileSync(file, "utf8"))),
-      ...findSettingsProblems(
-        existsSync(settingsPath) ? readFileSync(settingsPath, "utf8") : undefined,
-        `${manifestFields.name}@${marketplaceName}`,
-        marketplaceName,
+      ...findVersionKey(evalPluginManifestPath, expected.get(evalPluginManifestPath) ?? "{}"),
+      ...projectRoots.flatMap(projectRoot =>
+        agentTools.flatMap(({hookFilePath, key, renderHookEntry}) => {
+          const file = path.join(projectRoot, hookFilePath);
+          const text = readHeldFile(file);
+
+          return [
+            ...findMissingHookEntries(file, hooksConfig[key] ?? [], renderHookEntry, text),
+            ...findPluginLoaderKeys(file, text),
+          ];
+        }),
       ),
+      ...(existsSync(pluginLoaderScript)
+        ? [`${pluginLoaderScript}: loaded the harness as a plugin; a person deletes this file`]
+        : []),
     ];
 
     if (problems.length > 0) {
@@ -1165,20 +1336,7 @@ if (selfTestFailures.length > 0) {
       );
     }
   } else {
-    for (const file of orphans) {
-      rmSync(file);
-    }
-
-    const renderedStaleFiles = staleFiles.filter(staleFile => expected.has(staleFile));
-
-    for (const file of renderedStaleFiles) {
-      mkdirSync(path.dirname(file), {
-        recursive: true,
-      });
-
-      writeFileSync(file, expected.get(file) ?? "");
-    }
-
+    writeRenderedFiles(staleFiles, expected);
     process.stdout.write(`Synced ${expected.size} plugin files; ${staleFiles.length} updated.\n`);
   }
 }
