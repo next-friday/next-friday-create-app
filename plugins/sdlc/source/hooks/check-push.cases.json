@@ -12,7 +12,8 @@
     "name": "not a push, second tool: allowed",
     "argument": "json",
     "input": {
-      "command": "git status"
+      "command": "git status",
+      "cursor_version": "1.7.2"
     },
     "expected": "{\"permission\":\"allow\"}\n"
   },
@@ -29,10 +30,24 @@
     "expected": "block"
   },
   {
+    "name": "a push with no review, the first tool's entry run by the second tool: no output",
+    "input": {
+      "tool_input": {
+        "command": "git push -u origin feat/x"
+      },
+      "cursor_version": "1.7.2"
+    },
+    "fileContents": {
+      "README.md": "x\n"
+    },
+    "expected": "pass"
+  },
+  {
     "name": "a push with no review, second tool: blocked",
     "argument": "json",
     "input": {
-      "command": "git -C . push"
+      "command": "git -C . push",
+      "cursor_version": "1.7.2"
     },
     "fileContents": {
       "README.md": "x\n"

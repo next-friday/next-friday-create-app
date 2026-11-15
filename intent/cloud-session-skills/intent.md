@@ -1,6 +1,6 @@
 # Intent: Load the `sdlc` harness in every session, in every agent tool the team uses
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 

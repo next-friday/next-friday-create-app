@@ -4,20 +4,33 @@ import {existsSync, readdirSync, readFileSync, realpathSync, rmSync} from "node:
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 
+import {
+  bootstrapBranch,
+  commitProject,
+  didInstallDependencies,
+  initGit,
+  writeEnvironmentFile,
+} from "./setup.ts";
 import {defaultProjectName, packageName, validateProjectName} from "./project-name.ts";
 import {defaultStackId, stackById, stacks, templateName} from "./stacks.ts";
-import {didInstallDependencies, initGit, writeEnvironmentFile} from "./setup.ts";
 import {listProjectFiles} from "./project-files.ts";
 import {parseCliArguments, usage} from "./arguments.ts";
 import {renameProject} from "./rename.ts";
 import {resolveDeploySections} from "./deploy-sections.ts";
 import type {CliOptions} from "./arguments.ts";
+import type {CommitResult, GitResult} from "./setup.ts";
 import type {DeployTarget} from "./deploy-targets.ts";
-import type {GitResult} from "./setup.ts";
 import type {StackId} from "./stacks.ts";
 
 const templatesDirectory = fileURLToPath(new URL("../templates", import.meta.url));
 const interruptSignals = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
+const commitLineLimit = 100;
+
+type SetupResult = {
+  commit: CommitResult | undefined;
+  git: GitResult | undefined;
+  isInstalled: boolean;
+};
 
 class CancelledError extends Error {
   override message = "Cancelled.";
@@ -39,7 +52,7 @@ export async function create(cliArguments: string[]): Promise<void> {
     }
 
     if (options.version) {
-      process.stdout.write(`${packageVersion()}\n`);
+      process.stdout.write(`${packageManifest().version}\n`);
 
       return;
     }
@@ -53,9 +66,17 @@ export async function create(cliArguments: string[]): Promise<void> {
     await writeProject(stack, options.deploy, directory, manifestName);
     log.success(`Created ${manifestName} from the ${stack} template.`);
 
-    const {git, isInstalled} = setUpProject(directory, options);
+    const message = bootstrapMessage(name, stack, options.deploy);
+    const {commit, git, isInstalled} = setUpProject(directory, options, message);
 
-    outro(nextSteps(name, stack, git, isInstalled));
+    outro(
+      nextSteps(name, stack, {
+        commit,
+        git,
+        isInstalled,
+        message,
+      }),
+    );
   } catch (error) {
     if (error instanceof CancelledError) {
       cancel(error.message);
@@ -182,6 +203,11 @@ function assertUsableName(name: string, cwd: string): void {
   }
 }
 
+const commitWarnings: Partial<Record<CommitResult, string>> = {
+  failed: "The first commit failed. Fix the error above, then run the commit below.",
+  "branch-taken": `The branch ${bootstrapBranch} exists. Switch to a new branch, then run the commit below.`,
+};
+
 const gitWarnings: Partial<Record<GitResult, string>> = {
   failed:
     "git init failed. Check that Git 2.28 or later is installed and the directory is writable, then run the steps below.",
@@ -190,15 +216,13 @@ const gitWarnings: Partial<Record<GitResult, string>> = {
 };
 
 /**
- * Run `git init` and then `pnpm install`, so the install sets up the Git hooks.
+ * Run `git init`, then `pnpm install`, so the install sets up the Git hooks, then make the first commit.
  * @param directory - Project directory.
  * @param options - Parsed command-line options.
- * @returns The `git init` result, or `undefined` when skipped, and whether the install succeeded.
+ * @param message - Message of the first commit.
+ * @returns The `git init` result, or `undefined` when skipped, whether the install succeeded, and the first commit's result, or `undefined` when no commit ran.
  */
-function setUpProject(
-  directory: string,
-  options: CliOptions,
-): {git: GitResult | undefined; isInstalled: boolean} {
+function setUpProject(directory: string, options: CliOptions, message: string): SetupResult {
   const git = options.skipGit ? existingGit(directory) : initGit(directory);
   const warning = git === undefined ? undefined : gitWarnings[git];
 
@@ -206,13 +230,24 @@ function setUpProject(
     log.warn(warning);
   }
 
-  if (options.skipInstall) {
-    return {
-      git,
-      isInstalled: false,
-    };
-  }
+  const isInstalled = !options.skipInstall && didInstallProject(directory);
 
+  const canCommit =
+    isInstalled && !options.skipGit && (git === "initialized" || git === "existing");
+
+  return {
+    git,
+    isInstalled,
+    commit: canCommit ? makeFirstCommit(directory, message) : undefined,
+  };
+}
+
+/**
+ * Run `pnpm install`, and report a failure with what to do.
+ * @param directory - Project directory.
+ * @returns Whether the install succeeded.
+ */
+function didInstallProject(directory: string): boolean {
   log.step("Installing dependencies with pnpm.");
 
   const isInstalled = didInstallDependencies(directory);
@@ -225,10 +260,24 @@ function setUpProject(
     process.exitCode = 1;
   }
 
-  return {
-    git,
-    isInstalled,
-  };
+  return isInstalled;
+}
+
+/**
+ * Make the first commit, and warn when it did not happen.
+ * @param directory - Project directory.
+ * @param message - Message of the first commit.
+ * @returns The first commit's result.
+ */
+function makeFirstCommit(directory: string, message: string): CommitResult {
+  const commit = commitProject(directory, message);
+  const warning = commitWarnings[commit];
+
+  if (warning !== undefined) {
+    log.warn(warning);
+  }
+
+  return commit;
 }
 
 /**
@@ -352,19 +401,43 @@ function removeProject(directory: string, kept: string[] | undefined): void {
 }
 
 /**
+ * Write the first commit's message: where the project came from, so `git blame` on an untouched file names the generator.
+ * @param name - Project name, or `.` for the current directory.
+ * @param stack - Supported stack id.
+ * @param deploy - Supported deploy target.
+ * @returns The commit message.
+ */
+function bootstrapMessage(name: string, stack: StackId, deploy: DeployTarget): string {
+  const {name: packageId, version} = packageManifest();
+
+  const commandParts = [
+    `Command: pnpm create ${packageId.replace("/create-", "/")}`,
+    name,
+    `--stack ${stack} --deploy ${deploy}`,
+  ];
+
+  const commandLine = commandParts.join(" ");
+
+  return [
+    `build(repo): bootstrap ${stack} workspace`,
+    "",
+    `Generated by ${packageId} ${version}.`,
+    "",
+    commandLine.length <= commitLineLimit ? commandLine : commandParts.join(" \\\n  "),
+    `Stack: ${stack} (${stackById[stack].hint})`,
+    "",
+  ].join("\n");
+}
+
+/**
  * List the commands left to run, skipping what the CLI already did.
  * @param name - Project name, or `.` for the current directory.
  * @param stack - Supported stack id.
- * @param git - Result of `git init`, or `undefined` when skipped.
- * @param isInstalled - Whether `pnpm install` succeeded.
+ * @param setup - What the setup did, and the first commit's message.
  * @returns The next steps message.
  */
-function nextSteps(
-  name: string,
-  stack: StackId,
-  git: GitResult | undefined,
-  isInstalled: boolean,
-): string {
+function nextSteps(name: string, stack: StackId, setup: SetupResult & {message: string}): string {
+  const {commit, git, isInstalled, message} = setup;
   const {developmentScript, requiresDatabase} = stackById[stack];
   const hasGit = git !== undefined && git !== "failed";
 
@@ -372,6 +445,7 @@ function nextSteps(
     name === "." ? [] : [`cd ${name}`],
     hasGit ? [] : ["git init --initial-branch=main"],
     hasGit && isInstalled ? [] : ["pnpm install"],
+    commitCommands(commit, message),
     [`pnpm ${developmentScript}`],
   ].flat();
 
@@ -382,21 +456,53 @@ function nextSteps(
   const readme = name === "." ? "README.md" : `${name}/README.md`;
   const lines = commands.map(command => `  ${command}`).join("\n");
 
-  return `Next steps:\n${lines}\n${database}Before the first commit, follow "After creating a project from this template" in ${readme}.`;
+  return `Next steps:\n${lines}\n${database}${firstCommitNote(commit, message)}Then follow "After creating a project from this template" in ${readme}.`;
 }
 
 /**
- * Read this package's version.
- * @returns The version in `package.json`.
+ * List the commands that make the first commit, when the CLI did not make it.
+ * @param commit - The first commit's result, or `undefined` when no commit ran.
+ * @param message - Message of the first commit.
+ * @returns `git add` and a `git commit` with one `-m` for each line of the message, or nothing after a commit.
  */
-function packageVersion(): string {
-  const manifest = JSON.parse(
-    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-  ) as {
+function commitCommands(commit: CommitResult | undefined, message: string): string[] {
+  if (commit === "committed" || commit === "branched") {
+    return [];
+  }
+
+  const messageOptions = message
+    .split("\n")
+    .filter(Boolean)
+    .flatMap(line => ["-m", JSON.stringify(line)]);
+
+  return ["git add --all", ["git commit", ...messageOptions].join(" ")];
+}
+
+/**
+ * Say what the CLI's first commit leaves the person to do.
+ * @param commit - The first commit's result, or `undefined` when no commit ran.
+ * @param message - Message of the first commit, whose first line titles a pull request.
+ * @returns A sentence that ends with a space, or nothing when the CLI made no commit.
+ */
+function firstCommitNote(commit: CommitResult | undefined, message: string): string {
+  if (commit === "branched") {
+    const subject = message.split("\n", 1).join("");
+
+    return `Committed on the branch ${bootstrapBranch}. Push it and open a pull request titled "${subject}". `;
+  }
+
+  return commit === "committed" ? "Made the first commit on main. Push it. " : "";
+}
+
+/**
+ * Read this package's name and version.
+ * @returns The name and the version in `package.json`.
+ */
+function packageManifest(): {name: string; version: string} {
+  return JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+    name: string;
     version: string;
   };
-
-  return manifest.version;
 }
 
 /**

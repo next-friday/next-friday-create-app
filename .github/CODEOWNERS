@@ -5,11 +5,16 @@
 # Product owner: the intent home
 /intent/ @joetakara
 
-# Plugin owners: the plugin, in the source and in the adapters the agents load
+# Harness owners: the source, the eval plugin, and the folders the agents load
 /plugins/sdlc/ @joetakara @next-friday-engineer
+/.claude/skills/ @joetakara @next-friday-engineer
+/.claude/agents/ @joetakara @next-friday-engineer
+/.cursor/agents/ @joetakara @next-friday-engineer
 
 # Policy owner: policy skills and the loop's own skill
 /plugins/sdlc/source/skills/*-policy/ @joetakara
 /plugins/sdlc/source/skills/sdlc-mode/ @joetakara
-/plugins/sdlc/adapters/*/skills/*-policy/ @joetakara
-/plugins/sdlc/adapters/*/skills/sdlc-mode/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/*-policy/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-mode/ @joetakara
+/.claude/skills/*-policy/ @joetakara
+/.claude/skills/sdlc-mode/ @joetakara

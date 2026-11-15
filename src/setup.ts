@@ -5,6 +5,8 @@ import {readFile, writeFile} from "node:fs/promises";
 import {spawnSync} from "node:child_process";
 
 export type GitResult = "existing" | "failed" | "initialized" | "parent";
+export type CommitResult = "branch-taken" | "branched" | "committed" | "failed";
+export const bootstrapBranch = "build/bootstrap-workspace";
 
 /**
  * Write `.env` from `.env.example`, replacing the `PAYLOAD_SECRET` placeholder with a random secret.
@@ -53,6 +55,42 @@ export function initGit(directory: string): GitResult {
   });
 
   return init.status === 0 ? "initialized" : "failed";
+}
+
+/**
+ * Commit every file of the project with the project's own Git hooks. The project's `pre-commit` hook
+ * refuses a commit on `main` once `main` has one, so a repository that has a commit gets a branch first.
+ * @param directory - Project directory, the root of its repository.
+ * @param message - Commit message.
+ * @returns What happened.
+ */
+export function commitProject(directory: string, message: string): CommitResult {
+  const environment = projectGitEnvironment();
+
+  const runGit = (gitArguments: string[], input?: string): null | number =>
+    spawnSync("git", gitArguments, {
+      cwd: directory,
+      env: environment,
+      input,
+      stdio: [input === undefined ? "ignore" : "pipe", "inherit", "inherit"],
+    }).status;
+
+  const hasCommit =
+    spawnSync("git", ["rev-parse", "--quiet", "--verify", "HEAD"], {
+      cwd: directory,
+      env: environment,
+      stdio: "ignore",
+    }).status === 0;
+
+  if (hasCommit && runGit(["switch", "--create", bootstrapBranch]) !== 0) {
+    return "branch-taken";
+  }
+
+  if (runGit(["add", "--all"]) !== 0 || runGit(["commit", "--file", "-"], message) !== 0) {
+    return "failed";
+  }
+
+  return hasCommit ? "branched" : "committed";
 }
 
 /**

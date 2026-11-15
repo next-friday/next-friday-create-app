@@ -1,16 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "extraKnownMarketplaces": {
-    "next-friday-plugins": {
-      "source": {
-        "source": "directory",
-        "path": "."
-      }
-    }
-  },
-  "enabledPlugins": {
-    "sdlc@next-friday-plugins": true
-  },
   "permissions": {
     "defaultMode": "plan",
     "allow": [
@@ -89,6 +78,16 @@
             "onFailure": "block"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-push.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -98,6 +97,39 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.agents/hooks/agent-format-after-edit.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-reply-shape.sh snapshot",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-reply-shape.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/sdlc-status.sh",
+            "timeout": 10
           }
         ]
       }
