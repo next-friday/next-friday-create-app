@@ -11,13 +11,22 @@ read_status() {
   sed -n 's/.*Status: \([a-z][a-z ]*\)\..*/\1/p' "$1" | head -n 1
 }
 
+default_ref=$(git -C "$project" rev-parse --verify --quiet --abbrev-ref origin/HEAD 2> /dev/null) || default_ref=
+if [ -z "$default_ref" ] && git -C "$project" rev-parse --verify --quiet refs/remotes/origin/main > /dev/null 2>&1; then
+  default_ref=origin/main
+fi
+
 lines=""
 for folder in "$project"/intent/*/; do
   [ -d "$folder" ] || continue
   change=$(basename "$folder")
   intent_status=$(read_status "$folder/intent.md")
   spec_status=$(read_status "$folder/spec.md")
-  if [ "$intent_status" = done ] || [ "$spec_status" = done ]; then
+  case " $intent_status $spec_status " in
+    *" done "* | *" rejected "* | *" withdrawn "*) continue ;;
+  esac
+  if [ -f "$folder/plan.md" ] && [ ! -f "$folder/intent.md" ] && [ ! -f "$folder/spec.md" ] && [ -n "$default_ref" ] \
+    && git -C "$project" cat-file -e "$default_ref:intent/$change/plan.md" 2> /dev/null; then
     continue
   fi
   if [ -f "$folder/plan.md" ]; then

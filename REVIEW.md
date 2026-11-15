@@ -6,7 +6,7 @@ Run three passes and tag each finding with its pass:
 
 - Bugs: logic errors, broken edge cases, subtle regressions
 - Security: injection risks, authentication gaps, PII in logs
-- Compliance: the change matches spec.md, plan.md and the design principles that the four policies in force state, each the project's `.agents/skills/<area>-policy/SKILL.md` or the plugin's default; flag a plan.md that has no `Accepted by:` line and a change that makes `AGENTS.md` outdated
+- Compliance: the change matches spec.md, plan.md and the design principles that the four policies in force state, each the project's `.agents/skills/<area>-policy/SKILL.md` or else the harness default at `.claude/skills/<area>-policy/SKILL.md`; flag a plan.md that has no `Accepted by:` line and a change that makes `AGENTS.md` outdated
 
 ## What Important means here
 
@@ -34,7 +34,7 @@ Report at most five nits per review; summarize the rest as a count.
 - Preserve CLI arguments, prompts, and stack ids. Flag a breaking change, as defined in `.changeset/README.md`, that has no major changeset, and a major changeset for a change that is not breaking by that definition.
 - Require tests in `test/` to exercise observable CLI behavior. Flag tests that assert implementation shape alone.
 - Keep runtime dependencies to what the shipped CLI needs; repository tooling belongs in `devDependencies`.
-- Each stack is `templates/base` plus `templates/<stack>`, and a deploy target other than `none` adds `templates/deploy-<target>/base` and `templates/deploy-<target>/<stack>`. Keep a file in `base` only when every stack uses it with the same content. A stack may replace that file when its content must differ, and a deploy layer holds the files only that deploy target needs. In a file every deploy target shares, a `deploy:<target>` section holds the lines of one deploy target. Flag a `.gitignore` not stored as `_gitignore` and a committed `pnpm-lock.yaml` under `templates/`.
+- Each stack is `templates/base` plus `templates/<stack>`. Keep a file in `base` only when every stack uses it with the same content. A stack may replace that file when its content must differ. Flag a `.gitignore` not stored as `_gitignore` and a committed `pnpm-lock.yaml` under `templates/`.
 
 ## Do not report
 

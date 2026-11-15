@@ -1,7 +1,7 @@
 # Detection settings for one metric: the tiers' actions, tools, and routes. `pnpm bands:check <file>` reads this file.
 # The metric is this project's to set. Tiers are sample standard deviations from the baseline's mean.
+# The metric command writes the baseline window and the recent values; this file sets no window.
 metric: ci_test_failure_rate
-baseline: rolling_30d
 rules: western_electric
 tiers:
   1sigma: {action: log}

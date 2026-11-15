@@ -43,7 +43,7 @@ jobs:
           : > intents.txt
           while IFS= read -r path; do
             [[ "$path" =~ ^intent/[A-Za-z0-9._-]+/intent\.md$ ]] || continue
-            grep --extended-regexp --quiet 'Status: (draft|accepted)\.$' "$path" || continue
+            grep --extended-regexp --quiet 'Status: accepted\.$' "$path" || continue
             [[ ! -e "$(dirname "$path")/spec.md" ]] || continue
             echo "$path" >> intents.txt
           done <<< "$changed"

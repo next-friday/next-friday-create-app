@@ -1,6 +1,6 @@
 ---
 name: compliance-policy
-description: Apply the organization's compliance policy. Use whenever writing or reviewing a spec.md, a plan, or code that this policy covers.
+description: The organization's compliance policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches collecting, storing, showing, sending, or deleting data about a person.
 ---
 
 # Compliance policy

@@ -382,6 +382,7 @@ const headReferenceVariable = "GITHUB_HEAD_REF";
 const fixBranchPrefix = "fix/";
 const smallBranchPrefix = "small/";
 const smallChangeFileLimit = 5;
+const smallBranchPattern = /^small\/(?!fix-)/u;
 const fixTitleSuffix = "(fix)";
 
 /**
@@ -436,14 +437,14 @@ function findUnplannedChangeProblems(
   const isBotBranch = unplannedBranchPrefixes.some(prefix => branchName.startsWith(prefix));
 
   const isSmallChange =
-    branchName.startsWith(smallBranchPrefix) && changedPaths.length <= smallChangeFileLimit;
+    smallBranchPattern.test(branchName) && changedPaths.length <= smallChangeFileLimit;
 
   const isExempt = hasPlan || isBotBranch || isFirstImport || isSmallChange;
 
   return !isChangesCode || isExempt
     ? []
     : [
-        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request, or, for a change of at most ${smallChangeFileLimit} files, use a "${smallBranchPrefix}" branch`,
+        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request, or, for a change of at most ${smallChangeFileLimit} files that is not a defect, use a "${smallBranchPrefix}" branch; a defect goes on a "${fixBranchPrefix}" branch with a plan and a failing test`,
       ];
 }
 
@@ -1014,7 +1015,8 @@ const selfTestCases: SelfTestCase[] = [
       [false, "feat/a", ["src/a.ts"]],
       [true, "dependabot/npm_and_yarn/a", [manifestFileName]],
       [true, "docs/a", ["intent/a/intent.md"]],
-      [true, "small/fix-a", ["src/a.ts", "src/a.test.ts"]],
+      [true, "small/feat-a", ["src/a.ts"]],
+      [false, "small/fix-a", ["src/a.ts", "src/a.test.ts"]],
       [false, "small/feat-a", Array.from("abcdef", letter => `src/${letter}.ts`)],
       [true, "feat/import", [manifestFileName, "src/index.ts"], true],
     ] as [boolean, string, string[], boolean?][]

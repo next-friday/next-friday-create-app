@@ -1,5 +1,5 @@
 import {cancel, intro, isCancel, log, outro, select, text} from "@clack/prompts";
-import {chmod, cp, readFile, rename, writeFile} from "node:fs/promises";
+import {chmod, cp, readFile, rename} from "node:fs/promises";
 import {existsSync, readdirSync, readFileSync, realpathSync, rmSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
@@ -16,10 +16,8 @@ import {defaultStackId, stackById, stacks, templateName} from "./stacks.ts";
 import {listProjectFiles} from "./project-files.ts";
 import {parseCliArguments, usage} from "./arguments.ts";
 import {renameProject} from "./rename.ts";
-import {resolveDeploySections} from "./deploy-sections.ts";
 import type {CliOptions} from "./arguments.ts";
 import type {CommitResult, GitResult} from "./setup.ts";
-import type {DeployTarget} from "./deploy-targets.ts";
 import type {StackId} from "./stacks.ts";
 
 const templatesDirectory = fileURLToPath(new URL("../templates", import.meta.url));
@@ -63,10 +61,10 @@ export async function create(cliArguments: string[]): Promise<void> {
     const directory = existsSync(target) ? realpathSync(target) : target;
 
     log.step(`Copying the ${stack} template.`);
-    await writeProject(stack, options.deploy, directory, manifestName);
+    await writeProject(stack, directory, manifestName);
     log.success(`Created ${manifestName} from the ${stack} template.`);
 
-    const message = bootstrapMessage(name, stack, options.deploy);
+    const message = bootstrapMessage(name, stack);
     const {commit, git, isInstalled} = setUpProject(directory, options, message);
 
     outro(
@@ -92,13 +90,11 @@ export async function create(cliArguments: string[]): Promise<void> {
  * Copy, rename, and write `.env`, removing what was written when a step fails or Ctrl+C, SIGTERM, or SIGHUP arrives.
  * An interrupt waits for the running step, so the removal does not race the copy.
  * @param stack - Supported stack id.
- * @param deploy - Supported deploy target.
  * @param directory - Project directory.
  * @param manifestName - Package name for `package.json`.
  */
 async function writeProject(
   stack: StackId,
-  deploy: DeployTarget,
   directory: string,
   manifestName: string,
 ): Promise<void> {
@@ -114,7 +110,7 @@ async function writeProject(
   }
 
   try {
-    await copyTemplate(stack, deploy, directory);
+    await copyTemplate(stack, directory);
     await renameProject(directory, templateName(stack), manifestName);
     await writeEnvironmentFile(directory);
 
@@ -290,74 +286,32 @@ function existingGit(directory: string): GitResult | undefined {
 }
 
 /**
- * Copy the shared template files, the stack's files, and the deploy target's files into the project directory.
+ * Copy the shared template files and the stack's files into the project directory.
  * npm leaves `.gitignore` out of published packages, so the template keeps it as `_gitignore`.
  * @param stack - Supported stack id.
- * @param deploy - Supported deploy target.
  * @param directory - Project directory.
  */
-async function copyTemplate(
-  stack: StackId,
-  deploy: DeployTarget,
-  directory: string,
-): Promise<void> {
-  const deployLayer = deploy === "none" ? undefined : `deploy-${deploy}`;
-  const required = ["base", stack, ...(deployLayer === undefined ? [] : [`${deployLayer}/base`])];
+async function copyTemplate(stack: StackId, directory: string): Promise<void> {
+  const layers = ["base", stack];
 
-  for (const template of required) {
-    if (!existsSync(path.join(templatesDirectory, template))) {
+  for (const layer of layers) {
+    if (!existsSync(path.join(templatesDirectory, layer))) {
       throw new Error(
-        `The ${template} template is missing from ${templatesDirectory}. Reinstall @next-friday/create-app.`,
+        `The ${layer} template is missing from ${templatesDirectory}. Reinstall @next-friday/create-app.`,
       );
     }
   }
 
-  const copyLayer = async (layer: string): Promise<void> => {
-    await cp(path.join(templatesDirectory, layer), directory, {
-      recursive: true,
-    });
-  };
+  await cp(path.join(templatesDirectory, "base"), directory, {
+    recursive: true,
+  });
 
-  await copyLayer("base");
-  await copyLayer(stack);
-
-  if (deployLayer !== undefined) {
-    await copyLayer(`${deployLayer}/base`);
-
-    if (existsSync(path.join(templatesDirectory, deployLayer, stack))) {
-      await copyLayer(`${deployLayer}/${stack}`);
-    }
-  }
+  await cp(path.join(templatesDirectory, stack), directory, {
+    recursive: true,
+  });
 
   await rename(path.join(directory, "_gitignore"), path.join(directory, ".gitignore"));
-  await resolveDeployTarget(directory, deploy);
   await markScriptsExecutable(directory);
-}
-
-/**
- * Resolve the deploy target sections of every copied file that holds a marker.
- * @param directory - Project directory.
- * @param deploy - Supported deploy target.
- */
-async function resolveDeployTarget(directory: string, deploy: DeployTarget): Promise<void> {
-  const files = await listProjectFiles(directory);
-
-  await Promise.all(
-    files.map(async file => {
-      const content = await readFile(file);
-
-      if (!content.includes("deploy:")) {
-        return;
-      }
-
-      const template = content.toString();
-      const resolved = resolveDeploySections(template, deploy);
-
-      if (resolved !== template) {
-        await writeFile(file, resolved);
-      }
-    }),
-  );
 }
 
 /**
@@ -404,16 +358,15 @@ function removeProject(directory: string, kept: string[] | undefined): void {
  * Write the first commit's message: where the project came from, so `git blame` on an untouched file names the generator.
  * @param name - Project name, or `.` for the current directory.
  * @param stack - Supported stack id.
- * @param deploy - Supported deploy target.
  * @returns The commit message.
  */
-function bootstrapMessage(name: string, stack: StackId, deploy: DeployTarget): string {
+function bootstrapMessage(name: string, stack: StackId): string {
   const {name: packageId, version} = packageManifest();
 
   const commandParts = [
     `Command: pnpm create ${packageId.replace("/create-", "/")}`,
     name,
-    `--stack ${stack} --deploy ${deploy}`,
+    `--stack ${stack}`,
   ];
 
   const commandLine = commandParts.join(" ");

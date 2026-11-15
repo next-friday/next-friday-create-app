@@ -1,6 +1,6 @@
 ---
 name: security-policy
-description: Apply the organization's security policy. Use whenever writing or reviewing a spec.md, a plan, or code that this policy covers.
+description: The organization's security policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches authentication, sessions, access control, input handling, files, tokens, cryptography, secrets, or how the app talks to other systems.
 ---
 
 # Security policy

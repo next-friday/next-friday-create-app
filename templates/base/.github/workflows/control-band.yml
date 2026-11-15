@@ -47,6 +47,14 @@ jobs:
         id: tier
         run: |
           report="$(pnpm --silent bands:check metric-values.json)"
+          echo "$report"
+          {
+            echo "## Control band report"
+            echo
+            echo '```json'
+            echo "$report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
           {
             echo "report=$report"
             echo "action=$(jq --raw-output '.action // "none"' <<< "$report")"
@@ -82,6 +90,7 @@ jobs:
         if: contains(fromJSON(needs.detect.outputs.routes), 'pull_request')
         run: git switch --create "docs/band-finding-$GITHUB_RUN_ID"
       - name: Diagnose
+        id: diagnose
         if: ${{ !contains(fromJSON(needs.detect.outputs.routes), 'pull_request') }}
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
         with:
@@ -92,10 +101,21 @@ jobs:
             Detection report: ${{ needs.detect.outputs.report }}
             Metric values, oldest first: ${{ needs.detect.outputs.values }}
             The values come from the command in the CONTROL_BAND_METRIC_COMMAND repository variable. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            End with the diagnosis. A route other than pull_request is a runbook: name it and do not run it.
           claude_args: |
             --model claude-haiku-5-5
             --max-turns 15
             --allowedTools "${{ needs.detect.outputs.tools || 'Read,Grep,Glob' }}"
+      - name: Write the diagnosis to the job summary
+        if: ${{ always() && steps.diagnose.outputs.execution_file != '' }}
+        env:
+          EXECUTION_FILE: ${{ steps.diagnose.outputs.execution_file }}
+        run: |
+          {
+            echo "## Control band diagnosis"
+            echo
+            jq --raw-output '[.[] | select(.type == "result")] | last | .result // "The diagnosis returned no text."' "$EXECUTION_FILE"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Write the intent
         if: contains(fromJSON(needs.detect.outputs.routes), 'pull_request')
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269

@@ -17,8 +17,8 @@ disable-model-invocation: true
 
 - **How the workflow runs, and starting work:** the table in `../sdlc-mode/SKILL.md`.
 - **Keeping `/sdlc-mode` on for a session:** a person starts it; nothing routes work into it. How long an invoked skill's text stays in the conversation depends on the agent tool: a person sends `/sdlc-mode` again to restore the full text, or uses the agent tool's own way to keep a command active for a session.
-- **A small change:** `playbooks/small.md` takes a change of at most five files, none under `intent/`, with no new dependency, no schema or public interface change, and no decision left to a person, from a `small/` branch to one pull request with no intent, spec, or plan.
-- **Fixing a defect in behaviour that already exists:** `playbooks/fix.md` is the path with no intent and no spec, for a person's request: a plan an engineer accepts, then a failing test, the fix, and a pull request. A finding from a job always starts at intent. Every other change that is not small runs intent, spec, plan, then build.
+- **A small change:** `playbooks/small.md` takes a change that is not a defect, of at most five files, none under `intent/`, with no new dependency, no schema or public interface change, and no decision left to a person, from a `small/` branch to one pull request with no intent, spec, or plan.
+- **Fixing a defect in behaviour that already exists:** `playbooks/fix.md` is the path with no intent and no spec, for a person's request: a plan an engineer accepts, then a failing test, the fix, and a pull request. Every defect takes this path, never the small one. A finding from a job always starts at intent. Every other change that is not small runs intent, spec, plan, then build.
 - **Who decides:** the steps marked **Gate** in the playbooks.
 - **A mistake the agent repeats:** the project's agent instructions.
-- **Company policy:** the policy files, each the project's `.agents/skills/<area>-policy/SKILL.md` when it exists and the plugin's default at `../<area>-policy/SKILL.md` otherwise.
+- **Company policy:** the policy files, each the project's `.agents/skills/<area>-policy/SKILL.md` when it exists and the harness default at `../<area>-policy/SKILL.md` otherwise.

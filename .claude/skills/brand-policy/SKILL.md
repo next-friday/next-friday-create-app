@@ -1,6 +1,6 @@
 ---
 name: brand-policy
-description: Apply the organization's brand policy. Use whenever writing or reviewing a spec.md, a plan, or code that this policy covers.
+description: The organization's brand policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches user-visible text, a colour, a typeface, a logo, or a message.
 ---
 
 # Brand policy

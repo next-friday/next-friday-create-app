@@ -197,23 +197,6 @@ jobs:
           tar --extract --gzip --file "$archive" trivy
           ./trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress app:ci
 
-  # deploy:railway
-  deploy-dev:
-    name: Deploy to dev
-    needs:
-      - agent-checks
-      - checks
-      - image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
-    permissions:
-      contents: read
-      actions: read # Needed by deploy.yml to find the CI run of the deployed commit.
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment: dev
-      commit_sha: ${{ github.sha }}
-
-  # deploy:end
   triage:
     name: Triage failed build
     needs:
