@@ -4,10 +4,10 @@ Author: @joetakara (Developer Productivity). Status: accepted.
 
 ## Problem
 
-- In a Claude Code cloud session, `/sdlc:sdlc-mode` answers "isn't a command here". A cloud session started in a generated project loaded four built-in plugins and no `sdlc`.
+- In a Claude Code cloud session, `/sdlc:sdlc-mode` answers "isn't a command here": the session loads no `sdlc` plugin.
 - The cause is documented: "A cloud session doesn't install the plugins a repository turns on under `enabledPlugins`, including ones from the marketplaces it lists under `extraKnownMarketplaces`" ([Claude Code: Configure cloud environments](https://code.claude.com/docs/en/cloud-environments.md), "What carries over from your setup").
 - So in every Claude Code cloud session, in this repository and in every generated project, none of the plugin loads: none of its eight skills, not the `verifier` subagent, and not its hooks.
-- Cursor gets the plugin through one hook: `.cursor/hooks.json` runs `load-project-plugins.sh` on `workspaceOpen`, which returns `plugins/sdlc/cursor`. A session that does not run that hook has no plugin.
+- In a generated project, Cursor gets the plugin through one hook: `.cursor/hooks.json` runs `load-project-plugins.sh` on `workspaceOpen`, which returns `plugins/sdlc/cursor`. A session that does not run that hook has no plugin. This repository has no such hook; it lists its Cursor copy in `.cursor-plugin/marketplace.json`.
 - The harness ships inside each project so that a team sets nothing up. That does not hold today for a person who works in a cloud session.
 
 ## Proposed outcome
@@ -25,6 +25,7 @@ Author: @joetakara (Developer Productivity). Status: accepted.
 
 - Every path a skill or playbook opens resolves in those sessions, and a project's own policy still wins over the default policy.
 - In Claude Code and in Cursor, the `verifier` subagent runs, and so do the hooks that check the reply shape, block a stop before the checks pass, check a push, and show the status. Another agent tool gets the skills and no hooks; the checks in `pre-push` and in CI apply to every person, whichever tool they use.
+- The only exceptions are the two limits of Claude Code that **Constraints** names.
 - The harness stays embedded in the project. The skills, playbooks, subagent text, and hook scripts keep one source, `plugins/sdlc/source/`; `pnpm plugin:sync` renders them into the folders each tool reads from the repository, in this repository and in `templates/base/`, and `pnpm plugin:check` fails on a stale copy.
 - Every mention of `/sdlc:<skill>` in this repository and in `templates/` names the new command.
 - The product owner decided:
@@ -38,7 +39,8 @@ Author: @joetakara (Developer Productivity). Status: accepted.
 ## Affected users and systems
 
 - Every person and agent that runs the loop in this repository or in a generated project. The product owner gives the team's tools as about 60% Claude Code, 30% Cursor, and 10% other agent tools.
-- `plugins/sdlc/`, `scripts/sync-plugin.ts`, `.claude/`, `.cursor/`, both marketplace files, `AGENTS.md`, `CONTRIBUTING.md`, and `intent/README.md`, in the root and in `templates/base/`.
+- In the root: `plugins/sdlc/`, `scripts/sync-plugin.ts`, `.claude/`, `.cursor/`, both marketplace files, `AGENTS.md`, `CONTRIBUTING.md`, and `intent/README.md`.
+- In `templates/`: the plugin copy, `.claude/`, `.cursor/`, the marketplace file, `SETUP.md`, and `intent/README.md` in `templates/base/`, and `AGENTS.md` in each stack.
 - The workflows in `templates/base/.github/workflows/` that load the plugin with `--plugin-dir`.
 - The `sdlc-plugin` intent, whose decision that the template enables the plugin as a local marketplace this intent replaces.
 - The eval cases and `pnpm evals:run`, which load the plugin with `claude plugin eval`.
@@ -53,19 +55,19 @@ Author: @joetakara (Developer Productivity). Status: accepted.
   - "In a project's cloud thread, skills committed to a repository's `.claude/skills/` aren't available" ([Claude Code: Skills](https://code.claude.com/docs/en/skills.md)).
 - The two rendered copies of the skills differ in two files, `sdlc-mode/SKILL.md` and `setup-sdlc/SKILL.md`, by the six tool words in `plugins/sdlc/adapters/tool-words.json`.
 - `.claude/settings.json`, `.cursor/hooks.json`, and `.cursor/hooks/` are protected paths (`scripts/check-agent-gates.ts`): a person commits the change to them.
-- Releasing it publishes a new version of `@next-friday/create-app` to npm; `.changeset/README.md` decides whether removing the `sdlc:` prefix is a major change.
+- Releasing it publishes a new version of `@next-friday/create-app` to npm. The command changes in `templates/`, and "A template change is therefore `patch` or `minor`, never `major`" (`.changeset/README.md`).
 - The human gates stay as they are.
 
 ## Open questions
 
-- Cursor's documentation could not be opened from the agent's session. Search results report three things that the spec confirms from the documentation itself:
+- Cursor's documentation was not read for this intent. Search results report three things, which the spec confirms from the documentation itself:
   - `workspaceOpen` "is an IDE lifecycle hook and doesn't apply to cloud agents", which would mean a Cursor cloud agent has no plugin today.
   - Cursor reads project skills from `.agents/skills/`, `.cursor/skills/`, and `.claude/skills/`.
   - A Cursor cloud agent runs the hooks in the repository's `.cursor/hooks.json`.
 - Whether one copy of the skills can serve every tool, and whether Cursor shows a skill twice when two of the folders it reads hold it.
 - Who confirms the outcome in Cursor before the release: an agent's session cannot run Cursor.
 - Which tools the other 10% of the team use, and whether each reads `AGENTS.md`.
-- Whether hooks from `.claude/settings.json` run in a Claude Code cloud session with one repository: the documentation says so, and no test has shown it. The build tests it in a cloud session on this change's branch.
+- Whether hooks from `.claude/settings.json` run in a Claude Code cloud session with one repository, as the documentation says. The build tests it in a cloud session before the release.
 - Whether the `verifier` subagent loads from `.claude/agents/` in a cloud session; the same test shows it.
 - Whether the agent still loads the four policy skills by itself from a project folder, as it can from the plugin.
 - Whether the hook scripts, which read `${CLAUDE_PLUGIN_ROOT}` and `${CURSOR_PLUGIN_ROOT}` today, work from the project's own folders.
