@@ -14,7 +14,7 @@ This playbook takes a defect in behaviour that already exists to a pull request.
    Show the whole plan, with the line `File: intent/<short-description>/plan.md` above it, where `<short-description>` is the name you chose. In plan mode you cannot write the file. Show the plan as the plan.
 
 5. **Gate: the engineer accepts the plan.** Stop after showing it, as `playbooks/build.md` step 5 says. Write no file before the acceptance.
-6. Create the branch `fix/<short-description>` as `playbooks/open-pr.md` says. In its first commit, write `intent/<short-description>/plan.md` with the `Accepted by:` line set to the handle of the engineer who accepted it, as `playbooks/build.md` step 6 says.
+6. Create the branch `fix/<short-description>` as `playbooks/open-pr.md` says; `pnpm plan:check` accepts a plan with no intent and no spec only with the "(fix)" title on a `fix/` branch. In its first commit, write `intent/<short-description>/plan.md` with the `Accepted by:` line set to the handle of the engineer who accepted it, as `playbooks/build.md` step 6 says.
 7. The plan, the failing test, and the fix go in one pull request, as `playbooks/build.md` step 7 says.
 8. Reproduce the defect as a test. Run it and check that it fails for the reason the cause gives. Commit the failing test before any fix.
 9. Make the test pass without editing it, or any other test the default branch holds. `pnpm plan:check` refuses a fix that does, unless a code owner who accepts the change writes `Test change accepted by: @<handle>.` in the plan. When the test fails a second time after a fix, start a subagent on the `advise` model as `playbooks/build.md` step 8 says.
