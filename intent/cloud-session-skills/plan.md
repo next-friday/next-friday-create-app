@@ -121,7 +121,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - **10:** `pnpm plugin:sync` followed by `git status --short` shows no change. The self-tests of `scripts/sync-plugin.ts` show the check failing on a stale rendered file, on an extra file, on a missing hook entry, and on a marketplace key.
 - **11:** step 12 runs the eval cases. `ls plugins/sdlc/adapters` lists no `cursor`. A project generated in step 11 holds no eval cases and no `plugin-evals.yml`.
 - **12:** `grep -n "plugin-dir\|/sdlc:" templates/base/.github/workflows/*.yml` finds nothing. Step 13 proves a non-interactive run.
-- **13:** `grep -n "several repositories\|Claude project\|sessionStart\|read-only\|Third-Party\|another agent tool" templates/base/SETUP.md plugins/sdlc/README.md` finds each limit in both files.
+- **13:** `grep -n -i "several repositories\|Claude project\|sessionStart\|read-only\|Third-Party\|another agent tool" templates/base/SETUP.md plugins/sdlc/README.md` finds each limit in both files.
 - **14:** `git grep -n "next-friday-plugins\|marketplace" -- AGENTS.md CONTRIBUTING.md intent/README.md plugins/sdlc/README.md templates/base/SETUP.md templates/base/intent/README.md` finds no line on loading the harness. `grep -n "rules:sync" templates/base/SETUP.md` finds no line on a policy skill. `.github/CODEOWNERS` names the three new folders.
 - **15:** steps 13, 15, and 16, with their results in the pull request's description.
 - **16:** steps 11 and 12.
