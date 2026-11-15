@@ -17,13 +17,13 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
   - `sdlc-status.cases.json` names the new command. No case name holds an agent tool's name.
 - `plugins/sdlc/adapters/hooks.json` (changed): the second tool's `beforeSubmitPrompt` entry passes `submit`, so the two tools share no argument.
 - `plugins/sdlc/adapters/tool-words.json` (changed): the six words stay, as the spec's Design says, and their layout changes: each tool gains its display name; the keys lose their braces; each value stands alone as one line, with no leading space, and a tool with no advisor has no `advisor` key.
-- `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): step 4 holds no tool word. It names the `rules-file` and `subagent-model` lines of the file under `tool-words/` whose first line names the agent tool the session runs in, and keeps today's fallback when there is no such file or no rule. Names `/sdlc-mode` and `/setup-sdlc`.
+- `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): step 4 holds no tool word. It names the `rules-file` and `subagent-model` lines of the file under `tool-words/` whose first line names the agent tool the session runs in. With no rule or no line for a role, it starts the subagent on the role's default model from `setup-sdlc` step 3, and on the session's model only when the session offers no model of that family or there is no such file (spec requirement 18). Names `/sdlc-mode` and `/setup-sdlc`.
 - `plugins/sdlc/source/skills/setup-sdlc/SKILL.md` (changed): steps 2 and 5 and the sentence on choosing the main model name the lines of that same file in place of the tool words; it says the `advisor` line only when the file has one. With no file for the tool, it says so, writes no rule, and goes on to the `SETUP.md` report.
 - `plugins/sdlc/source/skills/sdlc-help/SKILL.md`, `plugins/sdlc/source/skills/sdlc-status/SKILL.md`, `plugins/sdlc/source/skills/sdlc-mode/playbooks/maintain.md`, `plugins/sdlc/source/skills/sdlc-mode/playbooks/review.md`, `plugins/sdlc/source/skills/sdlc-mode/playbooks/question.md` (changed): name `/<skill>`.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/design.md` (changed): names `/<skill>`, and takes the `Skills at` hash from the folder that holds the skills, `../..` from the playbook. The source may not hold a tool's folder name, and in a project that folder is `.claude/skills/`, as spec requirement 7 asks.
 - `plugins/sdlc/source/scripts/check-plan.ts` (changed): its message names `/sdlc-mode`.
 - `plugins/sdlc/adapters/claude-code/` (changed, rendered): the plugin that only `claude plugin eval` loads: the skills with `sdlc-mode/tool-words/`, the subagent, and the hooks in the plugin's own layout.
-- `plugins/sdlc/adapters/claude-code/evals/` (changed, authored): a prompt keeps `/sdlc:<skill>`, because the eval tool loads the skills as the plugin `sdlc`. Every other line names `/<skill>`: the patterns, the graders, the expected outcomes, and the project text the two scaffolds write. The `not_contains` pattern of `sdlc-mode/reported-problem-starts-the-plan/case.yaml` rejects both forms.
+- `plugins/sdlc/adapters/claude-code/evals/` (changed, authored): a prompt keeps `/sdlc:<skill>`, because the eval tool loads the skills as the plugin `sdlc`. Every other line names `/<skill>`: the patterns, the graders, the expected outcomes, and the project text the two scaffolds write. The `not_contains` pattern of `sdlc-mode/reported-problem-starts-the-plan/case.yaml` rejects both forms. `sdlc-mode/verifier-runs-on-the-chosen-model` expects the `explore` role's default model, haiku, when no rule can be read.
 - `plugins/sdlc/adapters/cursor/` (deleted).
 - `plugins/sdlc/README.md` (changed): says where the harness loads from, and states the limits of spec requirement 13.
 
@@ -71,7 +71,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 1. On `origin/main`, before any change, run `pnpm evals:run` and `pnpm evals:run:write` and keep each case's score, because the eval results are not in Git. Check: both commands finish and print their scores.
 2. Create `feat/cloud-session-skills` from `origin/main`. Commit `plan.md` with the `Accepted by:` line, `Status: done.` in `intent.md` and `spec.md`, and the two fixes in `spec.md`. Review the commit, push, and open the pull request, so that a person has a branch to commit to; its description lists the requirements still unmet. Check: `pnpm verify` passes in the `pre-push` hook.
 3. Change the four hook scripts, their case files, `plugins/sdlc/adapters/hooks.json`, and `runHookCase`. Run `pnpm plugin:sync`. Check: `pnpm plugin:check` passes, the new cases among its hook cases.
-4. Change the skills, the playbooks, `check-plan.ts`, and `plugins/sdlc/adapters/tool-words.json`. Check: `git grep -n "{{" plugins/sdlc/source` finds nothing, and `pnpm plan:check` passes with its self-tests.
+4. Change the skills, the playbooks, `check-plan.ts`, and `plugins/sdlc/adapters/tool-words.json`, with the fallback of spec requirement 18. Check: `git grep -n "{{" plugins/sdlc/source` finds nothing, and `pnpm plan:check` passes with its self-tests.
 5. Change the rest of `scripts/sync-plugin.ts`. Delete `plugins/sdlc/adapters/cursor/`, both marketplace files, `templates/base/plugins/sdlc/`, and `templates/base/.claude-plugin/`. Run `pnpm plugin:sync`. Check: its self-tests pass; `pnpm plugin:check` reports only the four protected files, with the entries each lacks and the keys each must lose, and `load-project-plugins.sh`; `pnpm exec prettier --check .claude .cursor/agents` passes.
 6. Post one comment on the pull request with the exact new text of `.claude/settings.json` and `.cursor/hooks.json` for the root and for `templates/base/`, formatted by Prettier, the deletion of `templates/base/.cursor/hooks/load-project-plugins.sh`, and a link to each file's web editor on the branch. The product owner commits them there. Steps 7 to 10 do not wait for it. Check: in a scratch copy of the tree that holds those four texts and lacks that script, `pnpm plugin:check` passes.
 7. Change the eval cases. Check: `git grep -n "/sdlc:" plugins/sdlc/adapters/claude-code/evals` finds a match only in a `prompt.md` and in the one pattern that rejects both forms.
@@ -106,6 +106,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
   - Telling Cursor from an environment variable: Claude Code started in Cursor's terminal could inherit it.
   - Rewording the text that calls the harness "the plugin", in the skills and in `.agents/review.md`: the spec leaves it as it is.
   - Adding `pnpm plugin:check` to CI: the spec does not ask for it.
+  - A `model` field in the subagent or the skill files, for requirement 18: pstack sets none and passes the model on each subagent call (`pstack/skills/poteto-mode/SKILL.md` in https://github.com/cursor/plugins), and a skill's `model` lasts only "for the rest of the current turn" ([Claude Code: Skills](https://code.claude.com/docs/en/skills)).
 
 ## Proof
 
@@ -126,4 +127,5 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - **15:** steps 13, 15, and 16, with their results in the pull request's description.
 - **16:** steps 11 and 12.
 - **17:** `pnpm changesets:check` passes with one `minor` changeset. The reply that asks for this plan's acceptance names the version.
+- **18:** in step 12, `sdlc-mode/verifier-runs-on-the-chosen-model` passes its grader that the reply names haiku as the default with no rule. `grep -n "role's default model" .claude/skills/sdlc-mode/SKILL.md` finds step 4.
 - **Policies:** the spec cites one policy rule, brand rule 4, as requirement 8. Security, compliance, and UX do not apply (spec, Policies).
