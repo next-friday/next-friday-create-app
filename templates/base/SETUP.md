@@ -4,18 +4,18 @@ This project runs an AI-native software development loop in Claude Code and Curs
 
 ## How a change flows
 
-Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/sdlc-help` says how to keep `/sdlc-mode` on for a session in Claude Code and Cursor, and `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                  |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
 | Plan     | The originator; the product owner accepts by merging                             | `/sdlc-mode` with the idea writes `intent/<change>/intent.md`                                                        |
 | Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc-mode` with the intent's path, writes `spec.md`                                     |
 | Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-mode build` writes `plan.md` and the code in one pull request; `pnpm plan:check` and the push hook check them |
-| Test     | The agent, before it reports done                                                | The `Stop` hook runs `pnpm verify`; the `verifier` subagent runs the app                                             |
+| Test     | The agent, before it reports done                                                | The `verifier` subagent runs the app; `pre-push` and CI run the checks                                             |
 | Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` drives the pull request to green; the production gate hook blocks a deploy without approval    |
 | Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                               |
 
-`/sdlc-status` shows where each change stands, and a session starts with the same list.
+A session starts with a list of where each change stands. A small, well-bounded change skips intent and spec: it goes from a `small/` branch to one pull request, which a code owner reviews (`.claude/skills/sdlc-mode/playbooks/small.md`).
 
 The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads, and which Cursor loads too: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). The `verifier` subagent is in `.claude/agents/` for Claude Code and in `.cursor/agents/` for Cursor. The hook scripts are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them in Claude Code, and `.cursor/hooks.json` runs them in Cursor. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 

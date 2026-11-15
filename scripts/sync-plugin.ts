@@ -379,14 +379,14 @@ function sortKeys(value: unknown): unknown {
 }
 
 /**
- * Find the hook entries a protected file lacks. A person commits that file, so the script only reports.
+ * Find the hook entries a protected file lacks, and the entries it holds for a harness script that `hooks.json` no longer runs that way. A person commits that file, so the script only reports.
  * @param filePath Path of the file from the repository root.
  * @param hooks The hooks that `hooks.json` names for the file's agent tool.
  * @param render Renders one hook as the file holds it under the hook's event.
  * @param fileText Content of the file; a missing file holds no entry.
- * @returns One message per hook whose entry is not under its event.
+ * @returns One message per hook whose entry is not under its event, then one per stale harness entry.
  */
-function findMissingHookEntries(
+function findHookEntryProblems(
   filePath: string,
   hooks: HookConfig[],
   render: (hook: HookConfig) => Record<string, unknown>,
@@ -396,18 +396,28 @@ function findMissingHookEntries(
     hooks?: Record<string, unknown[]>;
   };
 
-  return hooks
-    .map(hook => ({
-      entry: JSON.stringify(sortKeys(render(hook))),
-      event: hook.event,
-    }))
-    .filter(({entry, event}) =>
-      (heldHooks[event] ?? []).every(held => JSON.stringify(sortKeys(held)) !== entry),
-    )
-    .map(
-      ({entry, event}) =>
-        `${filePath}: lacks the ${event} hook entry ${entry}; a person commits this file`,
-    );
+  const expected = hooks.map(hook => `${hook.event} ${JSON.stringify(sortKeys(render(hook)))}`);
+
+  const held = Object.entries(heldHooks).flatMap(([event, entries]) =>
+    entries.map(entry => `${event} ${JSON.stringify(sortKeys(entry))}`),
+  );
+
+  return [
+    ...expected
+      .filter(entry => !held.includes(entry))
+      .map(entry => entry.split(" "))
+      .map(
+        ([event = "", ...entry]) =>
+          `${filePath}: lacks the ${event} hook entry ${entry.join(" ")}; a person commits this file`,
+      ),
+    ...held
+      .filter(entry => entry.includes(projectHooksDirectory) && !expected.includes(entry))
+      .map(entry => entry.split(" "))
+      .map(
+        ([event = "", ...entry]) =>
+          `${filePath}: holds the ${event} hook entry ${entry.join(" ")}, which the harness no longer has; a person removes it and commits this file`,
+      ),
+  ];
 }
 
 /**
@@ -1123,7 +1133,7 @@ const selfTestCases: SelfTestCase[] = [
   {
     name: "a protected file that holds the hook entry passes, whatever the order of its keys",
     expected: [],
-    problems: findMissingHookEntries(
+    problems: findHookEntryProblems(
       "f.json",
       [sampleHook],
       renderSampleHookEntry,
@@ -1131,19 +1141,22 @@ const selfTestCases: SelfTestCase[] = [
     ),
   },
   {
-    name: "a protected file that holds the hook entry under another event fails",
-    expected: [`f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`],
-    problems: findMissingHookEntries(
+    name: "a protected file that holds the hook entry under another event, and a stale harness entry, fails",
+    expected: [
+      `f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`,
+      'f.json: holds the Stop hook entry {"hooks":[{"command":"sh .claude/skills/sdlc-mode/hooks/old.sh"}]}, which the harness no longer has; a person removes it and commits this file',
+    ],
+    problems: findHookEntryProblems(
       "f.json",
       [sampleHook],
       renderSampleHookEntry,
-      `{"hooks": {"SessionStart": [${sampleHookEntry}]}}`,
+      `{"hooks": {"SessionStart": [${sampleHookEntry}], "Stop": [{"hooks": [{"command": "sh .claude/skills/sdlc-mode/hooks/old.sh"}]}]}}`,
     ),
   },
   {
     name: "a missing protected file lacks every hook entry",
     expected: [`f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`],
-    problems: findMissingHookEntries("f.json", [sampleHook], renderSampleHookEntry),
+    problems: findHookEntryProblems("f.json", [sampleHook], renderSampleHookEntry),
   },
   {
     name: "a protected file that still loads the harness as a plugin fails",
@@ -1317,7 +1330,7 @@ if (selfTestFailures.length > 0) {
           const text = readHeldFile(file);
 
           return [
-            ...findMissingHookEntries(file, hooksConfig[key] ?? [], renderHookEntry, text),
+            ...findHookEntryProblems(file, hooksConfig[key] ?? [], renderHookEntry, text),
             ...findPluginLoaderKeys(file, text),
           ];
         }),

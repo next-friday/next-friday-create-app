@@ -380,6 +380,8 @@ function isFixPlanFolder(folder: string): boolean {
 const unplannedBranchPrefixes = ["dependabot/", "changeset-release/"];
 const headReferenceVariable = "GITHUB_HEAD_REF";
 const fixBranchPrefix = "fix/";
+const smallBranchPrefix = "small/";
+const smallChangeFileLimit = 5;
 const fixTitleSuffix = "(fix)";
 
 /**
@@ -432,12 +434,16 @@ function findUnplannedChangeProblems(
 
   const hasPlan = changedPaths.some(changedPath => planPathPattern.test(changedPath));
   const isBotBranch = unplannedBranchPrefixes.some(prefix => branchName.startsWith(prefix));
-  const isExempt = hasPlan || isBotBranch || isFirstImport;
+
+  const isSmallChange =
+    branchName.startsWith(smallBranchPrefix) && changedPaths.length <= smallChangeFileLimit;
+
+  const isExempt = hasPlan || isBotBranch || isFirstImport || isSmallChange;
 
   return !isChangesCode || isExempt
     ? []
     : [
-        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request`,
+        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request, or, for a change of at most ${smallChangeFileLimit} files, use a "${smallBranchPrefix}" branch`,
       ];
 }
 
@@ -1002,27 +1008,21 @@ const selfTestCases: SelfTestCase[] = [
         ? []
         : ["expected one line for each file"],
   },
-  {
-    name: "a branch that changes code and adds a plan",
-    problems: findUnplannedChangeProblems(["src/a.ts", "intent/a/plan.md"], "feat/a"),
-  },
-  {
-    name: "a branch that changes code with no plan",
-    expectedMessagePart: "adds or changes no",
-    problems: findUnplannedChangeProblems(["src/a.ts"], "feat/a"),
-  },
-  {
-    name: "a dependency branch that changes code with no plan",
-    problems: findUnplannedChangeProblems([manifestFileName], "dependabot/npm_and_yarn/a"),
-  },
-  {
-    name: "the first import of a generated project needs no plan",
-    problems: findUnplannedChangeProblems([manifestFileName, "src/index.ts"], "feat/import", true),
-  },
-  {
-    name: "a branch that changes only intent files",
-    problems: findUnplannedChangeProblems(["intent/a/intent.md"], "docs/a"),
-  },
+  ...(
+    [
+      [true, "feat/a", ["src/a.ts", "intent/a/plan.md"]],
+      [false, "feat/a", ["src/a.ts"]],
+      [true, "dependabot/npm_and_yarn/a", [manifestFileName]],
+      [true, "docs/a", ["intent/a/intent.md"]],
+      [true, "small/fix-a", ["src/a.ts", "src/a.test.ts"]],
+      [false, "small/feat-a", Array.from("abcdef", letter => `src/${letter}.ts`)],
+      [true, "feat/import", [manifestFileName, "src/index.ts"], true],
+    ] as [boolean, string, string[], boolean?][]
+  ).map(([needsNoPlan, branchName, changedPaths, isFirstImport]) => ({
+    expectedMessagePart: needsNoPlan ? undefined : "adds or changes no",
+    name: `${branchName} changing ${changedPaths.join(", ")}${isFirstImport === true ? " as a first import" : ""} ${needsNoPlan ? "needs no" : "needs a"} plan`,
+    problems: findUnplannedChangeProblems(changedPaths, branchName, isFirstImport),
+  })),
   {
     name: "a fix that edits a test the default branch holds",
     expectedMessagePart: "fix the code, not the test",

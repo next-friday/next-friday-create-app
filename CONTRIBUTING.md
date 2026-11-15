@@ -41,10 +41,31 @@ pnpm install
 Each stack is `templates/base` plus `templates/<stack>`. The CLI copies `base`, then the stack directory, into the new project. For a deploy target other than `none`, it then copies `templates/deploy-<target>/base` and `templates/deploy-<target>/<stack>`, and it keeps the `deploy:<target>` sections of the chosen deploy target in every copied file.
 
 - `base` holds the files every stack uses with the same content, such as the Git hooks, gitleaks, and agent rules. It is not a template on its own.
-- A stack directory holds the files whose content differs by stack, such as `package.json` or `eslint.config.ts`. `AGENTS.md` says when a stack replaces a `base` file.
+- A stack directory holds the files whose content differs by stack, such as `package.json` or `eslint.config.ts`.
+- A stack replaces a `base` file only when that stack needs different content. Today these replace `base`: `knip.json`, `pnpm-workspace.yaml`, and `.github/dependabot.yml` in `turborepo`, and `.agents/review.md` with its rendered `REVIEW.md` in `payload` and `turborepo`. A deploy layer replaces a file the same way: `templates/deploy-railway/turborepo/turbo.json` replaces `templates/turborepo/turbo.json`, because JSON holds no marker comment, and `templates/deploy-railway/turborepo/.github/workflows/deploy.yml` replaces the one in `templates/deploy-railway/base`. When you change one of those `base` files, make the same change in each replacement.
+- Do not link the root and `templates/` trees. The root copies govern this repository; `templates/` ships to every generated project. One exception: `pnpm plugin:sync` renders the harness into `templates/base/.claude/skills/`, `templates/base/.claude/agents/`, and `templates/base/.cursor/agents/`, and the three scripts `check-plan.ts`, `check-bands.ts`, and `measure-loop.ts` in `templates/base/scripts/`, from `plugins/sdlc/source/`; `pnpm plugin:check` fails when one differs.
+- root `pnpm rules:sync` renders only the root. A template's rendered copy lives in `templates/base` when every stack renders it the same, and in each stack otherwise (for example `deterministic-testing`, whose globs differ by stack). Run `pnpm rules:sync` in a generated project and copy the output back with your file-editing tool, because the shell gate blocks `cp` and `rsync` into `.agents`, `.claude/rules`, and `.cursor` paths.
 - Each stack stores its `.gitignore` as `_gitignore`, because npm leaves `.gitignore` out of published packages. The CLI renames it.
 
-The root lint, format, Knip, and test configs skip `templates/`. To change or check a template, generate a project and run its `pnpm verify`, as `AGENTS.md` shows. Copy edited files back to `base`, the stack directory, or the deploy layer they came from, and `.gitignore` back as `_gitignore`. A file with a `deploy:<target>` section is the exception: the CLI removes its markers, so edit it under `templates/` and do not copy it back. Leave out `.env`, which the CLI writes from `.env.example`. Leave out `pnpm-lock.yaml`: `pnpm pack` drops nested lockfiles, so the generated project creates its own on the first `pnpm install`.
+The root lint, format, Knip, and test configs skip `templates/`. To change or check a template, generate a project and run its `pnpm verify`, as below. Copy edited files back to `base`, the stack directory, or the deploy layer they came from, and `.gitignore` back as `_gitignore`. A file with a `deploy:<target>` section is the exception: the CLI removes its markers, so edit it under `templates/` and do not copy it back. Leave out `.env`, which the CLI writes from `.env.example`. Leave out `pnpm-lock.yaml`: `pnpm pack` drops nested lockfiles, so the generated project creates its own on the first `pnpm install`.
+
+Check a template by generating a project under the template's own package name, so the rename changes nothing and edited files copy back as they are. A file with a `deploy:<target>` section is the exception: the CLI removes the markers, so edit it under `templates/` and do not copy it back. Add `--deploy railway` to check the files of that deploy target:
+
+```sh
+pnpm build
+dir="$(mktemp -d)"
+(cd "$dir" && node "$OLDPWD/dist/main.mjs" next-friday-template-nestjs --stack nestjs < /dev/null)
+cd "$dir/next-friday-template-nestjs" && git add --all && pnpm verify
+```
+
+## Architecture
+
+- `src/main.ts` calls `create()` in `src/create.ts`, which copies `templates/base`, then `templates/<stack>`, then, for `--deploy <target>` other than `none`, `templates/deploy-<target>/base` and `templates/deploy-<target>/<stack>`. It then keeps the `deploy:<target>` sections of the chosen deploy target (`src/deploy-sections.ts`), renames the project, and installs.
+- A stack is an entry in `src/stacks.ts` plus `templates/<stack>/`, whose `package.json` is named `next-friday-template-<stack>`.
+- Agent rules, `review.md`, and `mcp.json`: the files under `.agents/` are the source; `pnpm rules:sync` renders them into `.claude/`, `.cursor/`, `REVIEW.md`, and the MCP configs. Never edit a rendered copy.
+- The `sdlc` harness: `plugins/sdlc/source/` holds the skills, the subagent's text, the hook scripts, and the scripts behind `plan:check`, `bands:check`, and `loop:measure`. `pnpm plugin:sync` renders them into the folders each agent tool reads from the repository, in the root and in `templates/base/`: the skills in `.claude/skills/`, with the hook scripts and each tool's words under `sdlc-mode/`, and the subagent in `.claude/agents/` and `.cursor/agents/`. It also renders the three scripts into `templates/base/scripts/`, and `plugins/sdlc/adapters/claude-code/`, the plugin that only `claude plugin eval` loads. Never edit a rendered file; the eval cases in `plugins/sdlc/adapters/claude-code/evals/` and the JSON files in `plugins/sdlc/adapters/` are authored there. `.claude/settings.json` and `.cursor/hooks.json` run the hook scripts; a person commits them, and `pnpm plugin:check` fails when one lacks an entry of `plugins/sdlc/adapters/hooks.json`.
+
+Run parallel sessions in separate worktrees, on tasks that touch different files. Start each with `claude --worktree <name>`: a worktree is its own checkout on its own branch. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 
 ## Verification
 
@@ -52,7 +73,7 @@ Run the narrowest check that covers the change. Run `pnpm verify` before submitt
 
 For focused checks, use the relevant script in [`package.json`](package.json).
 
-Run `pnpm evals:run` and `pnpm evals:run:write` after you change `AGENTS.md`, a skill under `plugins/sdlc/source/skills/`, or a hook under `.agents/hooks/`, and add `--case <name>` to run one case. Together they run the cases in `plugins/sdlc/adapters/claude-code/evals/` with `claude plugin eval` on your own Claude login and score each case with and without the harness, so they spend your Claude usage; neither is part of `pnpm verify`. [`plugins/sdlc/README.md`](plugins/sdlc/README.md) says which cases each one runs.
+After you change `AGENTS.md`, a skill under `plugins/sdlc/source/skills/`, or a hook, run the eval cases of what changed: add `--case <name>` to `pnpm evals:run` or `pnpm evals:run:write`. Run both in full before a release. Together they run the cases in `plugins/sdlc/adapters/claude-code/evals/` with `claude plugin eval` on your own Claude login and score each case with and without the harness, so they spend your Claude usage; neither is part of `pnpm verify`. [`plugins/sdlc/README.md`](plugins/sdlc/README.md) says which cases each one runs.
 
 Three jobs in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) run only in CI: Template, which generates each stack and runs its checks; Consumer Smoke, which installs the packed CLI with npm and runs it; and Compatibility, which runs the tests on the Node.js versions and operating systems in its matrix. Run `pnpm audit` locally for the Dependency Audit job. These workflows have no local command: Dependency Review, Zizmor with Actionlint, Secret Scan (TruffleHog and Gitleaks), and pull request title validation run on pull requests; the Triage failed build job comments on a failing pull request from this repository; OpenSSF Scorecard runs on pushes to `main`, weekly, and when a branch protection rule changes. CodeQL on this repository stays on GitHub default setup so an advanced workflow does not conflict with it. Generated projects ship an advanced CodeQL workflow.
 
