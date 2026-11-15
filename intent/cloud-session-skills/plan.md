@@ -127,5 +127,5 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - **15:** steps 13, 15, and 16, with their results in the pull request's description.
 - **16:** steps 11 and 12.
 - **17:** `pnpm changesets:check` passes with one `minor` changeset. The reply that asks for this plan's acceptance names the version.
-- **18:** in step 12, `sdlc-mode/verifier-runs-on-the-chosen-model` passes its grader that the reply names haiku, and the `large` budget's effort or the nearest one haiku offers, as the default with no rule. `grep -n "role's default model" .claude/skills/sdlc-mode/SKILL.md` finds step 4.
+- **18:** in step 12, `sdlc-mode/verifier-runs-on-the-chosen-model` passes its grader that the reply names haiku, and the `large` budget's effort or the nearest one haiku offers, as the default with no rule. `grep -n "role's default from the table" .claude/skills/sdlc-mode/SKILL.md` finds step 4.
 - **Policies:** the spec cites one policy rule, brand rule 4, as requirement 8. Security, compliance, and UX do not apply (spec, Policies).
