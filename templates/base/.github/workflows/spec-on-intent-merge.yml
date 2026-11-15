@@ -97,7 +97,7 @@ jobs:
             --model claude-haiku-5-5
             --max-turns 30
             --permission-mode acceptEdits
-            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git add *),Bash(git commit *),Bash(git status *),Bash(git log *),Bash(git push --set-upstream origin ${{ steps.branch.outputs.name }}),Bash(gh pr create *)"
+            --allowedTools "Read,Write,Edit,Glob,Grep,Task,Bash(git rev-parse *),Bash(gh api repos/*/rules/branches/*),Bash(git add *),Bash(git commit *),Bash(git status *),Bash(git log *),Bash(git push --set-upstream origin ${{ steps.branch.outputs.name }}),Bash(gh pr create *)"
       - name: Require the pull request
         env:
           BRANCH: ${{ steps.branch.outputs.name }}
