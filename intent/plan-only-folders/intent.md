@@ -1,6 +1,6 @@
 # Intent: Only a bug fix may skip the intent and the spec
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 
