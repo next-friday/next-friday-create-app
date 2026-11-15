@@ -39,8 +39,8 @@ Author: @joetakara (Developer Productivity). Status: accepted.
 ## Affected users and systems
 
 - Every person and agent that runs the loop in this repository or in a generated project. The product owner gives the team's tools as about 60% Claude Code, 30% Cursor, and 10% other agent tools.
-- In the root: `plugins/sdlc/`, `scripts/sync-plugin.ts`, `.claude/`, `.cursor/`, both marketplace files, `AGENTS.md`, `CONTRIBUTING.md`, and `intent/README.md`.
-- In `templates/`: the plugin copy, `.claude/`, `.cursor/`, the marketplace file, `SETUP.md`, and `intent/README.md` in `templates/base/`, and `AGENTS.md` in each stack.
+- In the root: `plugins/sdlc/`, `scripts/sync-plugin.ts`, `package.json`, `.claude/`, `.cursor/`, both marketplace files, `.github/CODEOWNERS`, `AGENTS.md`, `CONTRIBUTING.md`, and `intent/README.md`.
+- In `templates/`: the plugin copy, `.claude/`, `.cursor/`, the marketplace file, `scripts/check-plan.ts`, `SETUP.md`, and `intent/README.md` in `templates/base/`, and `AGENTS.md` in each stack.
 - The workflows in `templates/base/.github/workflows/` that load the plugin with `--plugin-dir`.
 - The `sdlc-plugin` intent, whose decision that the template enables the plugin as a local marketplace this intent replaces.
 - The eval cases and `pnpm evals:run`, which load the plugin with `claude plugin eval`.
@@ -52,20 +52,20 @@ Author: @joetakara (Developer Productivity). Status: accepted.
 - A plugin skill and a project skill with the same name both load, as `/<plugin>:<skill>` and `/<skill>` (same page), so a session must not get both.
 - Two limits of Claude Code that this change cannot lift:
   - A cloud session with several repositories "reads only the `enabledPlugins` and `extraKnownMarketplaces` keys from each repository's `.claude/settings.json`, not permission rules, hooks, `env`, or other keys" ([Claude Code: Settings](https://code.claude.com/docs/en/settings.md)), so the hooks do not run there.
-  - "In a project's cloud thread, skills committed to a repository's `.claude/skills/` aren't available" ([Claude Code: Skills](https://code.claude.com/docs/en/skills.md)).
+  - A cloud thread in a Claude project loads neither the skills nor the hooks: "In a project's cloud thread, skills committed to a repository's `.claude/skills/` aren't available" ([Claude Code: Skills](https://code.claude.com/docs/en/skills.md)), and there "none of a repository's `.claude/settings.json` permission rules, hooks, or `env` apply, however many repositories the project has" ([Claude Code: Settings](https://code.claude.com/docs/en/settings.md)).
 - The two rendered copies of the skills differ in two files, `sdlc-mode/SKILL.md` and `setup-sdlc/SKILL.md`, by the six tool words in `plugins/sdlc/adapters/tool-words.json`.
-- `.claude/settings.json`, `.cursor/hooks.json`, and `.cursor/hooks/` are protected paths (`scripts/check-agent-gates.ts`): a person commits the change to them.
+- `.claude/settings.json` and `.cursor/hooks.json` are protected paths (`scripts/check-agent-gates.ts`), and `.claude/settings.json` denies an agent's edit to both and to `.cursor/hooks/`: a person commits the change to them.
 - Releasing it publishes a new version of `@next-friday/create-app` to npm. The command changes in `templates/`, and "A template change is therefore `patch` or `minor`, never `major`" (`.changeset/README.md`).
 - The human gates stay as they are.
 
 ## Open questions
 
-- Cursor's documentation was not read for this intent. Search results report three things, which the spec confirms from the documentation itself:
+- Three claims about Cursor are not confirmed from its documentation; the spec checks each:
   - `workspaceOpen` "is an IDE lifecycle hook and doesn't apply to cloud agents", which would mean a Cursor cloud agent has no plugin today.
   - Cursor reads project skills from `.agents/skills/`, `.cursor/skills/`, and `.claude/skills/`.
   - A Cursor cloud agent runs the hooks in the repository's `.cursor/hooks.json`.
 - Whether one copy of the skills can serve every tool, and whether Cursor shows a skill twice when two of the folders it reads hold it.
-- Who confirms the outcome in Cursor before the release: an agent's session cannot run Cursor.
+- Who confirms the outcome in Cursor before the release: no check in this repository runs Cursor.
 - Which tools the other 10% of the team use, and whether each reads `AGENTS.md`.
 - Whether hooks from `.claude/settings.json` run in a Claude Code cloud session with one repository, as the documentation says. The build tests it in a cloud session before the release.
 - Whether the `verifier` subagent loads from `.claude/agents/` in a cloud session; the same test shows it.
