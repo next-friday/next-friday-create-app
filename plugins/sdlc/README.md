@@ -78,4 +78,6 @@ The cases run with `claude plugin eval`, which loads the skills as the plugin `s
 | `pnpm evals:run`       | tagged `no-shell`    | `Write` and `Edit`.                                                                                                                    |
 | `pnpm evals:run:write` | tagged `needs-write` | `Write`, `Edit`, and `Bash`. `claude plugin eval` runs `Bash` only under an OS sandbox, which on Linux needs `bubblewrap` and `socat`. |
 
+For a change, run only the cases of what changed: add `--case <glob>` to the command, for example `pnpm evals:run:write --case 'deploy-*'`; `--case` filters cases by name glob (`claude plugin eval --help`). Run both commands in full before a release.
+
 A grader that requires no file, commit, or branch passes whatever the skill says unless its case may use the tool it forbids, so each case runs under the command that grants that tool.
