@@ -71,7 +71,8 @@ The name must:
 2. Writes `.env` from `.env.example`. For Payload and Turborepo, it sets `PAYLOAD_SECRET` to a random secret.
 3. Runs `git init --initial-branch=main`, unless the directory is already in a Git repository.
 4. Runs `pnpm install`, which also installs the Git hooks.
-5. Prints the next steps, for example:
+5. Makes the first commit, `build(repo): bootstrap <stack> workspace`, whose body names the CLI's version, the command, and the stack. The commit runs the project's Git hooks. In a repository that already has a commit, it commits on the branch `build/bootstrap-workspace` and prints the subject as the pull request title. When a hook stops the commit, or with `--skip-git` or `--skip-install`, it prints the commit to run instead.
+6. Prints the next steps, for example:
 
    ```sh
    cd my-api
@@ -80,7 +81,7 @@ The name must:
 
    The development script is `pnpm dev` for Next.js, Payload, and Turborepo, and `pnpm start:dev` for Node.js and NestJS.
 
-Then follow **After creating a project from this template** in the project's `README.md` to make the first commit and set up the repository.
+Then follow **After creating a project from this template** in the project's `README.md` to push the first commit and set up the repository.
 
 ## Troubleshooting
 

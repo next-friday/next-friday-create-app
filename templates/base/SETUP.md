@@ -32,26 +32,26 @@ Part of the harness does not load in these cases. The checks of `pre-push` and o
 
 **Who:** an engineer.
 
-1. Install gitleaks and jq (see [CONTRIBUTING.md](CONTRIBUTING.md)).
-2. Replace the template's description and owner: `package.json#description`, `repository.url`, and `author`, and any template text that `README.md` → **After creating a project from this template** lists. Change `license` from `UNLICENSED` if the project is open source.
-3. Create an empty repository on GitHub. If the project is not a Git repository yet, run `git init --initial-branch=main`. Make the first commit on `main` and push it there. The Git hooks allow only this first commit and push on `main`; work on branches after that.
+1. Install gitleaks and jq (see [CONTRIBUTING.md](CONTRIBUTING.md)). The Git hooks need them for every commit.
+2. The CLI made the first commit on `main`: `build(repo): bootstrap <stack> workspace`, with the CLI's version, the command, and the stack in its body, so `git blame` on a file nobody edits names where it came from. When the CLI printed `git add --all` and a `git commit` instead, because a Git hook stopped the commit or the CLI skipped Git or the install, run them.
+3. Create an empty repository on GitHub and push `main` there. The Git hooks allow only this first commit and push on `main`; work on branches after that.
 
    ```sh
-   git add --all
-   git commit -m "chore(repo): start from template"
    git remote add origin https://github.com/OWNER/REPOSITORY.git
    git push --set-upstream origin main
    ```
 
-   When the GitHub repository already has a commit, such as a README, push the import to a branch and open a pull request instead. `pnpm plan:check` lets this first import through without a plan while `main` has no `package.json`. `-X theirs` keeps the template's copy of a file, such as `README.md`, that both commits add.
+   When the GitHub repository already has a commit, such as a README, push the import to a branch and open a pull request titled with the first commit's subject, since the squash merge takes the pull request title. When the CLI ran in such a clone, it already committed on `build/bootstrap-workspace`; skip the first command. `pnpm plan:check` lets this first import through without a plan while `main` has no `package.json`. `-X theirs` keeps the template's copy of a file, such as `README.md`, that both commits add.
 
    ```sh
-   git branch -m chore/start-from-template
+   git branch -m build/bootstrap-workspace
    git remote add origin https://github.com/OWNER/REPOSITORY.git
    git fetch origin main
    git rebase -X theirs origin/main
-   git push --set-upstream origin chore/start-from-template
+   git push --set-upstream origin build/bootstrap-workspace
    ```
+
+4. On a branch, replace the template's description and owner: `package.json#description`, `repository.url`, and `author`, and any template text that `README.md` → **After creating a project from this template** lists. Change `license` from `UNLICENSED` if the project is open source.
 
 **Check:** `git log --oneline origin/main` prints one commit, or the import's pull request is open.
 

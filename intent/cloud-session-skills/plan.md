@@ -40,6 +40,13 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
   - Removed, with their self-tests: the Cursor adapter, the plugin copy under `templates/base/plugins/sdlc/`, `renderTemplateMarketplace`, both reads of a marketplace file, `findSettingsProblems`, and `renderToolWords`. `findToolWords` stays, and now finds a tool word left in any rendered file.
   - Its self-tests cover the tool-words render, the project render, the protected-file check, and the reference check.
 
+**The CLI (spec requirement 19)**
+
+- `src/setup.ts` (changed): `commitProject` commits every file with the project's Git hooks, on `build/bootstrap-workspace` when the repository already has a commit, and reports `committed`, `branched`, `branch-taken`, or `failed`.
+- `src/create.ts` (changed): writes the first commit's message from the CLI's name and version, the options, and the stack's hint; commits after a successful install unless the run skipped Git or the install or found a parent repository; the next steps name the branch and the pull request title, or print the commit to run.
+- `test/setup.test.ts`, `test/create.test.ts` (changed): cover each result with real Git, the message, and the next steps.
+- `README.md` (changed): **What the CLI does** gains the first commit.
+
 **The root project**
 
 - `.claude/skills/`, `.claude/agents/verifier.md`, `.cursor/agents/verifier.md` (new, rendered).
@@ -61,7 +68,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - `templates/base/.github/workflows/spec-on-intent-merge.yml`, `templates/base/.github/workflows/control-band.yml` (changed): send `/sdlc-mode` and pass no `--plugin-dir`.
 - `templates/base/.github/workflows/plugin-evals.yml` (deleted). `templates/base/.github/zizmor.yml` (changed): holds no `adhoc-packages` rule and no comment for that workflow.
 - `templates/base/scripts/check-plan.ts` (changed, rendered).
-- `templates/base/SETUP.md` (changed): says how the harness loads; names the new commands; names `.claude/skills/` in its `CODEOWNERS` lines and its policies paragraph; drops the sentence on `pnpm rules:sync` rendering a policy skill, the sentence on adding a marketplace to `strictKnownMarketplaces`, the `Plugin evals` paragraph, and the `--plugin-dir` paragraph; states the limits of spec requirement 13.
+- `templates/base/SETUP.md` (changed): step 1 says that the CLI made the first commit, pushes it, and moves the description and owner edits to a branch after the push (spec requirement 19); says how the harness loads; names the new commands; names `.claude/skills/` in its `CODEOWNERS` lines and its policies paragraph; drops the sentence on `pnpm rules:sync` rendering a policy skill, the sentence on adding a marketplace to `strictKnownMarketplaces`, the `Plugin evals` paragraph, and the `--plugin-dir` paragraph; states the limits of spec requirement 13.
 - `templates/base/intent/README.md` (changed): names the new commands and the playbooks' new path.
 - `templates/nodejs/AGENTS.md`, `templates/nestjs/AGENTS.md`, `templates/nextjs/AGENTS.md`, `templates/payload/AGENTS.md`, `templates/turborepo/AGENTS.md` (changed): name `/sdlc-mode` and the path of spec requirement 9.
 - `templates/nodejs/_gitignore`, `templates/nestjs/_gitignore`, `templates/nextjs/_gitignore`, `templates/payload/_gitignore`, `templates/turborepo/_gitignore` (changed): lose the line for the plugin copy's eval results.
@@ -85,6 +92,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 15. Start a Claude Code cloud session with this repository alone on the pull request's branch. Send it `/sdlc-status`, then ask it to push a commit that has no review. Check: the session lists `/sdlc-mode`, `/sdlc-help`, `/sdlc-status`, and `/setup-sdlc`, and the `verifier` subagent; it refuses the push; and its command list holds no second `sdlc-mode` from `templates/base/.claude/skills/`.
 16. Post on the pull request the steps for the person who runs Cursor, in the editor and in a cloud agent, with Cursor's settings at their defaults. The engineer who accepted this plan names that person before this step, as the spec's area of concern 3 decides. That person writes the result there. Check: `/sdlc-mode` is listed once, `verifier` is listed once, a `git push` of a commit with no review is refused with one message, and the checks run once when a turn ends.
 17. Write the results of steps 12, 13, 15, and 16 in the pull request's description, and keep the pull request green as `playbooks/review.md` says.
+18. Build spec requirement 19 in `src/setup.ts`, `src/create.ts`, their tests, `README.md`, and `templates/base/SETUP.md`. Check: `pnpm test` passes with the new cases, and a project generated from each stack passes its own `pnpm verify`.
 
 ## Risks
 
@@ -128,4 +136,5 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - **16:** steps 11 and 12.
 - **17:** `pnpm changesets:check` passes with one `minor` changeset. The reply that asks for this plan's acceptance names the version.
 - **18:** in step 12, `sdlc-mode/verifier-runs-on-the-chosen-model` passes its grader that the reply names haiku, and the `large` budget's effort or the nearest one haiku offers, as the default with no rule. `grep -n "role's default from the table" .claude/skills/sdlc-mode/SKILL.md` finds step 4.
+- **19:** `test/setup.test.ts` shows `commitProject` committing on `main` with the message, branching when the repository has a commit, refusing a taken branch, and reporting a commit a hook stops; `test/create.test.ts` shows the message, the branch and title, and the printed commit.
 - **Policies:** the spec cites one policy rule, brand rule 4, as requirement 8. Security, compliance, and UX do not apply (spec, Policies).
