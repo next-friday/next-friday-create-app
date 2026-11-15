@@ -1,6 +1,6 @@
 # Spec: The `sdlc` harness loads from the project's own folders, in every agent tool
 
-From `intent/cloud-session-skills/intent.md`. Status: accepted.
+From `intent/cloud-session-skills/intent.md`. Status: done.
 
 Request: "เขียน spec ของ intent/cloud-session-skills/intent.md". Skills at 51fc7a0.
 
@@ -15,7 +15,7 @@ In this spec, "a project" is this repository's root or a project generated from 
 5. **The hooks.** The four hook scripts are in a project once, at `.claude/skills/sdlc-mode/hooks/`. `.claude/settings.json` runs them on the Claude Code events that `plugins/sdlc/adapters/hooks.json` lists, and `.cursor/hooks.json` runs them on the Cursor events it lists. Each entry runs its script through `sh`, as the plugin's entries do today, with the matcher, the argument, the timeout, and the loop limit that file gives. Each hook acts once in a session:
    - Cursor also runs the entries of `.claude/settings.json`: "Claude Code hooks load when **Include Third-Party Plugins, Skills, and Other Configs** is enabled", "The setting is on by default", and "All matching hooks from every source run" ([Cursor: Third Party Hooks](https://cursor.com/docs/reference/third-party-hooks)).
    - So when Cursor runs a script, the script acts only for an entry of `.cursor/hooks.json`:
-     - it knows that Cursor runs it from `cursor_version` in its input, one of the fields of which Cursor's page says "All hooks receive a base set of fields" ([Cursor: Hooks](https://cursor.com/docs/hooks), "Common schema"). It reads no environment variable for this, so Claude Code acts as today when a person starts it in Cursor's terminal;
+     - it knows that Cursor runs it from `cursor_version` in its input. Cursor's page lists that field in the table under "All hooks receive a base set of fields" ([Cursor: Hooks](https://cursor.com/docs/hooks), "Common schema"). The script reads no environment variable for this, so Claude Code acts as today when a person starts it in Cursor's terminal;
      - it knows the entry from its argument. In `plugins/sdlc/adapters/hooks.json`, no Cursor entry shares an argument with a Claude Code entry: the one both pass today, `snapshot`, becomes another word for Cursor.
    - A hook case of each script proves both: Cursor's input with a Claude Code entry's argument does nothing, and Claude Code's input acts as today. Requirement 15 proves it in Cursor (area of concern 7).
 6. **Nothing loads the harness as a plugin.** After the change:
@@ -38,6 +38,7 @@ In this spec, "a project" is this repository's root or a project generated from 
     - a Claude Code cloud session with several repositories, in an Anthropic-hosted environment: no hooks;
     - a cloud thread in a Claude project: no skills and no hooks;
     - a Cursor cloud agent on Cursor's own machines: no `sessionStart` hook, so the status list does not show when it starts. Cursor's page says of that hook: "Deferred while cloud agents can still start in a read-only environment" ([Cursor: Hooks](https://cursor.com/docs/hooks));
+    - a Cursor cloud agent in its early read-only turns: no hook. "Hooks do not run during those turns. They start once the agent has a writable environment" (same page, "Cloud agent support");
     - Cursor with **Include Third-Party Plugins, Skills, and Other Configs** turned off: Cursor's page names that setting for the Claude Code hooks it loads, and its name covers skills, so `SETUP.md` says to leave it on;
     - another agent tool: the skills by their path, and no subagent and no hooks.
 14. **The documents.** These say how the harness loads after the change, and name no marketplace and no plugin folder of a generated project: `AGENTS.md`, `CONTRIBUTING.md`, `plugins/sdlc/README.md`, and `intent/README.md` in the root; `SETUP.md` and `intent/README.md` in `templates/base/`. The policies paragraph of `SETUP.md` no longer says that `pnpm rules:sync` renders a project's own policy skill: `scripts/sync-agent-rules.ts` renders no skill. `.github/CODEOWNERS` names the owners of the new folders.
