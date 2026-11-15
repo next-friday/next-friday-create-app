@@ -5,6 +5,8 @@ heavy:
   - "!.gitattributes"
   - "!.github/ISSUE_TEMPLATE/**"
   - "!.github/dependabot.yml"
+  - "!intent/**"
+  - "!.cursor/rules/*.mdc"
 
 ci_policy:
   - ".github/file-filters.yml"
@@ -12,6 +14,18 @@ ci_policy:
   - ".agents/**"
   - ".claude/**"
   - ".cursor/**"
-  - "intent/**"
-  - "REVIEW.md"
   - "scripts/**"
+  - "!.agents/**/*.md"
+  - "!.claude/**/*.md"
+  - "!.cursor/**/*.md"
+  - "!.cursor/rules/*.mdc"
+
+agent_docs:
+  - "intent/**"
+  - ".agents/**/*.md"
+  - ".claude/**/*.md"
+  - ".cursor/**/*.md"
+  - ".cursor/rules/*.mdc"
+  - "AGENTS.md"
+  - "REVIEW.md"
+  - "apps/*/AGENTS.md"

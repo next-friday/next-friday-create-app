@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -25,10 +25,12 @@ jobs:
       heavy: ${{ steps.filter.outputs.heavy }}
       ci_policy: ${{ steps.filter.outputs.ci_policy }}
       full_verification: ${{ steps.mode.outputs.full_verification }}
+      agent_checks: ${{ steps.mode.outputs.agent_checks }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Detect relevant changes
         id: filter
@@ -45,6 +47,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           HEAVY: ${{ steps.filter.outputs.heavy }}
           CI_POLICY: ${{ steps.filter.outputs.ci_policy }}
+          AGENT_DOCS: ${{ steps.filter.outputs.agent_docs }}
         run: |
           release_pr=false
           if [[ "$EVENT_NAME" == "pull_request" && "$HEAD_REF" == "changeset-release/main" && "$PR_AUTHOR" == "github-actions[bot]" ]]; then
@@ -52,11 +55,17 @@ jobs:
           fi
 
           full_verification=false
-          if [[ "$EVENT_NAME" == "push" || ( "$EVENT_NAME" == "pull_request" && ( "$release_pr" == "true" || "$HEAVY" == "true" || "$CI_POLICY" == "true" ) ) ]]; then
+          if [[ "$release_pr" == "true" || "$HEAVY" == "true" || "$CI_POLICY" == "true" ]]; then
             full_verification=true
           fi
 
+          agent_checks=false
+          if [[ "$full_verification" == "true" || "$AGENT_DOCS" == "true" ]]; then
+            agent_checks=true
+          fi
+
           echo "full_verification=$full_verification" >> "$GITHUB_OUTPUT"
+          echo "agent_checks=$agent_checks" >> "$GITHUB_OUTPUT"
 
   lint:
     name: Lint
@@ -77,7 +86,7 @@ jobs:
   agent-gates:
     name: Agent Gates
     needs: changes
-    if: needs.changes.outputs.full_verification == 'true'
+    if: needs.changes.outputs.agent_checks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -101,6 +110,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
         run: pnpm plan:check
+      - name: Check formatting
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # editorconfig-checker downloads its binary from GitHub releases; the token avoids the anonymous rate limit.
+        run: pnpm format:check
 
   format:
     name: Format & Manifests
@@ -115,10 +128,6 @@ jobs:
           persist-credentials: false
       - name: Set up pnpm
         uses: ./.github/actions/setup-pnpm
-      - name: Check formatting
-        env:
-          GITHUB_TOKEN: ${{ github.token }} # editorconfig-checker downloads its binary from GitHub releases; the token avoids the anonymous rate limit.
-        run: pnpm format:check
       - name: Check package.json ordering
         run: pnpm sort-package-json:check
 

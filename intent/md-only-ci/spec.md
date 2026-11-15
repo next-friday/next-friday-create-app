@@ -1,6 +1,6 @@
 # Spec: A Markdown-only change runs only the checks it can break
 
-From `intent/md-only-ci/intent.md`. Status: accepted.
+From `intent/md-only-ci/intent.md`. Status: done.
 
 Request: "เขียน spec ของ md-only-ci". Skills at 51fc7a0.
 

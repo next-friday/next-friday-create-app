@@ -1,6 +1,6 @@
 # Intent: A Markdown-only change runs only the checks it can break
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 

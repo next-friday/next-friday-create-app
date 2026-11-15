@@ -1,10 +1,14 @@
 name: OSV-Scanner
 
 on:
-  pull_request: {}
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
   push:
     branches:
       - main
+    paths-ignore:
+      - "**/*.md"
   schedule:
     - cron: "37 2 * * 1"
 

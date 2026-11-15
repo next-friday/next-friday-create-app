@@ -28,14 +28,16 @@ jobs:
       heavy: ${{ steps.filter.outputs.heavy }}
       ci_policy: ${{ steps.filter.outputs.ci_policy }}
       full_verification: ${{ steps.mode.outputs.full_verification }}
+      agent_checks: ${{ steps.mode.outputs.agent_checks }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Detect relevant changes
         id: filter
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'schedule'
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           predicate-quantifier: some-with-excludes
@@ -48,13 +50,21 @@ jobs:
           DRAFT: ${{ github.event.pull_request.draft }}
           HEAVY: ${{ steps.filter.outputs.heavy }}
           CI_POLICY: ${{ steps.filter.outputs.ci_policy }}
+          AGENT_DOCS: ${{ steps.filter.outputs.agent_docs }}
         run: |
           full_verification=false
-          if [[ "$EVENT_NAME" == "push" || ( "$EVENT_NAME" == "pull_request" && "$DRAFT" != "true" && ( "$HEAVY" == "true" || "$CI_POLICY" == "true" ) ) ]]; then
-            full_verification=true
+          agent_checks=false
+          if [[ "$EVENT_NAME" == "push" || ( "$EVENT_NAME" == "pull_request" && "$DRAFT" != "true" ) ]]; then
+            if [[ "$HEAVY" == "true" || "$CI_POLICY" == "true" ]]; then
+              full_verification=true
+            fi
+            if [[ "$full_verification" == "true" || "$AGENT_DOCS" == "true" ]]; then
+              agent_checks=true
+            fi
           fi
 
           echo "full_verification=$full_verification" >> "$GITHUB_OUTPUT"
+          echo "agent_checks=$agent_checks" >> "$GITHUB_OUTPUT"
 
   affected-apps:
     name: Detect Affected Apps
@@ -93,6 +103,37 @@ jobs:
           fi
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
 
+  agent-checks:
+    name: Agent Checks & Formatting
+    needs: changes
+    if: needs.changes.outputs.agent_checks == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # Needed by plan:check to read who merged the plan's pull request.
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js and pnpm
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          cache: true
+          require-lockfile: true
+      - name: Check rendered agent rules match .agents/rules
+        run: pnpm rules:check
+      - name: Check agent gates
+        run: pnpm gates:check
+      - name: Check plans
+        env:
+          GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
+        run: pnpm plan:check
+      - name: Check formatting
+        run: pnpm format:check
+
   checks:
     name: Static Checks, Tests & Build
     needs:
@@ -104,7 +145,6 @@ jobs:
     permissions:
       contents: read
       id-token: write # Needed to exchange GitHub OIDC for a Turborepo Remote Cache token.
-      pull-requests: read # Needed by plan:check to read who merged the plan's pull request.
     services:
       postgres:
         image: postgres:17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
@@ -152,20 +192,10 @@ jobs:
         run: |
           echo "TURBO_FILTER=--affected" >> "$GITHUB_ENV"
           echo "TURBO_SCM_BASE=origin/$BASE_REF" >> "$GITHUB_ENV"
-      - name: Check rendered agent rules match .agents/rules
-        run: pnpm rules:check
-      - name: Check agent gates
-        run: pnpm gates:check
-      - name: Check plans
-        env:
-          GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
-        run: pnpm plan:check
       - name: Check bands
         run: pnpm bands:check
       - name: Check lint
         run: pnpm lint:check
-      - name: Check formatting
-        run: pnpm format:check
       - name: Check files against .editorconfig
         env:
           EDITORCONFIG_CHECKER_VERSION: 4.0.2
@@ -284,9 +314,10 @@ jobs:
   deploy-dev:
     name: Deploy to dev
     needs:
+      - agent-checks
       - checks
       - image
-    if: ${{ !cancelled() && needs.checks.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.image.result) && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true' }}
+    if: ${{ !cancelled() && needs.checks.result == 'success' && needs.agent-checks.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.image.result) && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true' }}
     permissions:
       contents: read
       actions: read # Needed by deploy.yml to find the CI run of the deployed commit.
@@ -299,6 +330,7 @@ jobs:
   triage:
     name: Triage failed build
     needs:
+      - agent-checks
       - changes
       - affected-apps
       - checks
@@ -355,6 +387,7 @@ jobs:
     if: always()
     timeout-minutes: 5
     needs:
+      - agent-checks
       - changes
       - affected-apps
       - checks
