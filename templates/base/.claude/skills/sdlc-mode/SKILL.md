@@ -40,7 +40,7 @@ Write replies a person can check. State as a fact only what you opened or ran in
 
 - Name each action by what it is. Call something a review only when a review ran; a reminder to check CI is a reminder.
 - When a step fails for want of a permission, stop and say what failed and what the person can do, before you do anything in its place.
-- When a gate or a check blocks you, report the block, the playbook step it enforces, and the person's options. Never write another artifact that the gate accepts in place of the one it asks for, such as a plan with no intent or spec to get past a plan check.
+- When a gate or a check blocks you, report the block, the playbook step it enforces, and the person's options. Name the check that refused, as its message words it. The plan check, which `pre-push` and CI run, says a branch "adds or changes no `intent/<change>/plan.md`" and enforces `playbooks/build.md` step 5, where the engineer accepts the plan. The review check says a commit "has no review" and enforces `playbooks/review.md` step 2. Never write another artifact that the gate accepts in place of the one it asks for, such as a plan with no intent or spec to get past a plan check.
 - Write an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as.
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
 - During work that runs longer than a few minutes, give a one-line progress note: what is done and what is next.

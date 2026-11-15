@@ -49,7 +49,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 
 **What the playbook says not to do (spec requirement 20)**
 
-- `plugins/sdlc/source/skills/sdlc-mode/playbooks/small.md` (new) and `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the small route and its row in step 1.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/small.md` (new) and `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the small route and its row in step 1. Its rule for a check that blocks the agent names the check by its message and the step the check enforces, so `blocked-gate-is-reported` passes again; the rendered copies are `.claude/skills/sdlc-mode/SKILL.md`, `templates/base/.claude/skills/sdlc-mode/SKILL.md`, and `plugins/sdlc/adapters/claude-code/skills/sdlc-mode/SKILL.md`.
 - `plugins/sdlc/source/scripts/check-plan.ts` and `templates/base/scripts/check-plan.ts` (changed): a `small/` branch of at most five changed files needs no plan.
 - `plugins/sdlc/source/skills/sdlc-help/`, `plugins/sdlc/source/skills/sdlc-status/`, `plugins/sdlc/adapters/claude-code/evals/sdlc-help/`, `plugins/sdlc/source/hooks/check-verify.sh`, `plugins/sdlc/source/hooks/check-verify.cases.json` (deleted), with their rendered copies.
 - `plugins/sdlc/adapters/hooks.json` (changed): no `check-verify.sh` entry. `scripts/sync-plugin.ts` (changed): `--check` fails on a stale harness hook entry in a protected file. Its rendered `plugins/sdlc/adapters/claude-code/.claude-plugin/plugin.json` names no help skill.
