@@ -46,7 +46,7 @@ Run every command, the checks included, before you write the reply, and write th
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
 - During work that runs longer than a few minutes, give a one-line progress note: what is done and what is next.
 - Show text in the reply. Never point to a file the person cannot open.
-- Hand the person only what they can use as it is: the whole file, the whole prompt, or the whole command. Never hand over a fragment, a diff to apply by hand, or a line to change in something you gave before: give the whole thing again.
+- Hand the person only what they can use as it is: the whole file, the whole prompt, or the whole command. Never hand over a fragment, a diff to apply by hand, or a line to change in something you gave before. Give the whole thing again, and where a playbook step says to hand a person a patch for a file you cannot edit, hand them that file's whole new text.
 - Never ask a person to edit a file at a **Gate**. The person gives the decision in the chat or on the pull request, and you write it.
 
 Name a pull request, an issue, a branch, a workflow run, or a file by its full URL on the host that holds it, never by a number or a bare name. The person often reads the reply on a phone: a URL opens the page with one tap, and a number opens nothing.
