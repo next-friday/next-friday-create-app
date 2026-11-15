@@ -19,7 +19,6 @@ Request: "fix(repo): know a bot's branch after an update". Skills at unknown.
 - `scripts/check-changesets.ts` reads the authors with `git log --no-merges --format="%an <%ae>" <merge base>..HEAD`.
 - It reads the pull request's author from the file that `GITHUB_EVENT_PATH` names.
 - It passes both to `findChangesetProblems` in place of `GITHUB_ACTOR`.
-- The failing self-test went in its own commit before the fix.
 
 ## Policies
 

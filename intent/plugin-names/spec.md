@@ -15,8 +15,7 @@ Request: "fix(repo): name the plugin sdlc". Skills at unknown.
 7. `AGENTS.md`, `CONTRIBUTING.md`, `intent/README.md`, `intent/sdlc-plugin/`, and the plugin's README, skills, and eval cases use the new commands and name the `sdlc` plugin.
 8. `sdlc-help` and the four policy skills keep their names.
 9. `pnpm plugin:sync` changes nothing further, and `claude plugin validate .` and `claude plugin validate plugins/sdlc/adapters/claude-code` pass.
-10. `pnpm pack --dry-run` ships the same file list as before.
-11. `pnpm verify` exits 0.
+10. `pnpm verify` exits 0.
 
 ## Design
 

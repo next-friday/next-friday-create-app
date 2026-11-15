@@ -18,7 +18,6 @@ Request: "fix(repo): keep git hook env out of eval runs". Skills at unknown.
 ## Design
 
 - The scripts read the variable names from `git rev-parse --local-env-vars` and remove them from the environment each child process gets.
-- The test went in before the fix and failed because `HEAD` moved.
 - Pull request #153 added `.changeset/gate-check-git-env.md`; #162 removed it by the product owner's decision, and dropped its row from the plan.
 
 ## Policies
@@ -32,9 +31,7 @@ Request: "fix(repo): keep git hook env out of eval runs". Skills at unknown.
 
 1. **Which variables to remove.** Removing every `GIT_` variable would also drop settings the scripts may need.
    Decision: remove only the variables `git rev-parse --local-env-vars` lists, which is git's documented list.
-2. **A person commits the gate check scripts.** The test fails until that commit lands, and the pre-push hook runs the tests.
-   Decision: a person committed `scripts/check-agent-gates.ts` and its template copy from an issue that carries the exact text, and the test was pushed after that commit.
-3. **The release of the template change.** The change touches `templates/`.
+2. **The release of the template change.** The change touches `templates/`.
    Decision: the changeset was removed in #162, so nothing waits for release.
 
 ## Open questions

@@ -37,7 +37,7 @@ Request: "fix(plugin): close the eval gaps on the default model". Skills at unkn
 ## Areas of concern
 
 1. **A judge model scores some graders.** One run can differ from the next by a grader or two.
-   Decision: compare one run per case before and after, with the same judge, `claude-haiku-5-5`, and two runs for two cases.
+   Decision: compare one run per case before and after, with the same judge, `claude-haiku-5-5`, and two runs for two cases, as #241's description reports.
 2. **Cases that fail in the eval sandbox.** Its `.git` is read-only, so no branch can be created.
    Decision: leave those cases unchanged.
 3. **A grader that asks for more than the playbook says.**
