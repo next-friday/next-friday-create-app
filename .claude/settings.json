@@ -120,15 +120,6 @@
             "timeout": 10
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-verify.sh",
-            "timeout": 900
-          }
-        ]
       }
     ],
     "SessionStart": [
