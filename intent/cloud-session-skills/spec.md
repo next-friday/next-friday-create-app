@@ -17,7 +17,7 @@ In this spec, "a project" is this repository's root or a project generated from 
    - So when Cursor runs a script, the script acts only for an entry of `.cursor/hooks.json`:
      - it knows that Cursor runs it from `cursor_version` in its input. Cursor's page lists that field in the table under "All hooks receive a base set of fields" ([Cursor: Hooks](https://cursor.com/docs/hooks), "Common schema"). The script reads no environment variable for this, so Claude Code acts as today when a person starts it in Cursor's terminal;
      - it knows the entry from its argument. In `plugins/sdlc/adapters/hooks.json`, no Cursor entry shares an argument with a Claude Code entry: the one both pass today, `snapshot`, becomes another word for Cursor.
-   - A hook case of each script proves both: Cursor's input with a Claude Code entry's argument does nothing, and Claude Code's input acts as today. Requirement 15 proves it in Cursor (area of concern 7).
+   - A hook case of each script proves both: Cursor's input with a Claude Code entry's argument does nothing, and Claude Code's input acts as today. In Cursor, an issue shows it when it does not hold (area of concern 7).
 6. **Nothing loads the harness as a plugin.** After the change:
    - `.claude/settings.json` holds no `extraKnownMarketplaces` and no `enabledPlugins`;
    - `.cursor/hooks.json` holds no `workspaceOpen` hook, and `.cursor/hooks/load-project-plugins.sh` is gone;
@@ -45,7 +45,7 @@ In this spec, "a project" is this repository's root or a project generated from 
 15. **Proof in real sessions.** Before a code owner approves the build's pull request, its description holds the result of each of these. When one fails, the build stops and this spec changes before the code does.
     - **Claude Code, a cloud session with one repository,** started on the pull request's branch: the session lists the two typed commands and the `verifier` subagent, and refuses a `git push` of a commit that has no review.
     - **Claude Code, a non-interactive run** in a project generated from one stack: `claude -p "/sdlc-mode how do I start new work"` answers from the skill.
-    - **Cursor, in the editor and in a cloud agent,** run by a person (area of concern 3) with Cursor's settings at their defaults: `/sdlc-mode` is listed once, `verifier` is listed once, a `git push` of a commit that has no review is refused with one message, and the reply-shape check runs once when a turn ends.
+    - **Cursor:** not run before the merge. A person on the team who finds that the harness does not work in Cursor opens an issue (area of concern 3).
 16. **The checks.** `pnpm verify` passes at the root and in a generated project of each stack. The pull request reports the scores of `pnpm evals:run` and `pnpm evals:run:write`.
 17. **The release.** The pull request has one changeset of type `minor` for `@next-friday/create-app`: a generated project gets commands under new names, and "A template change is therefore `patch` or `minor`, never `major`" (`.changeset/README.md`). Before it opens, the user is told the version it publishes.
 18. **A subagent's model with no rule.** With a tool-words file for the agent tool and no models rule, a rule the session cannot read, or no line for a role, `sdlc-mode` starts that role's subagent on the role's default model from the table of `setup-sdlc` step 3, `haiku` for `explore` and `opus` for `advise`, in place of the session's model, and says so in the reply. It picks the offered model of that family as `setup-sdlc` steps 1 and 3 do, the newest when there are several, and passes the effort of the `large` budget, which `setup-sdlc` step 4 says "matches the defaults", or the nearest effort that model offers. It starts the subagent on the session's model only when the session offers no model of that family, or when there is no tool-words file for the agent tool. The product owner decided this. It is how pstack chooses a subagent's model: "A role with no line in the rule keeps the skill's default" (`pstack/docs/guide/01-setup.md` in https://github.com/cursor/plugins).
@@ -122,7 +122,7 @@ The CI file filters need no change: `.github/file-filters.yml` already counts a 
 
 3. **No check in this repository runs Cursor** (a decision the files do not settle; no policy).
 
-   Decision: the engineer who accepts the plan names a person on the team who uses Cursor. That person runs the Cursor part of requirement 15, and the result goes on the pull request before a code owner approves it.
+   Decision: the product owner decided that no Cursor run blocks the merge. A person on the team who finds that the harness does not work in Cursor opens an issue.
 
 4. **What another agent tool gets** (the intent's proposal; no policy).
    - The product owner has not named the tools the other 10% of the team use.
@@ -146,7 +146,7 @@ The CI file filters need no change: `.github/file-filters.yml` already counts a 
    - Cursor's page says that it maps and runs the Claude Code hook entries. It does not show the input it gives a script for such an entry.
    - Requirement 5 relies on that input holding `cursor_version`, as the input of Cursor's own hooks does.
 
-   Decision: requirement 5 as written. The Cursor run of requirement 15 shows whether each hook acts once. When it does not, this spec changes before the code does.
+   Decision: requirement 5 as written. An issue that shows a hook acting twice in Cursor starts a change to requirement 5.
 
 ## Open questions
 
@@ -156,7 +156,7 @@ Each open question of the intent, in its order.
    - `workspaceOpen`: "This is an IDE lifecycle hook and doesn't apply to cloud agents" ([Cursor: Hooks](https://cursor.com/docs/hooks), "Hooks not available in cloud agents"). So a Cursor cloud agent has no plugin today.
    - Skill folders: the page lists `.agents/skills/` and `.cursor/skills/`, and the passage in requirement 1 adds `.claude/skills/`.
    - Hooks in a cloud agent: "If you have hooks defined in `.cursor/hooks.json` at the root of your project, cloud agents pick them up and run them during their work" (same page, "Cloud agent support").
-2. **One copy for every tool, and a skill shown twice:** answered by requirements 1 and 3. Cursor's page gives a rule for a subagent held in two folders and none for a skill, so the change ships one copy. That Cursor lists it once is part of requirement 15. Cursor would run a hook twice, and requirement 5 says how each acts once.
+2. **One copy for every tool, and a skill shown twice:** answered by requirements 1 and 3. Cursor's page gives a rule for a subagent held in two folders and none for a skill, so the change ships one copy. A person who sees Cursor list it twice opens an issue (area of concern 3). Cursor would run a hook twice, and requirement 5 says how each acts once.
 3. **Who confirms the outcome in Cursor:** carried to area of concern 3.
 4. **The tools of the other 10%:** carried forward. Area of concern 4 says what the build does without the answer.
 5. **Hooks from `.claude/settings.json` in a cloud session with one repository:** answered from two pages, and proved by requirement 15.

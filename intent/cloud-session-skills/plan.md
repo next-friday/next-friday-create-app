@@ -99,8 +99,8 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 13. In a project generated from one stack, run `claude -p "/sdlc-mode how do I start new work"`. Check: the reply comes from the skill and names `/sdlc-mode`.
 14. Run the `verifier` subagent and the advice review, review the commits, write the hash, and push. Check: the push passes the `pre-push` hook.
 15. Start a Claude Code cloud session with this repository alone on the pull request's branch. Send it `/sdlc-mode where does each change stand`, then ask it to push a commit that has no review. Check: the session lists `/sdlc-mode` and `/setup-sdlc`, and the `verifier` subagent; it refuses the push; and its command list holds no second `sdlc-mode` from `templates/base/.claude/skills/`.
-16. Post on the pull request the steps for the person who runs Cursor, in the editor and in a cloud agent, with Cursor's settings at their defaults. The engineer who accepted this plan names that person before this step, as the spec's area of concern 3 decides. That person writes the result there. Check: `/sdlc-mode` is listed once, `verifier` is listed once, a `git push` of a commit with no review is refused with one message, and the reply-shape check runs once when a turn ends.
-17. Write the results of steps 12, 13, 15, and 16 in the pull request's description, and keep the pull request green as `playbooks/review.md` says.
+16. Skipped: the product owner decided that no Cursor run blocks the merge, and that a person who finds the harness failing in Cursor opens an issue (spec, area of concern 3).
+17. Write the results of steps 12, 13, and 15 in the pull request's description, and keep the pull request green as `playbooks/review.md` says.
 18. Build spec requirement 19 in `src/setup.ts`, `src/create.ts`, their tests, `README.md`, and `templates/base/SETUP.md`. Check: `pnpm test` passes with the new cases, and a project generated from each stack passes its own `pnpm verify`.
 19. Build spec requirement 20 and run the eval cases of `sdlc-mode` that route a request. Check: `pnpm plan:check` passes its small-branch self-tests, `pnpm plugin:check` passes once the person's commits are on the branch, and a project generated from each stack passes its own `pnpm verify`.
 
@@ -108,10 +108,10 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 
 - **The riskiest step is 4.** The skills no longer hold the tool words in their sentences: the agent reads a second file to learn the path of the models rule and how to pass a subagent's model. An eval case of `setup-sdlc` or `sdlc-mode` may fail. Steps 1 and 12 compare each case before and after. A case's score also varies between two runs of the same text.
 - **Nothing can be pushed between step 2 and step 11.** `pnpm plugin:check` fails until a person has committed the protected files, and the `pre-push` hook runs it. Step 6 gives the person the text as soon as it is fixed, so that the wait runs beside the work.
-- **Cursor may give a mapped Claude Code entry an input without `cursor_version`** (spec, area of concern 7). Then a hook acts twice in Cursor's editor. Step 16 shows it; the build stops and the spec changes.
+- **Cursor may give a mapped Claude Code entry an input without `cursor_version`** (spec, area of concern 7). Then a hook acts twice in Cursor's editor. A person who sees it opens an issue, which starts a change to the spec.
 - **A change to a hook entry after step 6** makes the person commit a protected file again. Step 3 fixes the entries, and no later step changes `plugins/sdlc/adapters/hooks.json`.
 - **A session in this repository may find `templates/base/.claude/skills/` as a nested skills folder** and list each skill a second time under a longer name once it works on files there. Step 15 looks for it. It cannot happen in a generated project, which holds one `.claude/skills/`.
-- **A project's own policy sits in `.agents/skills/`, which Cursor also loads,** so Cursor may list that policy and the default. This is so today with the plugin's default. Step 16 notes what Cursor lists.
+- **A project's own policy sits in `.agents/skills/`, which Cursor also loads,** so Cursor may list that policy and the default. This is so today with the plugin's default. A person who sees a policy listed twice opens an issue.
 - **CI does not run `pnpm plugin:check`;** only the `pre-push` hook does, as today. A protected file changed on the host's web editor is checked at the next push.
 - **A project that already exists** keeps its plugin copy and its commands: the CLI copies the template once. Each takes this change through its own pull request.
 - **The release.** The changeset is `minor`. With no other changeset pending, merging the pull request publishes `@next-friday/create-app` 9.15.0.
@@ -131,8 +131,8 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - **1:** `ls .claude/skills templates/base/.claude/skills` lists the six skills in each. `git ls-files "*SKILL.md"` lists no copy outside `.claude/skills/`, `templates/base/.claude/skills/`, `plugins/sdlc/source/`, and `plugins/sdlc/adapters/claude-code/`.
 - **2:** `grep -L "disable-model-invocation: true"` over the six rendered `SKILL.md` files lists exactly the four policy skills.
 - **3:** `git grep -n "{{" plugins/sdlc/source .claude/skills` finds nothing; `pnpm plugin:check` passes its vendor-name check and its tool-word check; the eval cases that expect the path of the models rule pass in step 12.
-- **4:** `.claude/agents/verifier.md` holds `tools:` and `.cursor/agents/verifier.md` holds `readonly:`, in the root and in the template. Step 16 shows `verifier` once in Cursor.
-- **5:** `pnpm plugin:check` passes with the entries in place. Its hook cases hold, for each script, the twin case that gives no output, and the two snapshot cases of `check-reply-shape.sh`. Step 16 shows one refusal and one run of the checks.
+- **4:** `.claude/agents/verifier.md` holds `tools:` and `.cursor/agents/verifier.md` holds `readonly:`, in the root and in the template.
+- **5:** `pnpm plugin:check` passes with the entries in place. Its hook cases hold, for each script, the twin case that gives no output, and the two snapshot cases of `check-reply-shape.sh`. Step 15 shows one refusal in a Claude Code cloud session.
 - **6:** `pnpm plugin:check` passes its protected-file check. `ls templates/base/plugins .claude-plugin .cursor-plugin templates/base/.claude-plugin` finds none of them. A project generated in step 11 holds no `plugins/` folder.
 - **7:** `pnpm plugin:check` passes its check that every relative path a rendered skill or playbook names exists. `git grep -n "plugins/sdlc" plugins/sdlc/source/skills/sdlc-mode/playbooks/design.md` finds nothing.
 - **8:** the `git grep` of step 9. It also proves brand rule 4, which the spec cites as this requirement.
@@ -142,7 +142,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - **12:** `grep -n "plugin-dir\|/sdlc:" templates/base/.github/workflows/*.yml` finds nothing. Step 13 proves a non-interactive run.
 - **13:** `grep -n -i "several repositories\|Claude project\|sessionStart\|read-only\|Third-Party\|another agent tool" templates/base/SETUP.md plugins/sdlc/README.md` finds each limit in both files.
 - **14:** `git grep -n "next-friday-plugins\|marketplace" -- AGENTS.md CONTRIBUTING.md intent/README.md plugins/sdlc/README.md templates/base/SETUP.md templates/base/intent/README.md` finds no line on loading the harness. `grep -n "rules:sync" templates/base/SETUP.md` finds no line on a policy skill. `.github/CODEOWNERS` names the three new folders.
-- **15:** steps 13, 15, and 16, with their results in the pull request's description.
+- **15:** steps 13 and 15, with their results in the pull request's description.
 - **16:** steps 11 and 12.
 - **17:** `pnpm changesets:check` passes with one `minor` changeset. The reply that asks for this plan's acceptance names the version.
 - **18:** in step 12, `sdlc-mode/verifier-runs-on-the-chosen-model` passes its grader that the reply names haiku, and the `large` budget's effort or the nearest one haiku offers, as the default with no rule. `grep -n "role's default from the table" .claude/skills/sdlc-mode/SKILL.md` finds step 4.
