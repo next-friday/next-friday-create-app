@@ -34,6 +34,7 @@ type HookCase = {
   fileContents?: Record<string, string>;
   filesBeforeTurn?: string[];
   input: Record<string, unknown>;
+  merged?: boolean;
   name: string;
   savedReply?: string;
   snapshotArgument?: string;
@@ -91,7 +92,7 @@ const ignoredDirectories = new Set(["results"]);
 const manifestFields = {
   name: "sdlc",
   description:
-    "Runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a verifier subagent, and the default policies.",
+    "Runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a help skill, a verifier subagent, and the default policies.",
   license: "MIT",
   homepage: "https://github.com/next-friday/next-friday-create-app/tree/main/plugins/sdlc",
   repository: "https://github.com/next-friday/next-friday-create-app",
@@ -491,8 +492,9 @@ function writeCaseFiles(repository: string, files: string[], content: string): v
 /**
  * Commit every file of a hook case's repository that Git does not ignore.
  * @param repository The repository's path.
+ * @param isMerged Whether `origin/main` then points at the commit, as after a merge.
  */
-function commitCaseFiles(repository: string): void {
+function commitCaseFiles(repository: string, isMerged = false): void {
   for (const gitArguments of [
     ["add", "--all"],
     [
@@ -507,6 +509,7 @@ function commitCaseFiles(repository: string): void {
       "--message",
       "case",
     ],
+    ...(isMerged ? [["update-ref", "refs/remotes/origin/main", "HEAD"]] : []),
   ]) {
     execFileSync("git", gitArguments, {
       cwd: repository,
@@ -609,7 +612,7 @@ function runHookCase(script: string, hookCase: HookCase): string {
     writeCaseFiles(input.cwd, hookCase.changedFiles, "changed\n");
 
     if (hookCase.committed === true) {
-      commitCaseFiles(input.cwd);
+      commitCaseFiles(input.cwd, hookCase.merged);
     }
 
     return runHookScript(script, hookCase.argument, caseInput, stateDirectory);

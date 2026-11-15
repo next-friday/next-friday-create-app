@@ -80,37 +80,6 @@ Uploaded images, up to 10 MB each, are written to the backoffice container files
 
 On Vercel, deploy an app without its image. The Next.js preset takes precedence over the Dockerfile.
 
-<!-- deploy:railway -->
-
-## Deploy
-
-`.github/workflows/deploy.yml` deploys both apps and promotes one commit through `dev`, `uat`, and `prod`. `railway.json` sets the Railway health check to `/health`. Create one Railway service per app, with that service's Dockerfile path set to `apps/app/Dockerfile` or `apps/backoffice/Dockerfile`. The workflow stays off until you configure it:
-
-1. In Railway, create a project with one service for each app, one PostgreSQL database for the backoffice, and the environments `dev`, `uat`, and `prod`. The workflow passes these names to `railway up --environment`. In each backoffice environment, set the service variables:
-   - `DATABASE_URL` to `${{Postgres.DATABASE_URL}}`;
-   - `PAYLOAD_SECRET` to a separate long random string;
-   - `APP_URL` to that environment's public backoffice `https://` URL.
-
-   Create one project token per environment under **Project Settings → Tokens**. CI tests against PostgreSQL 17; change the image in `ci.yml` if the database runs another major version.
-
-2. In GitHub, create the `dev`, `uat`, and `prod` environments under **Settings → Environments**, and add to each:
-   - the `RAILWAY_TOKEN` secret: that environment's project token;
-   - the `RAILWAY_SERVICE_APP` variable: the Next.js service name;
-   - the `RAILWAY_SERVICE_BACKOFFICE` variable: the Payload service name;
-   - the `APP_URL` variable: the public Next.js `https://` URL;
-   - the `BACKOFFICE_URL` variable: the public backoffice `https://` URL.
-
-   Limit `dev`, `uat`, and `prod` to the `main` branch. Add the release managers as required reviewers on `prod` only; `dev` deploys on every push to `main`, so a reviewer there would hold each push. Environment secrets and variables in a private repository need GitHub Pro, Team, or Enterprise; required reviewers in a private repository need GitHub Enterprise.
-
-3. Set the repository variable `DEPLOY_ENABLED` to `true`. Each push to `main` that passes CI then deploys to `dev`. The workflow compares the commit with the commit of the last successful deploy to that environment, found from the successful `deploy.yml` and `ci.yml` runs on `main`, and runs `railway up` only for services whose packages changed. A promotion through `uat` or `prod` uses the same comparison against the commit last deployed there, so several commits still ship every changed service. The first deploy to an environment ships both services.
-4. Promote with **Actions → Deploy → Run workflow**, giving the environment and the full commit SHA. The workflow requires a successful CI run on `main` for that commit and a successful deployment to the previous environment, then waits for `/health` on each service it uploaded.
-
-Remove the workflow, `railway.json`, and the `deploy-dev` job in `ci.yml` if the project deploys elsewhere.
-
-<!-- deploy:end -->
-
-<!-- deploy:none -->
-
 ## Deploy
 
 The project has no deploy step yet. A deploy step needs:
@@ -118,8 +87,6 @@ The project has no deploy step yet. A deploy step needs:
 - a workflow under `.github/workflows/` that deploys;
 - the `prod` environment under **Settings → Environments**, with the release managers as its required reviewers;
 - the image the `Dockerfile` builds.
-
-<!-- deploy:end -->
 
 ## Mobile app
 
@@ -129,16 +96,6 @@ To add an Expo app, create it under `apps/mobile`:
 2. Use `@expo/fingerprint` with `expo-github-action/fingerprint` so a pull request requests a native build only when the native layer changed ([Expo fingerprint](https://docs.expo.dev/versions/latest/sdk/fingerprint/)).
 3. Keep a single `react-native` version in the workspace. Duplicate React Native versions in one monorepo are not supported ([Expo: Monorepos](https://docs.expo.dev/guides/monorepos/)).
 
-<!-- deploy:railway -->
-
-EAS Build and Submit replace Railway for that app. CI `--affected` already includes `apps/*` and `packages/*`, so an Expo app is skipped when it did not change.
-
-<!-- deploy:end -->
-
-<!-- deploy:none -->
-
 EAS Build and Submit deploy that app, in place of the project's deploy step. CI `--affected` already includes `apps/*` and `packages/*`, so an Expo app is skipped when it did not change.
-
-<!-- deploy:end -->
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.

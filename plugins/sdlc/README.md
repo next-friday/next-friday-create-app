@@ -1,16 +1,16 @@
 # sdlc harness
 
-The `sdlc` harness runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a setup skill, a verifier subagent, the default policies, and three hooks.
+The `sdlc` harness runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a help skill, a setup skill, a verifier subagent, the default policies, and three hooks.
 
 ## Where it loads from
 
 `pnpm plugin:sync` renders `source/` into the folders each agent tool reads from the repository, in this repository's root and in `templates/base/`, so a project holds the harness and installs nothing:
 
-| Path                         | Holds                                                                                                                                    |
-| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `.claude/skills/`            | The six skills. Under `sdlc-mode/`: the playbooks, `tool-words/` with each agent tool's words, and `hooks/` with the three hook scripts. |
-| `.claude/agents/verifier.md` | The subagent with the fields Claude Code reads.                                                                                          |
-| `.cursor/agents/verifier.md` | The subagent with the fields Cursor reads.                                                                                               |
+| Path                         | Holds                                                                                                                                      |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| `.claude/skills/`            | The seven skills. Under `sdlc-mode/`: the playbooks, `tool-words/` with each agent tool's words, and `hooks/` with the three hook scripts. |
+| `.claude/agents/verifier.md` | The subagent with the fields Claude Code reads.                                                                                            |
+| `.cursor/agents/verifier.md` | The subagent with the fields Cursor reads.                                                                                                 |
 
 Claude Code loads `.claude/skills/`, and so does Cursor: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). `.claude/settings.json` runs the hook scripts on the Claude Code events of `adapters/hooks.json`, and `.cursor/hooks.json` runs them on its Cursor events. A person commits both files, and `pnpm plugin:check` fails when one lacks an entry. Cursor also runs the entries of `.claude/settings.json` ([Cursor: Third Party Hooks](https://cursor.com/docs/reference/third-party-hooks)), so a script exits with no output when its input holds `cursor_version` and its argument is one a Claude Code entry passes. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 
@@ -34,7 +34,7 @@ Part of the harness does not load in these cases:
 
 ## Hooks
 
-`sdlc-status.sh` runs as a `SessionStart` hook for Claude Code and a `sessionStart` hook for Cursor. When a session starts, it lists each `intent/<change>/` whose intent and spec are not `Status: done.`, with its stage and who acts next, from the files alone, and prints nothing when there is no such change or no `jq`. Claude Code adds the plain text to the session's context; Cursor gets it as `additional_context` from `sdlc-status.sh json`. `pnpm plugin:check` runs the hook against `source/hooks/sdlc-status.cases.json`.
+`sdlc-status.sh` runs as a `SessionStart` hook for Claude Code and a `sessionStart` hook for Cursor. When a session starts, it lists each `intent/<change>/` whose intent and spec are not `Status: done.`, `Status: rejected.`, or `Status: withdrawn.`, with its stage and who acts next, and leaves out a fix folder, which holds only `plan.md`, once that plan is on `origin`'s default branch. It reads the files and that one Git ref, and prints nothing when there is no such change or no `jq`. Claude Code adds the plain text to the session's context; Cursor gets it as `additional_context` from `sdlc-status.sh json`. `pnpm plugin:check` runs the hook against `source/hooks/sdlc-status.cases.json`.
 
 `check-push.sh` runs before a shell command, as a `PreToolUse` hook on `Bash` for Claude Code and a `beforeShellExecution` hook for Cursor. It reads only `git push`, and refuses it when the last commit is not the hash in the file `git rev-parse --git-path sdlc-review` names, which `playbooks/open-pr.md` step 4 writes after the review, or when a commit on the branch changes a file that the branch's one `plan.md` does not name without changing that `plan.md`. The file is written by the agent, so the hook makes a skipped review visible rather than impossible; the review's findings on the pull request are the record a code owner reads.
 
@@ -77,5 +77,7 @@ The cases run with `claude plugin eval`, which loads the skills as the plugin `s
 | :--------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm evals:run`       | tagged `no-shell`    | `Write` and `Edit`.                                                                                                                    |
 | `pnpm evals:run:write` | tagged `needs-write` | `Write`, `Edit`, and `Bash`. `claude plugin eval` runs `Bash` only under an OS sandbox, which on Linux needs `bubblewrap` and `socat`. |
+
+For a change, run only the cases of what changed: add `--case <glob>` to the command, for example `pnpm evals:run:write --case 'deploy-*'`; `--case` filters cases by name glob (`claude plugin eval --help`). Run both commands in full before a release.
 
 A grader that requires no file, commit, or branch passes whatever the skill says unless its case may use the tool it forbids, so each case runs under the command that grants that tool.

@@ -4,7 +4,7 @@ This project runs an AI-native software development loop in Claude Code and Curs
 
 ## How a change flows
 
-Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 8 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, and `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                  |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
@@ -15,7 +15,7 @@ Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work i
 | Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` drives the pull request to green; the production gate hook blocks a deploy without approval    |
 | Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                               |
 
-A session starts with a list of where each change stands. A small, well-bounded change skips intent and spec: it goes from a `small/` branch to one pull request, which a code owner reviews (`.claude/skills/sdlc-mode/playbooks/small.md`).
+A session starts with a list of where each change stands. A small, well-bounded change that is not a defect skips intent and spec: it goes from a `small/` branch to one pull request, which a code owner reviews (`.claude/skills/sdlc-mode/playbooks/small.md`).
 
 The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads, and which Cursor loads too: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). The `verifier` subagent is in `.claude/agents/` for Claude Code and in `.cursor/agents/` for Cursor. The hook scripts are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them in Claude Code, and `.cursor/hooks.json` runs them in Cursor. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 
@@ -97,9 +97,6 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
   Rulesets in a private repository need GitHub Pro, Team, or Enterprise (**paid:** in a private repository; **free alternative:** make the repository public). Without a ruleset, a person can merge a pull request with no review, and the agent says so on each pull request.
 
 - **Secrets and variables → Actions → Variables:** in a private repository, set `CODE_SCANNING` to `true` to run CodeQL, Scorecard, and Dependency Review, which need GitHub Code Security there (**paid:** in a private repository; **free alternative:** public repositories run them without it). Set `CONTAINER_IMAGE` to `false` to skip the job that builds and scans the container image, for a project that ships no image.
-<!-- deploy:railway -->
-- **Secrets and variables → Actions → Variables:** set `DEPLOY_ENABLED` to `true` when each push to `main` that passes CI should deploy to `dev`; the README's deploy section sets up the environments.
-<!-- deploy:end -->
 - Create the `needs triage` label, which the issue forms apply: `gh label create "needs triage"`.
 
 **Check:** a test pull request shows the two required checks and asks for a code owner's review.
@@ -130,16 +127,10 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 - **Sources of truth (engineering lead):** for each artifact, name one system as the source of truth: this repository, an existing tool such as Jira, or, as the minimum, a link both ways (the record id in the file and the commit SHA in the record).
 - **Higher risk (engineering lead):** decide which changes count as higher risk. A tech lead or architect approves their specs and plans.
 - **Policies (each policy owner, with an engineer):** the harness ships a default for each area, `.claude/skills/<area>-policy/SKILL.md` (security: OWASP ASVS 5.0.0 Level 1; UX: WCAG 2.2 Level AA; compliance: the OECD privacy principles; brand: one declared source for every brand value). Review it. To replace a default, add the organization's own rules in `.agents/skills/<area>-policy/SKILL.md` in the project: the playbooks read that file in place of the default, and the `CODEOWNERS` line of step 2 for that area makes the policy owner its code owner. Do not edit the default. Test it: ask for a spec that touches the area, and confirm that the reply names `.agents/skills/<area>-policy/SKILL.md` among the policies it read.
-- **Production gate (engineering leadership, with change management and compliance):** name the release managers and add them as required reviewers on the `prod` environment, as the README's deploy section describes. `.agents/hooks/agent-production-gate.sh` blocks an agent's shell commands that dispatch a `prod`
-  <!-- deploy:railway -->
-  deploy, run a Railway command with `prod` as its environment,
-  <!-- deploy:end -->
-  <!-- deploy:none -->
-  deploy
-  <!-- deploy:end -->
-  or push a release tag. It does not read MCP tools. A release manager whose own agent session must do one of these starts the agent with `RELEASE_APPROVAL` set to the approval record, for example `RELEASE_APPROVAL=CHG-123 claude`. The value lifts the gate only when it matches the extended regular expression on the first line of `.agents/release-approval-form`, shipped as `^[A-Z]+-[0-9]+$`; set that line to the form of your organization's approval records. Each gate hook appends its decisions to `.agents/logs/gate-decisions.jsonl`, which git ignores: the time, the hook, the decision, the session, and the reason for a block, and, when the production gate is lifted, the approval value and the Git user name. A record holds no command text and no path.
+- **Production gate (engineering leadership, with change management and compliance):** name the release managers and add them as required reviewers on the `prod` environment, as **Deploy** below describes. `.agents/hooks/agent-production-gate.sh` blocks an agent's shell commands that dispatch a `prod` deploy or push a release tag. It does not read MCP tools. A release manager whose own agent session must do one of these starts the agent with `RELEASE_APPROVAL` set to the approval record, for example `RELEASE_APPROVAL=CHG-123 claude`. The value lifts the gate only when it matches the extended regular expression on the first line of `.agents/release-approval-form`, shipped as `^[A-Z]+-[0-9]+$`; set that line to the form of your organization's approval records. An agent runs a runbook, such as a rollback, only in such a session; a job, such as `Control band`, names a runbook in the intent it writes and never runs it. Each gate hook appends its decisions to `.agents/logs/gate-decisions.jsonl`, which git ignores: the time, the hook, the decision, the session, and the reason for a block, and, when the production gate is lifted, the approval value and the Git user name. A record holds no command text and no path.
 - **Review (tech lead):** `.agents/review.md` names this stack's generated files to skip; add a path when the project gains a generated file, then run `pnpm rules:sync`, which renders it to `REVIEW.md` for Claude Code Review. Once a month, rate the review findings and tune `.agents/review.md`.
-- **People without Git experience:** connect GitHub to Claude (claude.ai or Cowork), so Claude commits `intent.md` for them.
+- **Who writes intents (product owner):** decide who may send an idea with `/sdlc-mode` to write an intent, such as anyone in the team or only the product owner and the leads, and say so in `intent/README.md`. The `/intent/` line of `CODEOWNERS` in step 2 makes the product owner accept each one.
+- **The product owner in Claude (an Owner of the Claude organization):** give the product owner a Claude seat with GitHub connected (claude.ai, Cowork, or Claude Code), so that they write intents with `/sdlc-mode` and review specs themselves. Do the same for anyone else without Git experience who writes intents: Claude commits `intent.md` for them.
 
 ## 7. Later, as the guardrails mature
 
@@ -153,14 +144,22 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 Each workflow below stays off until the repository variable `CLAUDE_CI_ENABLED` is `true`; until then nothing runs, on a schedule or otherwise, and nothing calls a model. When it is on, each needs one secret: `CLAUDE_CODE_OAUTH_TOKEN`, a Claude subscription token from `claude setup-token`, or `ANTHROPIC_API_KEY`, an API key. Either works; with neither set the job fails and says so. The jobs run the small model with a turn cap. Jobs that write install the Claude GitHub App from step 4 on the repository, and every change they make arrives as a pull request.
 
-- **`Spec on intent merge`:** when an `intent.md` reaches `main` with `Status: draft.` or `Status: accepted.` and no `spec.md` beside it, which is how the product owner accepts it, runs `/sdlc-mode intent/<change>/intent.md`, so that `spec.md` arrives as a pull request for the product owner.
+- **`Spec on intent merge`:** when an `intent.md` reaches `main` with `Status: accepted.` and no `spec.md` beside it, which is how the product owner accepts it, runs `/sdlc-mode intent/<change>/intent.md`, so that `spec.md` arrives as a pull request for the product owner.
 - **`Claude fix loop`:** when a person with write access comments `@claude` on a line of a pull request from this repository, Claude addresses the comment and pushes to that branch. It cannot approve or merge.
 - **`triage` job of `Verify`:** when a pull request from this repository fails a check, reads the failed logs with the `Read` tool only and posts a three-line summary.
-- **`Control band`:** every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `pnpm bands:check metric-values.json`. A tier whose action is `diagnose` or `propose` runs `/sdlc-mode` with the finding, and the `pull_request` route opens an intent pull request. It never acts on production.
+- **`Control band`:** every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `pnpm bands:check metric-values.json`. It writes the detection report to the run's job summary, which is where a `log` tier's finding is read. A tier whose action is `diagnose` runs `/sdlc-mode` with the finding and writes the diagnosis to the job summary; a tier whose action is `propose` opens an intent pull request through the `pull_request` route. It never acts on production and never runs a runbook.
 
 On a machine, `pnpm loop:measure` reports the loop's measures. It is not part of `pnpm verify`.
 
 **Check:** with `CLAUDE_CI_ENABLED` unset, **Actions** shows these jobs as skipped.
+
+## Deploy
+
+**Who:** an engineer, with the release managers.
+
+The project ships no deploy workflow; set up your own. It needs a workflow under `.github/workflows/` that deploys the image the `Dockerfile` builds, and a `prod` environment under **Settings → Environments** with the release managers as its required reviewers. Name the production environment `prod`, so that the production gate recognizes a dispatch to it.
+
+**Check:** a run of your deploy workflow against `prod` waits for a release manager's approval.
 
 ## References
 
