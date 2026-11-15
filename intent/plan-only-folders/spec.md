@@ -1,6 +1,6 @@
 # Spec: Only a bug fix may skip the intent and the spec
 
-From `intent/plan-only-folders/intent.md`. Status: accepted.
+From `intent/plan-only-folders/intent.md`. Status: done.
 
 Request: "เขียน spec ของ plan-only-folders". Skills at aed01d3.
 
