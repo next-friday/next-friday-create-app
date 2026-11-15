@@ -4,30 +4,25 @@ Accepted by: @joetakara.
 
 ## Files that change
 
-- `plugins/sdlc/source/scripts/plan-check-self-test-cases.ts` (new): the data the self-tests of `check-plan.ts` read, so `check-plan.ts` stays under the `sonarjs/max-lines` limit of 1000 counted lines (`eslint` with a lowered limit reports 995 today). It holds:
-  - the `planOnlyCases` and `statusCases` tables and their constants, moved unchanged;
-  - `createChangeFolder` with the folders it makes, moved unchanged;
-  - the new `doneCases` table.
-    It imports nothing from `check-plan.ts`, so the two modules do not import each other.
 - `plugins/sdlc/source/scripts/check-plan.ts` (changed):
-  - It imports the tables and the folders from the new module.
+  - Stays under the `sonarjs/max-lines` limit of 1000 counted lines (`eslint` with a lowered limit reports 995 before this change). The self-tests that differ only in their Proof text, and those that differ only in their `Accepted by:` line, move into the tables `proofCases` and `acceptedLineCases`, with the same names, inputs, and expected messages. A sibling module is not used: the `nestjs`, `nextjs`, and `payload` stacks set no `allowImportingTsExtensions`, so a relative `.ts` import fails their type check.
   - A new `isBuildPlan(folder, changedPaths, isCodeChanged)` is true when all of these hold (requirements 1, 3, 4):
     - `isCodeChanged` is true;
     - `<folder>/plan.md` exists, and its path, normalised with `split(path.sep).join("/")` as `findStatusLines` does, is in `changedPaths`;
     - `<folder>/spec.md` exists.
-  - A new `findDoneProblems(isBuildPlan, statuses)` takes `[path, status]` pairs for the intent and the spec. A missing file is read as status `undefined` through an `existsSync` guard, as `readSpec` does. For each pair that is not `done`, it returns `<path>: the build pull request sets "Status: done." here; when a requirement stays unmet, its description names it` (requirements 1, 2, 6).
+  - A new `findDoneProblems(statuses)` takes `[path, status]` pairs for the intent and the spec of a folder that `isBuildPlan` accepts. A missing file is read as status `undefined` through an `existsSync` guard, as `readSpec` does. For each pair that is not `done`, it returns `<path>: the build pull request sets "Status: done." here; when a requirement stays unmet, its description names it` (requirements 1, 2, 6).
   - A new `findDoneLines(changeFolders)` reads `findBranchChanges()` once. It sets `isCodeChanged` from `requiresAcceptance` and returns the lines.
   - The main block runs `findDoneLines` only when no paths are given, as it runs `findBranchRuleLines`.
-  - The self-test list maps `doneCases` to `isBuildPlan` and `findDoneProblems`. Each case expects at most one line, because `isSelfTestFailure` expects exactly one problem when a message part is set. The "without done" case therefore leaves only the spec not done. The cleanup loop removes the new folders too.
+  - A new `doneCases` table holds the seven cases of requirement 8; the self-test list maps it to `isBuildPlan` and `findDoneProblems`. Each case expects at most one line, because `isSelfTestFailure` expects exactly one problem when a message part is set. The "without done" case therefore leaves only the spec not done. The cleanup loop removes the new folders too.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/build.md` (changed): the last sentence of step 8 becomes the text of requirement 7.
-- `templates/base/scripts/check-plan.ts`, `templates/base/scripts/plan-check-self-test-cases.ts`, `plugins/sdlc/adapters/**`, `templates/base/plugins/sdlc/**` (changed or new): rendered by `pnpm plugin:sync`, which copies every file in `plugins/sdlc/source/scripts/` (`scripts/sync-plugin.ts:671`).
+- `templates/base/scripts/check-plan.ts`, `plugins/sdlc/adapters/**`, `templates/base/plugins/sdlc/**` (changed): rendered by `pnpm plugin:sync`, which copies every file in `plugins/sdlc/source/scripts/` (`scripts/sync-plugin.ts:671`).
 - `.changeset/done-at-build.md` (new): `patch` for `@next-friday/create-app` (requirement 11).
 - `intent/done-at-build/plan.md` (new): this plan.
 - `intent/done-at-build/intent.md` and `spec.md` (changed): `Status: done.`, set before the first push (requirement 7). This branch is the first one the new rule checks.
 
 ## Order of work
 
-1. Move the tables and `createChangeFolder` into the new module. Check: `node plugins/sdlc/source/scripts/check-plan.ts` still reports 66 self-tests, and `pnpm lint:check` passes.
+1. Move the Proof-only and `Accepted by:`-only self-tests into `proofCases` and `acceptedLineCases`. Check: `node plugins/sdlc/source/scripts/check-plan.ts` still reports 66 self-tests, and `pnpm lint:check` passes.
 2. Add `isBuildPlan`, `findDoneProblems`, `findDoneLines`, the main block line, and `doneCases`. Commit `plan.md` and the code: `findBranchChanges` reads commits only. Check: the script reports 73 self-tests. On this branch, with `intent.md` and `spec.md` still `accepted`, it prints the requirement 2 line for both files. `pnpm lint:check` passes.
 3. Change `build.md` step 8, then run `pnpm plugin:sync`. Check: `pnpm plugin:check` passes, and `grep -rln "fails the push without it" plugins/sdlc templates/base/plugins/sdlc` finds the sentence in every rendered copy.
 4. Add the changeset, then set `Status: done.` in `intent.md` and `spec.md`. Check: `pnpm plan:check` and `pnpm changesets:check` pass.
@@ -39,7 +34,7 @@ Accepted by: @joetakara.
 
 - The riskiest steps are 2 and 1. `plan:check` runs on every push, in this repository and in every generated project:
   - a wrong `isBuildPlan` would block every branch, or none;
-  - a broken move would stop the self-tests.
+  - a broken table would drop a self-test.
     The unchanged self-test count after step 1, the seven new cases, and the failing run on this branch in step 2 cover these.
 - A branch that adds `spec.md` together with a plan and code can never pass. An added file must say accepted or rejected (`check-plan.ts:551`), but this rule demands done. `build.md` step 1 already needs the spec merged before the build, so the plan only states it.
 - Without `origin/main`, for example in a generated project before its first fetch, the rule says nothing, because `requiresAcceptance` is false. The other branch rules behave the same, and CI fetches the default branch.
