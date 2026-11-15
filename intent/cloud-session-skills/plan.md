@@ -52,7 +52,7 @@ Paths are from the repository root. "Rendered" means `pnpm plugin:sync` writes t
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/small.md` (new) and `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the small route and its row in step 1.
 - `plugins/sdlc/source/scripts/check-plan.ts` and `templates/base/scripts/check-plan.ts` (changed): a `small/` branch of at most five changed files needs no plan.
 - `plugins/sdlc/source/skills/sdlc-help/`, `plugins/sdlc/source/skills/sdlc-status/`, `plugins/sdlc/adapters/claude-code/evals/sdlc-help/`, `plugins/sdlc/source/hooks/check-verify.sh`, `plugins/sdlc/source/hooks/check-verify.cases.json` (deleted), with their rendered copies.
-- `plugins/sdlc/adapters/hooks.json` (changed): no `check-verify.sh` entry. `scripts/sync-plugin.ts` (changed): `--check` fails on a stale harness hook entry in a protected file.
+- `plugins/sdlc/adapters/hooks.json` (changed): no `check-verify.sh` entry. `scripts/sync-plugin.ts` (changed): `--check` fails on a stale harness hook entry in a protected file. Its rendered `plugins/sdlc/adapters/claude-code/.claude-plugin/plugin.json` names no help skill.
 - `.claude/settings.json`, `.cursor/hooks.json`, `templates/base/.claude/settings.json`, `templates/base/.cursor/hooks.json` (changed by a person): lose the `check-verify.sh` entries.
 - `AGENTS.md`, `CONTRIBUTING.md`, `templates/nodejs/AGENTS.md`, `templates/nestjs/AGENTS.md`, `templates/nextjs/AGENTS.md`, `templates/payload/AGENTS.md`, `templates/turborepo/AGENTS.md`, `plugins/sdlc/README.md`, `templates/base/SETUP.md` (changed): as requirement 20 says.
 

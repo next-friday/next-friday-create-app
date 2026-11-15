@@ -810,4 +810,18 @@ describe("create's first commit", () => {
       `Next steps:\n  cd hookless-api\n${commitLines("hookless-api", "nestjs")}\n  pnpm start:dev\n${followReadme} hookless-api/README.md.`,
     );
   });
+
+  it("wraps the command so that no line passes commitlint's 100 characters", async () => {
+    const name = "customer-billing-reconciliation-service-api";
+
+    await create([name, "--stack", "nestjs"]);
+
+    const message = vi.mocked(commitProject).mock.calls.at(-1)?.[1] ?? "";
+
+    expect(message.split("\n").filter(line => line.length > 100)).toEqual([]);
+
+    expect(message).toContain(
+      `Command: pnpm create @next-friday/app \\\n  ${name} \\\n  --stack nestjs --deploy none\n`,
+    );
+  });
 });
