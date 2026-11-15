@@ -5,19 +5,19 @@ Accepted by: @joetakara.
 ## Files that change
 
 - `plugins/sdlc/source/scripts/check-plan.ts` (changed):
-  - A new `readBranchName()` reads `GITHUB_HEAD_REF`, else `git branch --show-current`. `findBranchRuleLines` uses it.
-  - A new `isFixPlan(folder, planText, branchName)` replaces `isFixPlanFolder` at every call site, the test-edit rule in `findBranchRuleLines` included. `findPlanFileLines` and `findBranchRuleLines` treat a folder as a fix plan only when it has no intent and no spec, its title ends in "(fix)", and the branch starts with `fix/` (requirements 1, 3).
-  - `checkPlan` reports a changed plan with no spec that is not a fix plan, with a message that says to start from an intent with `/sdlc:sdlc-mode` (requirement 2).
-  - `findStatusLines` passes to `findStatusProblems` whether the folder's `plan.md` is on the default branch, so an added `done` file passes beside a merged plan (requirement 5).
-  - Self-tests (requirement 10) each name the `fix.md` rule they prove:
+  - A new `readBranchName()` reads `GITHUB_HEAD_REF`, else `git branch --show-current`. `findPlanLines` and `findBranchRuleLines` use it (requirement 3).
+  - A new `findPlanOnlyProblems(planText, branchName)` refuses a changed plan whose folder has no intent and no spec unless its title ends in "(fix)" and the branch starts with `fix/`. Its message says to start from an intent with `/sdlc:sdlc-mode` (requirements 1, 2).
+  - `findPlanFileLines` runs it, and only plans the branch changes reach it, so the six unchanged plan-only folders on `main` still pass (requirement 4).
+  - The test-edit rule keeps `isFixPlanFolder`, so a plan-only folder on any branch still may not edit a test the default branch holds.
+  - `findStatusLines` passes `findStatusProblems` whether the folder's `plan.md` is on the default branch, so an added `done` file passes beside a merged plan (requirement 5).
+  - Self-tests (requirement 10), the first three each naming the `fix.md` step they prove:
     - a fix title on a `fix/` branch;
     - a fix title on another branch;
     - no fix title on a `fix/` branch;
-    - an added `done` file beside a merged plan;
-    - an added `done` file with no merged plan;
     - `readBranchName` with `GITHUB_HEAD_REF` set;
-    - an unchanged plan-only plan is not checked;
-    - `findFixTestEditProblems` still fires for a fix plan on a `fix/` branch.
+    - an added `done` file beside a merged plan;
+    - an added `done` file with no merged plan.
+  - The status self-tests become one table, so the file stays under the 1000-line lint limit.
   - `pnpm plugin:sync` renders the script to `templates/base/scripts/check-plan.ts`.
 - `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): a reply rule that a blocked gate is reported, never routed around with another artifact (requirement 6).
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/fix.md` (changed): step 6 says `pnpm plan:check` enforces the "(fix)" title and the `fix/` branch (requirement 7).
@@ -46,7 +46,7 @@ Accepted by: @joetakara.
 - 1: self-tests for a fix title on a `fix/` branch, a fix title on another branch, and no fix title on a `fix/` branch.
 - 2: the self-test message names `/sdlc:sdlc-mode`, plus a probe folder refused on this branch.
 - 3: the self-test of `readBranchName` with `GITHUB_HEAD_REF` set.
-- 4: the self-test that an unchanged plan-only plan is not checked.
+- 4: `pnpm plan:check` passes on `feat/plan-only-folders` while the six plan-only folders sit unchanged on `main`; a probe plan-only folder added on that branch is refused.
 - 5: self-tests for an added `done` file beside a merged plan and with no merged plan.
 - 6, 7: `grep` finds the rule in `SKILL.md` and the check named in `fix.md`.
 - 8: `pnpm plan:check` passes with the twelve new files, and the review checks each file against its pull request.

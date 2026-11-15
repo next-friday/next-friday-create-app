@@ -373,6 +373,35 @@ function isFixPlanFolder(folder: string): boolean {
 
 const unplannedBranchPrefixes = ["dependabot/", "changeset-release/"];
 const headReferenceVariable = "GITHUB_HEAD_REF";
+const fixBranchPrefix = "fix/";
+const fixTitleSuffix = "(fix)";
+
+/**
+ * Read the name of the branch under check.
+ * @param environment The process environment; CI sets `GITHUB_HEAD_REF` for a pull request, whose checkout has no branch name.
+ * @returns The branch name.
+ */
+function readBranchName(environment: NodeJS.ProcessEnv = process.env): string {
+  const headReference = environment[headReferenceVariable];
+
+  return headReference === undefined || headReference === ""
+    ? runGit(["branch", "--show-current"])
+    : headReference;
+}
+
+/**
+ * Find a plan with no intent and no spec that `playbooks/fix.md` does not allow: only a fix plan, titled "(fix)" on a `fix/` branch, skips the intent and the spec.
+ * @param planText The plan's content.
+ * @param branchName The branch under check.
+ * @returns At most one message.
+ */
+function findPlanOnlyProblems(planText: string, branchName: string): string[] {
+  const isFixTitle = (splitLines(planText).at(0) ?? "").trimEnd().endsWith(fixTitleSuffix);
+  const message = `the folder has no ${intentFileName} and no ${specFileName}; only a bug fix, titled "${fixTitleSuffix}" on a "${fixBranchPrefix}" branch, may skip them. Start from an intent with /sdlc:sdlc-mode`;
+
+  return isFixTitle && branchName.startsWith(fixBranchPrefix) ? [] : [message];
+}
+
 const planPathPattern = /^intent\/[^/]+\/plan\.md$/;
 const manifestFileName = "package.json";
 const testDirectoryPattern = /(?:^|\/)(?:tests?|e2e|__tests__)\//;
@@ -510,11 +539,19 @@ function readStatus(text: string): string | undefined {
  * Find an intent or a spec whose status would be wrong once its pull request merges.
  * @param status The status the branch writes, or undefined when there is none.
  * @param isAdded Whether the branch adds the file, which the default branch does not have yet.
+ * @param isPlanMerged Whether the folder's `plan.md` is already on the default branch, so the change was built before this file was written.
  * @returns At most one message.
  */
-function findStatusProblems(status: string | undefined, isAdded: boolean): string[] {
+function findStatusProblems(
+  status: string | undefined,
+  isAdded: boolean,
+  isPlanMerged = false,
+): string[] {
   if (isAdded) {
-    return status !== undefined && addedStatuses.has(status)
+    const isAllowed =
+      status !== undefined && (addedStatuses.has(status) || (isPlanMerged && status === "done"));
+
+    return isAllowed
       ? []
       : [
           `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
@@ -617,6 +654,28 @@ function createChangeFolder(fileNames: string[]): string {
 const fixPlanFolder = createChangeFolder([planFileName]);
 const intentOnlyFolder = createChangeFolder([intentFileName, planFileName]);
 const specOnlyFolder = createChangeFolder([specFileName, planFileName]);
+const fixBranch = "fix/health";
+const notDecisionMessage = "merging it is the decision";
+const doneLine = "Status: done.";
+const draftLine = "Status: draft.";
+const intentStartMessage = "Start from an intent";
+
+const planOnlyCases: [string, string, string, string?][] = [
+  ["fix.md 4, 6: a (fix) plan on fix/ skips the spec", "a (fix)", fixBranch],
+  ["fix.md 6: a (fix) plan off fix/ may not", "a (fix)", "feat/a", intentStartMessage],
+  ["fix.md 4: a plan with no (fix) may not", "a", fixBranch, intentStartMessage],
+];
+
+const statusCases: [string, string, boolean, boolean, string?][] = [
+  ["adds done beside a merged plan", doneLine, true, true],
+  ["adds done with no merged plan", doneLine, true, false, notDecisionMessage],
+  ["adds accepted", "Status: accepted.", true, false],
+  ["adds rejected", "Status: rejected.", true, false],
+  ["adds draft", draftLine, true, false, notDecisionMessage],
+  ["marks a merged file done", doneLine, false, false],
+  ["removes a merged status line", "# Intent: a", false, false, "keeps a status line"],
+  ["sets a merged file to draft", draftLine, false, false, "never goes back"],
+];
 
 const selfTestCases: SelfTestCase[] = [
   {
@@ -918,33 +977,25 @@ const selfTestCases: SelfTestCase[] = [
       ? [acceptanceRequiredProblem]
       : [],
   },
+  ...planOnlyCases.map(([name, title, branchName, expectedMessagePart]) => ({
+    name,
+    expectedMessagePart,
+    problems: findPlanOnlyProblems(`# Plan: ${title}\n`, branchName),
+  })),
   {
-    name: "a branch that adds a file as accepted",
-    problems: findStatusProblems(readStatus("Author: @a (B). Status: accepted.\n"), true),
+    name: "the branch comes from GITHUB_HEAD_REF when CI sets it",
+    problems:
+      readBranchName({
+        [headReferenceVariable]: fixBranch,
+      }) === fixBranch
+        ? []
+        : [fixBranch],
   },
-  {
-    name: "a branch that adds a file as rejected",
-    problems: findStatusProblems(readStatus("Author: @a (B). Status: rejected.\n"), true),
-  },
-  {
-    name: "a branch that adds a file as draft",
-    expectedMessagePart: "merging it is the decision",
-    problems: findStatusProblems(readStatus("Author: @a (B). Status: draft.\n"), true),
-  },
-  {
-    name: "a branch that marks a merged file done",
-    problems: findStatusProblems(readStatus("From `intent/a/intent.md`. Status: done.\n"), false),
-  },
-  {
-    name: "a branch that removes a merged file's status line",
-    expectedMessagePart: "keeps a status line",
-    problems: findStatusProblems(readStatus("# Intent: a\n"), false),
-  },
-  {
-    name: "a branch that sets a merged file back to draft",
-    expectedMessagePart: "never goes back",
-    problems: findStatusProblems(readStatus("From `intent/a/intent.md`. Status: draft.\n"), false),
-  },
+  ...statusCases.map(([name, statusLine, isAdded, isPlanMerged, expectedMessagePart]) => ({
+    name,
+    expectedMessagePart,
+    problems: findStatusProblems(readStatus(`${statusLine}\n`), isAdded, isPlanMerged),
+  })),
   {
     name: "a branch that changes code and adds a plan",
     problems: findUnplannedChangeProblems(["src/a.ts", "intent/a/plan.md"], "feat/a"),
@@ -1081,17 +1132,24 @@ function findMissingPlanLines(changeFolders: string[]): string[] {
  * Check one existing plan against the spec beside it.
  * @param planPath Path of the plan.
  * @param isAcceptanceRequired Whether the branch changes a file outside `intent/`.
+ * @param branchName The branch under check, or undefined when the default branch is missing.
  * @returns One line per problem.
  */
-function findPlanFileLines(planPath: string, isAcceptanceRequired: boolean): string[] {
+function findPlanFileLines(
+  planPath: string,
+  isAcceptanceRequired: boolean,
+  branchName?: string,
+): string[] {
   const folder = path.dirname(planPath);
+  const planText = readFileSync(planPath, "utf8");
+  const isFixPlan = isFixPlanFolder(folder);
+  const specText = readSpec(path.join(folder, specFileName));
+  const planOnly = isFixPlan && branchName !== undefined ? [branchName] : [];
 
-  return checkPlan(
-    readFileSync(planPath, "utf8"),
-    readSpec(path.join(folder, specFileName)),
-    isAcceptanceRequired,
-    isFixPlanFolder(folder),
-  ).map(message => `${planPath}: ${message}`);
+  return [
+    ...planOnly.flatMap(name => findPlanOnlyProblems(planText, name)),
+    ...checkPlan(planText, specText, isAcceptanceRequired, isFixPlan),
+  ].map(message => `${planPath}: ${message}`);
 }
 
 /**
@@ -1124,8 +1182,10 @@ function findPlanLines(planPaths: string[]): string[] {
           readFileSync(planPath, "utf8").trim(),
     );
 
+  const branchName = branchChanges === undefined ? undefined : readBranchName();
+
   const checkedLines = changedPlanPaths.flatMap(planPath =>
-    findPlanFileLines(planPath, isAcceptanceRequired),
+    findPlanFileLines(planPath, isAcceptanceRequired, branchName),
   );
 
   return [...missingBranchLines, ...missingLines, ...checkedLines];
@@ -1156,12 +1216,7 @@ function findBranchRuleLines(): string[] {
     return [];
   }
 
-  const headReference = process.env[headReferenceVariable];
-
-  const branchName =
-    headReference === undefined || headReference === ""
-      ? runGit(["branch", "--show-current"])
-      : headReference;
+  const branchName = readBranchName();
 
   const modifiedPaths = runGit([
     "diff",
@@ -1260,9 +1315,14 @@ function findStatusLines(changeFolders: string[]): string[] {
       const isAdded =
         defaultBranchText === undefined && !renamedPaths.has(filePath.split(path.sep).join("/"));
 
+      const planPath = path.join(path.dirname(filePath), planFileName);
+      const isPlanMerged = readDefaultBranchFile(branchChanges.mergeBase, planPath) !== undefined;
+
       return defaultBranchText === text.trim()
         ? []
-        : findStatusProblems(readStatus(text), isAdded).map(message => `${filePath}: ${message}`);
+        : findStatusProblems(readStatus(text), isAdded, isPlanMerged).map(
+            message => `${filePath}: ${message}`,
+          );
     });
 }
 
