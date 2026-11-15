@@ -486,7 +486,7 @@ function commitCommands(commit: CommitResult | undefined, message: string): stri
  */
 function firstCommitNote(commit: CommitResult | undefined, message: string): string {
   if (commit === "branched") {
-    const subject = message.split("\n", 1)[0] ?? "";
+    const subject = message.split("\n", 1).join("");
 
     return `Committed on the branch ${bootstrapBranch}. Push it and open a pull request titled "${subject}". `;
   }
