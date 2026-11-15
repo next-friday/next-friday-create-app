@@ -1,16 +1,16 @@
 # sdlc harness
 
-The `sdlc` harness runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a setup skill, a verifier subagent, the default policies, and three hooks.
+The `sdlc` harness runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a help skill, a setup skill, a verifier subagent, the default policies, and three hooks.
 
 ## Where it loads from
 
 `pnpm plugin:sync` renders `source/` into the folders each agent tool reads from the repository, in this repository's root and in `templates/base/`, so a project holds the harness and installs nothing:
 
-| Path                         | Holds                                                                                                                                    |
-| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `.claude/skills/`            | The six skills. Under `sdlc-mode/`: the playbooks, `tool-words/` with each agent tool's words, and `hooks/` with the three hook scripts. |
-| `.claude/agents/verifier.md` | The subagent with the fields Claude Code reads.                                                                                          |
-| `.cursor/agents/verifier.md` | The subagent with the fields Cursor reads.                                                                                               |
+| Path                         | Holds                                                                                                                                      |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| `.claude/skills/`            | The seven skills. Under `sdlc-mode/`: the playbooks, `tool-words/` with each agent tool's words, and `hooks/` with the three hook scripts. |
+| `.claude/agents/verifier.md` | The subagent with the fields Claude Code reads.                                                                                            |
+| `.cursor/agents/verifier.md` | The subagent with the fields Cursor reads.                                                                                                 |
 
 Claude Code loads `.claude/skills/`, and so does Cursor: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). `.claude/settings.json` runs the hook scripts on the Claude Code events of `adapters/hooks.json`, and `.cursor/hooks.json` runs them on its Cursor events. A person commits both files, and `pnpm plugin:check` fails when one lacks an entry. Cursor also runs the entries of `.claude/settings.json` ([Cursor: Third Party Hooks](https://cursor.com/docs/reference/third-party-hooks)), so a script exits with no output when its input holds `cursor_version` and its argument is one a Claude Code entry passes. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 

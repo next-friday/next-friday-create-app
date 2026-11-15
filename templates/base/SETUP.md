@@ -4,7 +4,7 @@ This project runs an AI-native software development loop in Claude Code and Curs
 
 ## How a change flows
 
-Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. Only a person starts it; nothing routes work into it by itself. `/sdlc-help` explains how the workflow runs and starts no work, and `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                  |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |

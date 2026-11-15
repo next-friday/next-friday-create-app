@@ -8,7 +8,7 @@ Accepted by: @joetakara.
 - `plugins/sdlc/source/skills/sdlc-help/SKILL.md` (restored): the help skill as it was before its removal, with the `small` route added to its map.
 - `.claude/skills/sdlc-help/SKILL.md`, `templates/base/.claude/skills/sdlc-help/SKILL.md`, `plugins/sdlc/adapters/claude-code/skills/sdlc-help/SKILL.md` (rendered by `pnpm plugin:sync`).
 - `scripts/sync-plugin.ts` and the rendered `plugins/sdlc/adapters/claude-code/.claude-plugin/plugin.json` (changed): the plugin description names the help skill again.
-- `plugins/sdlc/README.md` and `templates/base/SETUP.md` (changed): seven skills, and the sentence on `/sdlc-help`.
+- `plugins/sdlc/README.md` (changed): seven skills, a help skill among them. `templates/base/SETUP.md` (changed): the sentence on `/sdlc-help`.
 - `intent/cloud-session-skills/spec.md` (changed): requirement 20 keeps `sdlc-help` and removes only `sdlc-status`.
 - `.changeset/restore-sdlc-help.md` (new): a `minor` changeset.
 
