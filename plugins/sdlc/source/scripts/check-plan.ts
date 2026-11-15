@@ -381,7 +381,7 @@ const fixTitleSuffix = "(fix)";
  * @param environment The process environment; CI sets `GITHUB_HEAD_REF` for a pull request, whose checkout has no branch name.
  * @returns The branch name.
  */
-function readBranchName(environment: NodeJS.ProcessEnv = process.env): string {
+function readBranchName(environment: Record<string, string | undefined> = process.env): string {
   const headReference = environment[headReferenceVariable];
 
   return headReference === undefined || headReference === ""
