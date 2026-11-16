@@ -22,5 +22,7 @@
    - **A nit.** Never push for nits alone, because a push can dismiss the code owner's approval. Answer it, and carry the fix in the next push that has another reason.
 
 6. **Gate: a code owner approves the pull request, and a person merges it.** You never approve it and never merge it. Write the **Now** line from the case `playbooks/open-pr.md` step 5 found, for a branch with no pull request too. It names the **Gate** and the person who merges. It names a code owner's review only when the host requires one, which is the case **Review required**. For **No review required**, it says that a person can merge once the required checks pass. For **Rules unavailable**, it says that nothing on this plan can require a review. Say that a person sends `/sdlc-mode review` with the pull request when a check fails or a comment needs an answer.
+   - **A requirement of the change has no result.** Write the **Not yet** line: it names each such requirement and says not to merge. The **Now** line then asks the person to decide between getting the result first and accepting the change without it, and it tells nobody to merge. A person's answer that accepts the change lifts the **Not yet** line.
+   - **The pull request adds a changeset.** Say that the merge opens a release pull request, and name the package and the version that merging that one publishes.
 
 **Hands off to:** `playbooks/deploy.md`. The project's deploy workflow runs it, or an agent when a person asks, once the pull request is merged.
