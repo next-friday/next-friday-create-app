@@ -40,17 +40,19 @@
     "check:publint": "publint",
     "clean": "rm -rf dist coverage *.tsbuildinfo .eslintcache node_modules/.cache",
     "dev": "tsdown --watch",
-    "evals:run": "claude plugin eval plugins/sdlc/adapters/claude-code --scaffold --tag no-shell --allow-tools Write Edit",
-    "evals:run:write": "claude plugin eval plugins/sdlc/adapters/claude-code --scaffold --tag needs-write --allow-tools Write Edit Bash",
+    "evals:run": "claude plugin eval plugins/sdlc/adapters/claude-code --scaffold --tag no-shell --allow-tools Write Edit --judge-model sonnet",
+    "evals:run:scripts": "claude plugin eval plugins/sdlc/adapters/claude-code --scaffold --tag script-only --allow-tools Write Edit Bash",
+    "evals:run:write": "claude plugin eval plugins/sdlc/adapters/claude-code --scaffold --tag needs-write --allow-tools Write Edit Bash --judge-model sonnet",
     "format": "prettier --write --cache .",
     "format:check": "prettier --check --cache . && editorconfig-checker",
     "gates:check": "node scripts/check-agent-gates.ts",
+    "harness:check": "node plugins/sdlc/source/scripts/check-harness.ts --self-test",
     "knip": "knip",
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
     "loop:measure": "node plugins/sdlc/source/scripts/measure-loop.ts",
     "prepack": "pnpm build",
-    "plan:check": "node plugins/sdlc/source/scripts/check-plan.ts",
+    "plan:check": "node plugins/sdlc/source/scripts/check-plan.ts && node plugins/sdlc/source/scripts/check-records.ts",
     "plugin:check": "node scripts/sync-plugin.ts --check",
     "plugin:sync": "node scripts/sync-plugin.ts",
     "prepare": "husky",
@@ -62,7 +64,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm rules:check && pnpm plugin:check && pnpm gates:check && pnpm plan:check && pnpm bands:check && pnpm changesets:check && pnpm lint:check && pnpm format:check && pnpm sort-package-json:check && pnpm typecheck && pnpm test:coverage && pnpm knip && pnpm build && pnpm check:publint"
+    "verify": "pnpm rules:check && pnpm plugin:check && pnpm gates:check && pnpm plan:check && pnpm harness:check && pnpm bands:check && pnpm changesets:check && pnpm lint:check && pnpm format:check && pnpm sort-package-json:check && pnpm typecheck && pnpm test:coverage && pnpm knip && pnpm build && pnpm check:publint"
   },
   "dependencies": {
     "@clack/prompts": "1.8.1"

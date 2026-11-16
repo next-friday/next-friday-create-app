@@ -42,6 +42,31 @@ export function findMissingReferences(
     .map(target => `${filePath}: ${target} names no rendered file`);
 }
 
+const playbookPathPattern = /`(playbooks\/[\w-]+\.md)`/g;
+
+/**
+ * Find the playbook paths a skill's own file writes with no folder before them and that name no rendered file.
+ * @param filePath Path of the rendered file from the repository root.
+ * @param text File content.
+ * @param renderedFiles Path of every rendered file, from the repository root.
+ * @returns One message per path that the skill's own folder does not hold; a playbook names its siblings this way, so a file in `playbooks/` gives none.
+ */
+export function findMissingPlaybooks(
+  filePath: string,
+  text: string,
+  renderedFiles: string[],
+): string[] {
+  if (path.basename(path.dirname(filePath)) === "playbooks") {
+    return [];
+  }
+
+  const renderedPaths = new Set(renderedFiles.map(file => path.resolve(file)));
+
+  return Array.from(text.matchAll(playbookPathPattern), match => match[1] ?? "")
+    .filter(target => !renderedPaths.has(path.resolve(path.dirname(filePath), target)))
+    .map(target => `${filePath}: ${target} names no rendered file`);
+}
+
 /**
  * Find the names a file must not contain.
  * @param filePath Path of the file from the repository root.

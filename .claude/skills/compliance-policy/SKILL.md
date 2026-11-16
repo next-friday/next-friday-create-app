@@ -1,6 +1,7 @@
 ---
 name: compliance-policy
-description: The organization's compliance policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches collecting, storing, showing, sending, or deleting data about a person.
+description: The organization's compliance policy. It covers collecting, storing, showing, sending, or deleting data about a person.
+disable-model-invocation: true
 ---
 
 # Compliance policy
@@ -11,13 +12,13 @@ Standard: the eight basic principles of the [OECD Guidelines Governing the Prote
 
 1. A change that collects, stores, shows, sends, or deletes no data about a person meets this policy; say "Does not apply" and why.
 2. For any other change, the spec lists each kind of personal data the change touches and answers the eight points below for it. Each answer becomes a requirement.
-   1. **Collection limitation:** what is collected, by what lawful and fair means, and how the person knows or consents.
-   2. **Data quality:** why each field is relevant to the purpose, and how it is kept accurate and up to date.
-   3. **Purpose specification:** the purpose, stated no later than the moment of collection.
-   4. **Use limitation:** who else receives the data. A use that is incompatible with the stated purpose needs the person's consent or the authority of law.
-   5. **Security safeguards:** how the data is protected against loss and against unauthorised access, destruction, use, modification, or disclosure. The security policy gives the rules.
-   6. **Openness:** where a person can read what data is held, its main purposes, and who controls it.
-   7. **Individual participation:** how a person learns whether data about them is held, gets it within a reasonable time and at no excessive charge, is given reasons when a request is denied, and challenges it; when the challenge succeeds, the data is erased, rectified, completed, or amended.
-   8. **Accountability:** who in the organization answers for these points.
+   1. **Collection limitation.** What is collected, by what lawful and fair means, and how the person knows or consents.
+   2. **Data quality.** Why each field is relevant to the purpose, and how it is kept accurate and up to date.
+   3. **Purpose specification.** The purpose, stated no later than the moment of collection.
+   4. **Use limitation.** Who else receives the data. A use that is incompatible with the stated purpose needs the person's consent or the authority of law.
+   5. **Security safeguards.** How the data is protected against loss and against unauthorised access, destruction, use, modification, or disclosure. The security policy gives the rules.
+   6. **Openness.** Where a person can read what data is held, its main purposes, and who controls it.
+   7. **Individual participation.** How a person learns whether data about them is held, gets it within a reasonable time and at no excessive charge, is given reasons when a request is denied, and challenges it; when the challenge succeeds, the data is erased, rectified, completed, or amended.
+   8. **Accountability.** Who in the organization answers for these points.
 3. A point the spec cannot answer from the files is an area of concern. Never guess a legal basis.
 4. Whether a specific law applies is a decision for the owner; raise it as an area of concern.

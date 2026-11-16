@@ -45,11 +45,12 @@
     "expected": "Changes in intent/ that are not done (send /sdlc-mode to work on one):\n- intent/app-version: plan accepted; the engineer builds it, then a code owner reviews the pull request\n- intent/fix-crash: plan accepted; the engineer builds it, then a code owner reviews the pull request\n"
   },
   {
-    "name": "a rejected and a withdrawn intent: not listed",
+    "name": "a rejected, a withdrawn, and a replaced intent: not listed",
     "input": {},
     "fileContents": {
       "intent/dropped/intent.md": "# Intent: Dropped\n\nAuthor: @a (b). Status: rejected.\n",
-      "intent/pulled/intent.md": "# Intent: Pulled\n\nAuthor: @a (b). Status: withdrawn.\n"
+      "intent/pulled/intent.md": "# Intent: Pulled\n\nAuthor: @a (b). Status: withdrawn.\n",
+      "intent/superseded/intent.md": "# Intent: Superseded\n\nAuthor: @a (b). Status: replaced.\n"
     },
     "expected": "Changes in intent/ that are not done (send /sdlc-mode to work on one):\n- intent/app-version: plan accepted; the engineer builds it, then a code owner reviews the pull request\n"
   }

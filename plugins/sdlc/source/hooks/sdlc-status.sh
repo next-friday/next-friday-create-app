@@ -23,7 +23,7 @@ for folder in "$project"/intent/*/; do
   intent_status=$(read_status "$folder/intent.md")
   spec_status=$(read_status "$folder/spec.md")
   case " $intent_status $spec_status " in
-    *" done "* | *" rejected "* | *" withdrawn "*) continue ;;
+    *" done "* | *" rejected "* | *" withdrawn "* | *" replaced "*) continue ;;
   esac
   if [ -f "$folder/plan.md" ] && [ ! -f "$folder/intent.md" ] && [ ! -f "$folder/spec.md" ] && [ -n "$default_ref" ] \
     && git -C "$project" cat-file -e "$default_ref:intent/$change/plan.md" 2> /dev/null; then

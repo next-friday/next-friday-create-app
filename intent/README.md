@@ -8,6 +8,18 @@ This folder is the intent home. Every change starts here as an `intent.md`, and 
 - **Build.** The engineer sends `/sdlc-mode build` with the spec's path, and starts in plan mode with `intent.md` and `spec.md`. The engineer accepts the plan in the session; `plan.md` and the code go in one pull request, with one changeset for the whole change. When implementation departs from the plan, `plan.md` changes in the same commit.
 - **Done.** A change is `done` when the tree meets every numbered requirement of its `spec.md`. The agent sets `Status: done.` in `intent.md` and `spec.md` in the pull request that meets the last requirement, and the code owner's approval of that pull request accepts it.
 
+## Reading the records
+
+A record is history. The code in the tree and `AGENTS.md` say what is true now. The `Status:` line of `intent.md` and `spec.md` holds one of five words:
+
+- `accepted`: merged, and the work is still open.
+- `done`: the tree met every numbered requirement of the spec when the build merged.
+- `rejected`: the product owner decided against it.
+- `withdrawn`: given up after it merged.
+- `replaced`: a later change replaced what it describes.
+
+List the changes that are still open with `grep -rLE "Status: (done|rejected|withdrawn|replaced)\." --include=intent.md intent`.
+
 ## Which file holds what
 
 The bullets above say who writes and who decides each file. What each file answers:

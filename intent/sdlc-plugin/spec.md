@@ -1,6 +1,6 @@
 # Spec: Ship the SDLC playbook as the `sdlc` plugin
 
-From `intent/sdlc-plugin/intent.md`. Status: done.
+From `intent/sdlc-plugin/intent.md`. Status: replaced.
 
 Request: "/sdlc intent/sdlc-plugin/intent.md". Skills at `90c2ed0`.
 

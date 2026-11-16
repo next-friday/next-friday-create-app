@@ -1,0 +1,19 @@
+{
+  "exceptions": [],
+  "paths": [
+    ".agents",
+    ".claude",
+    ".cursor",
+    ".github",
+    ".husky",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "REVIEW.md",
+    "SETUP.md",
+    "bands.yaml",
+    "intent/README.md",
+    "lessons/README.md",
+    "scripts"
+  ],
+  "stack": "turborepo"
+}

@@ -27,3 +27,13 @@ graders:
     input_match: '\bgit\s+merge\b|\bpr\s+merge\b'
     min: 0
     max: 0
+  - name: no-push-or-pull-request-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bpush\b|\bpr\s+create\b'
+    min: 0
+    max: 0
+  - name: reply-asks-to-accept-or-correct-the-plan
+    type: regex
+    pattern: '^\*\*Now:\*\*[^\n]*\baccept'
+    flags: imu

@@ -1,6 +1,7 @@
 ---
 name: ux-policy
-description: The organization's UX policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches a page, a screen, a form, or any other user interface.
+description: The organization's UX policy. It covers a page, a screen, a form, or any other user interface.
+disable-model-invocation: true
 ---
 
 # UX policy

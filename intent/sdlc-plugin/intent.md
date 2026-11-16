@@ -1,6 +1,6 @@
 # Intent: Ship the SDLC playbook as the `sdlc` plugin
 
-Author: Joe Takara (Developer Productivity). Status: done.
+Author: Joe Takara (Developer Productivity). Status: replaced.
 
 ## Problem
 

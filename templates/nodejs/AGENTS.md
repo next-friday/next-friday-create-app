@@ -4,20 +4,21 @@ TypeScript HTTP service on `node:http`, without a framework, on pnpm and Node.js
 
 ## Commands
 
-| Task                        | Command                                             | Healthy output                                                                                       |
-| :-------------------------- | :-------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| Start with reload           | `pnpm start:dev`                                    | The only output is `$ node --env-file-if-exists=.env --watch src/main.ts`; `GET /health` answers 200 |
-| Run the build               | `pnpm start`, which builds first                    | `$ tsc -p tsconfig.build.json`, then nothing                                                         |
-| One test                    | `pnpm vitest run src/port.test.ts -t "<test name>"` | `Tests  1 passed \| 9 skipped (10)`                                                                  |
-| Unit tests                  | `pnpm test`, or `pnpm test:coverage`                | `Tests  15 passed (15)`                                                                              |
-| What `pre-push` runs        | `pnpm check`                                        | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
-| Every check                 | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
-| Render rules after a change | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                                                             |
+| Task                                          | Command                                             | Healthy output                                                                                       |
+| :-------------------------------------------- | :-------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| Start with reload                             | `pnpm start:dev`                                    | The only output is `$ node --env-file-if-exists=.env --watch src/main.ts`; `GET /health` answers 200 |
+| Run the build                                 | `pnpm start`, which builds first                    | `$ tsc -p tsconfig.build.json`, then nothing                                                         |
+| One test                                      | `pnpm vitest run src/port.test.ts -t "<test name>"` | `Tests  1 passed \| 9 skipped (10)`                                                                  |
+| Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                | `Tests  15 passed (15)`                                                                              |
+| What `pre-push` runs                          | `pnpm check`                                        | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
+| Every check                                   | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
+| Render rules after a change                   | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                                                             |
+| Compare the harness with a create-app version | `pnpm harness:check <version>`                      | ends with `none differs.`                                                                            |
 
 ## Verifying your work
 
 - Build: `pnpm build` (prints nothing after `$ tsc -p tsconfig.build.json`)
-- Test: `pnpm test:coverage` (all green, then the coverage summary; never skip or delete a failing test)
+- Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
 Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.

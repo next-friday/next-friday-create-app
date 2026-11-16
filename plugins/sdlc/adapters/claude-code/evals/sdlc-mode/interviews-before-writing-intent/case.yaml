@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: interviews-before-writing-intent
 expected_outcome: |
-  The agent restates the goal, picks the plan playbook, and asks one question, with the answer it recommends first, by the session's question tool or in the reply. It writes no intent yet.
+  The agent restates the goal, picks the intent playbook, and asks one question, with the answer it recommends first, by the session's question tool or in the reply. It writes no intent yet.
 graders:
   - name: no-commit-command
     type: tool_used
@@ -13,5 +13,31 @@ graders:
     type: tool_used
     tool: Bash
     input_match: '\bgit\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch\s+(?!-{1,2}(?:a|r|v|vv|l|list|show-current|contains|merged|no-merged|all|remotes|format|sort|points-at)\b)[\w-]|worktree\s+add)'
+    min: 0
+    max: 0
+  - name: reply-restates-the-request
+    type: regex
+    pattern: '(?=[\s\S]*Goal:)(?=[\s\S]*Problem:)(?=[\s\S]*Smallest change:)'
+    flags: mu
+  - name: no-intent-written
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md'
+    min: 0
+    max: 0
+  - name: no-intent-created
+    type: regex
+    pattern: 'intent\.md$'
+    flags: m
+    match: not_contains
+    target: files
+  - name: reply-lists-the-seven-steps-with-a-status
+    type: regex
+    pattern: '(?=[\s\S]*Let the originator describe the problem in their own words[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Read the code, the docs, and the existing `?intent/`? folders[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Interview the originator, one question at a time[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Write `?intent/<change>/intent\.md`? from the template below[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the originator corrects the draft[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Commit `?intent\.md`? on a new branch[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the product owner accepts or rejects the intent[^\n]*\b(?:done|open|skip:))'
+    flags: mu
+  - name: no-push-or-pull-request-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bpush\b|\bpr\s+create\b'
     min: 0
     max: 0

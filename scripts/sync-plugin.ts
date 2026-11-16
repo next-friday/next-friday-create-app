@@ -13,6 +13,7 @@ import {tmpdir} from "node:os";
 
 import {
   findEscapingReferences,
+  findMissingPlaybooks,
   findMissingReferences,
   findVendorNames,
   findVersionKey,
@@ -45,6 +46,7 @@ type HookCase = {
   input: Record<string, unknown>;
   merged?: boolean;
   name: string;
+  projectFolder?: string;
   savedReply?: string;
   snapshotArgument?: string;
 };
@@ -94,6 +96,18 @@ const projectSkillsDirectory = ".claude/skills";
 const toolWordsDirectory = "sdlc-mode/tool-words";
 const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-mode/hooks`;
 const pluginLoaderScript = path.join(templateRoot, ".cursor", "hooks", "load-project-plugins.sh");
+
+const repositoryVariables = execFileSync("git", ["rev-parse", "--local-env-vars"], {
+  encoding: "utf8",
+})
+  .trim()
+  .split("\n");
+
+// Git sets these in a hook, where they point every git command of a hook case at this repository instead of the case's own.
+for (const name of repositoryVariables) {
+  Reflect.deleteProperty(process.env, name);
+}
+
 const textExtensions = new Set([".json", ".md", ".sh", ".ts", ".yaml", ".yml"]);
 const ignoredDirectories = new Set(["results"]);
 
@@ -480,13 +494,8 @@ function runHookCase(script: string, hookCase: HookCase): string {
     if (hookCase.fileContents !== undefined) {
       const repository = createCaseRepository(stateDirectory);
 
-      const headCommit = execFileSync("git", ["rev-parse", "HEAD"], {
-        cwd: repository,
-        encoding: "utf8",
-      }).trim();
-
       for (const [file, content] of Object.entries(hookCase.fileContents)) {
-        writeCaseFiles(repository, [file], content.split("{HEAD}").join(headCommit));
+        writeCaseFiles(repository, [file], content);
       }
 
       return runHookScript(
@@ -509,9 +518,16 @@ function runHookCase(script: string, hookCase: HookCase): string {
       cwd: createCaseRepository(stateDirectory),
     };
 
+    const project = path.join(input.cwd, hookCase.projectFolder ?? "");
+
+    mkdirSync(project, {
+      recursive: true,
+    });
+
     const caseInput = {
       ...input,
-      workspace_roots: [input.cwd],
+      cwd: project,
+      workspace_roots: [project],
     };
 
     writeCaseFiles(input.cwd, hookCase.filesBeforeTurn ?? [], "before\n");
@@ -985,6 +1001,17 @@ const selfTestCases: SelfTestCase[] = [
     ),
   },
   {
+    name: "a playbook path that the skill's own folder does not hold fails",
+    expected: [
+      `${path.join("p", "skills", "a", "SKILL.md")}: playbooks/b.md names no rendered file`,
+    ],
+    problems: findMissingPlaybooks(
+      path.join("p", "skills", "a", "SKILL.md"),
+      "see `playbooks/b.md`",
+      [path.join("p", "skills", "c", "playbooks", "b.md")],
+    ),
+  },
+  {
     name: "a reference to a file the source does not render fails",
     expected: [
       `${path.join("p", "skills", "a", "SKILL.md")}: ../c/SKILL.md names no rendered file`,
@@ -1233,7 +1260,10 @@ if (selfTestFailures.length > 0) {
       ...[...expected].flatMap(([file, content]) => findToolWords(file, content)),
       ...[...expected]
         .filter(([file]) => file.includes(`${path.sep}skills${path.sep}`))
-        .flatMap(([file, content]) => findMissingReferences(file, content, renderedFiles)),
+        .flatMap(([file, content]) => [
+          ...findMissingReferences(file, content, renderedFiles),
+          ...findMissingPlaybooks(file, content, renderedFiles),
+        ]),
       ...listFiles(pluginRoot, true)
         .filter(file => textExtensions.has(path.extname(file)))
         .map(file => path.join(pluginRoot, file))

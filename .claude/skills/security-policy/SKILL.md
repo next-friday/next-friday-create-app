@@ -1,6 +1,7 @@
 ---
 name: security-policy
-description: The organization's security policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches authentication, sessions, access control, input handling, files, tokens, cryptography, secrets, or how the app talks to other systems.
+description: The organization's security policy. It covers authentication, sessions, access control, input handling, files, tokens, cryptography, secrets, or how the app talks to other systems.
+disable-model-invocation: true
 ---
 
 # Security policy

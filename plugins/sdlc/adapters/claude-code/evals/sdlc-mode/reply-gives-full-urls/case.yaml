@@ -21,3 +21,8 @@ graders:
     pattern: '^(?!\.git/config\.worktree$|\.git/objects/info/alternates$).+$'
     flags: m
     match: not_contains
+  - name: reply-has-no-bare-number
+    type: regex
+    pattern: '^(?![^\n]*https://github\.com/acme/shop/pull/42)[^\n]*(?:#42\b|\b(?:pull request|PR) 42\b)'
+    flags: imu
+    match: not_contains

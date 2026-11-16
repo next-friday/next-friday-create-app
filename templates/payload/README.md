@@ -10,7 +10,7 @@ pnpm install
 pnpm dev
 ```
 
-The CLI created `.env` from `.env.example` and set `PAYLOAD_SECRET` to a random secret. Before `pnpm dev`, set in `.env`:
+The CLI created `.env` from `.env.example` and set `PAYLOAD_SECRET` to a random secret. Before `pnpm dev`, `pnpm build`, `pnpm check`, or `pnpm verify`, set in `.env`:
 
 - `DATABASE_URL`: a PostgreSQL database.
 - `APP_URL`: the URL you open the app at, such as `http://localhost:3000`.

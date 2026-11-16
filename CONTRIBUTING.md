@@ -137,9 +137,9 @@ This repository is the source of truth for intents, specs, plans, and lessons (t
 | Play (playbook page)                     | Where it lives                                                                                                         |
 | :--------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
 | Intent home (12–13)                      | [`intent/`](intent/README.md)                                                                                          |
-| Interviews in Plan and Build (12, 19–20) | `plugins/sdlc/source/skills/sdlc-mode/playbooks/plan.md` and `build.md`                                                |
+| Interviews in Plan and Build (12, 19–20) | `plugins/sdlc/source/skills/sdlc-mode/playbooks/intent.md` and `build.md`                                              |
 | Requirements and design (15–17)          | `plugins/sdlc/source/skills/sdlc-mode/playbooks/design.md` and the four policy skills in `plugins/sdlc/source/skills/` |
-| Feedback loop (31–33)                    | **Verifying your work** in `AGENTS.md`, `.agents/verifier.md`, and `plugins/sdlc/source/agents/verifier.md`            |
+| Feedback loop (31–33)                    | **Verifying your work** in `AGENTS.md` and `plugins/sdlc/source/agents/verifier.md`                                    |
 | PR review loop, step 4 (38)              | `REVIEW.md` (rendered from `.agents/review.md`) and `plugins/sdlc/source/skills/sdlc-mode/playbooks/review.md`         |
 | CI/CD step 1, triage (45)                | The **Triage failed build** job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)                              |
 | Closing the loop (48–51)                 | [`bands.yaml`](bands.yaml)                                                                                             |

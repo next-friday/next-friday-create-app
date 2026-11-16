@@ -35,8 +35,8 @@ Run the narrowest check that covers the change while you work. Git hooks run the
 | `pre-merge-commit` | blocks merge commits on `main`                                                                                                                                  |
 | `pre-push`         | blocks pushes to `main` except the push that creates it, then `pnpm check`: the static checks, the unit tests related to your changes, and the production build |
 
-- **Scans:** CI also runs coverage, the build, the container image, and the secret, SAST, OSV, CodeQL, dependency-review, and OpenSSF Scorecard scans. CodeQL, dependency-review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Dependabot and OSV-Scanner report vulnerable dependencies.
-- **Coverage:** CI requires 95% line coverage on changed lines in `src/`, except `main.ts`, which starts the server and handles the shutdown signals. Keep other logic out of it, as `src/port.ts` and `src/server.ts` do.
+- **Scans.** CI also runs coverage, the build, the container image, and the secret, SAST, OSV, CodeQL, dependency-review, and OpenSSF Scorecard scans. CodeQL, dependency-review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Dependabot and OSV-Scanner report vulnerable dependencies.
+- **Coverage.** CI requires 95% line coverage on changed lines in `src/`, except `main.ts`, which starts the server and handles the shutdown signals. Keep other logic out of it, as `src/port.ts` and `src/server.ts` do.
 
 Run `pnpm verify` for repository changes.
 

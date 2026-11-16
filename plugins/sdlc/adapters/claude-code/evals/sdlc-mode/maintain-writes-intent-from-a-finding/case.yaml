@@ -13,3 +13,50 @@ graders:
     tool: Bash
     input_match: '\bgit\s+(?:checkout|switch)\s+(?:-\S+\s+)*(?!main$).+'
     min: 1
+  - name: intent-has-the-five-headings
+    type: tool_used
+    tool: Write
+    input_match: 'intent/[^/\"]+/intent\.md[\s\S]*## Problem[\s\S]*## Proposed outcome[\s\S]*## Affected users and systems[\s\S]*## Constraints[\s\S]*## Open questions'
+    min: 1
+  - name: problem-holds-the-error-and-where
+    type: tool_used
+    tool: Write
+    input_match: '## Problem(?=(?:(?!## Proposed outcome)[\s\S])*Cannot read properties of undefined \(reading .status.\))(?=(?:(?!## Proposed outcome)[\s\S])*GET /health)(?=(?:(?!## Proposed outcome)[\s\S])*src/health/health\.controller\.ts)'
+    min: 1
+  - name: no-file-written-outside-intent
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":\s*"(?![^"]*\bintent/)'
+    min: 0
+    max: 0
+  - name: no-file-edited-outside-intent
+    type: tool_used
+    tool: Edit
+    input_match: '"file_path":\s*"(?![^"]*\bintent/)'
+    min: 0
+    max: 0
+  - name: no-file-created-outside-intent
+    type: regex
+    pattern: '^(?!intent/|\.git/).+$'
+    flags: m
+    match: not_contains
+    target: files
+  - name: reply-names-the-service-owner
+    type: regex
+    pattern: "service owner"
+    flags: imu
+  - name: no-question-tool
+    type: tool_used
+    tool: AskUserQuestion
+    min: 0
+    max: 0
+  - name: now-line-asks-no-question
+    type: regex
+    pattern: '^\*\*Now:\*\*[^\n]*\?'
+    flags: mu
+    match: not_contains
+  - name: open-questions-is-not-none
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md[\s\S]*## Open questions(?:\\n)+(?!None)[^\\]'
+    min: 1

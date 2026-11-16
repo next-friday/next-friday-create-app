@@ -4,20 +4,21 @@ Next.js App Router web app with React and Tailwind CSS, in TypeScript on pnpm an
 
 ## Commands
 
-| Task                               | Command                                                     | Healthy output                                                               |
-| :--------------------------------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------- |
-| Start with reload                  | `pnpm dev`                                                  | `✓ Ready in 301ms`                                                           |
-| One test                           | `pnpm vitest run app/health/route.test.ts -t "<test name>"` | `Tests  1 passed (1)`                                                        |
-| Unit tests                         | `pnpm test`, or `pnpm test:coverage`                        | `Tests  2 passed (2)`                                                        |
-| End-to-end tests                   | `pnpm test:e2e`                                             | `1 passed (5.6s)`                                                            |
-| What `pre-push` runs               | `pnpm check`                                                | exits 0; the last output is the route table of `next build` with `ƒ /health` |
-| Every check except `pnpm test:e2e` | `pnpm verify`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health` |
-| Render rules after a change        | `pnpm rules:sync`                                           | `Synced 37 agent rule files; 0 updated.`                                     |
+| Task                                          | Command                                                     | Healthy output                                                               |
+| :-------------------------------------------- | :---------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| Start with reload                             | `pnpm dev`                                                  | `✓ Ready in 301ms`                                                           |
+| One test                                      | `pnpm vitest run app/health/route.test.ts -t "<test name>"` | `Tests  1 passed (1)`                                                        |
+| Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                        | `Tests  2 passed (2)`                                                        |
+| End-to-end tests                              | `pnpm test:e2e`                                             | `1 passed (5.6s)`                                                            |
+| What `pre-push` runs                          | `pnpm check`                                                | exits 0; the last output is the route table of `next build` with `ƒ /health` |
+| Every check except `pnpm test:e2e`            | `pnpm verify`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health` |
+| Render rules after a change                   | `pnpm rules:sync`                                           | `Synced 37 agent rule files; 0 updated.`                                     |
+| Compare the harness with a create-app version | `pnpm harness:check <version>`                              | ends with `none differs.`                                                    |
 
 ## Verifying your work
 
 - Build: `pnpm build` (prints the `Route (app)` table)
-- Test: `pnpm test:coverage` (all green, then the coverage summary; never skip or delete a failing test)
+- Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
 Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.

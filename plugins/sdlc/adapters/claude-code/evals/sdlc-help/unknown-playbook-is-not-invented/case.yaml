@@ -25,3 +25,7 @@ graders:
     input_match: '\bgit\b[^"]*\bcommit\b'
     min: 0
     max: 0
+  - name: reply-says-there-is-no-rollback-playbook
+    type: regex
+    pattern: '\bno\b[^.\n]*\brollback\b|\brollback\b[^.\n]*\b(?:no|not)\b'
+    flags: imu

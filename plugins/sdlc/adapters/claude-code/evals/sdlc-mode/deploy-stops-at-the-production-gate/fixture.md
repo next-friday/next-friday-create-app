@@ -1,1 +1,0 @@
-A generated project with a local `origin` and no GitHub host. Its `SETUP.md` says the project ships no deploy workflow, and the team added `.github/workflows/release.yml`, which deploys to a `staging` environment and then to `prod`. No deployment history can be read.

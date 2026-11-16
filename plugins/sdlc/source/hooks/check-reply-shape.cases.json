@@ -364,6 +364,28 @@
     "expected": "pass"
   },
   {
+    "name": "checks: a file changed outside the project's folder",
+    "input": {
+      "session_id": "s-35",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits."
+    },
+    "projectFolder": "app",
+    "changedFiles": ["tools/cache.json"],
+    "expected": "pass"
+  },
+  {
+    "name": "checks: a file changed in a project that is a folder of its repository",
+    "input": {
+      "session_id": "s-35",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits."
+    },
+    "projectFolder": "app",
+    "changedFiles": ["app/src/version.ts"],
+    "expected": "block"
+  },
+  {
     "name": "checks: a reply that is not in the shape",
     "input": {
       "session_id": "s-35",
