@@ -38,7 +38,8 @@ When Claude makes a mistake twice, add the correction here.
 - **Commit messages**: commitlint accepts only `Co-Authored-By` trailers.
 - **Issues**: open an issue only to hand work to another person. A pull request closes an issue that already exists with `Closes #<issue>`.
 - **Testing a skill**: run it with Claude Code in a project generated after `pnpm plugin:sync` and `pnpm build`: `claude -p "/sdlc-mode <request>" --model <small model> --strict-mcp-config`. After you change `AGENTS.md`, a skill, or a hook, read the trace of a failing run first, then run only the eval cases of what changed, one run each, with `--case <name> --runs 1`, as `plugins/sdlc/README.md` says. Run `pnpm evals:run` and `pnpm evals:run:write` in full once, before the pull request is ready to merge, and report every case's score. A case below 3 of 3 is not passed.
-- **One change, one pull request**: `plan.md`, the code, and one changeset go in one pull request; the engineer accepts the plan in the session.
+- **One change, one pull request**: `plan.md`, the code, and one changeset go in one pull request; the engineer accepts the plan in the session. Keep a task on its branch and its pull request: never open another branch or pull request for it unless the user says so, and when a check blocks the branch, stop and ask.
+- **Pull requests stay open**: never close a pull request, and never take a step that closes one, such as renaming its branch. Every pull request is merged.
 - **Accepted is not built**: check each requirement of a spec against the tree before you call a change done.
 - **What belongs in the repository**: the change, its reason, and the checks. No date, log, history, mistake count, token figure, or session note.
 - **CI-only jobs**: Template, Consumer Smoke, Compatibility, Dependency Audit, and the scorecard, secret-scan, zizmor, and dependency-review workflows run only in CI. Do not report them as local results.
