@@ -1,13 +1,45 @@
 #!/usr/bin/env sh
 set -e
 
-# The first push of a new repository creates main on the remote, so it is the only push allowed there.
-while read -r _ _ remote_ref remote_oid; do
+default_branch=main
+changed_files=
+are_changed_files_known=true
+
+while read -r _ local_oid remote_ref remote_oid; do
+  # The first push of a new repository creates main on the remote, so it is the only push allowed there.
   if [ "$remote_ref" = refs/heads/main ] && [ -n "$(printf '%s' "$remote_oid" | tr -d 0)" ]; then
     echo "pre-push: do not push to main. Push your branch and open a pull request." >&2
     exit 1
   fi
+
+  [ -n "$(printf '%s' "$local_oid" | tr -d 0)" ] || continue
+
+  if [ -n "$(printf '%s' "$remote_oid" | tr -d 0)" ]; then
+    base=$remote_oid
+  else
+    base=$(git merge-base "origin/$default_branch" "$local_oid" 2> /dev/null) || base=
+  fi
+
+  if [ -n "$base" ] && ref_files=$(git -c core.quotePath=false diff --no-renames --name-only "$base" "$local_oid" 2> /dev/null); then
+    changed_files="$changed_files
+$ref_files"
+  else
+    are_changed_files_known=false
+  fi
 done
+
+if [ "$are_changed_files_known" = true ] && printf '%s\n' "$changed_files" | node scripts/changed-documents.ts; then
+  pnpm rules:check && pnpm plan:check && pnpm format:check || {
+    echo "pre-push: pnpm rules:check, pnpm plan:check, or pnpm format:check failed. Fix the failures above, commit, then push again." >&2
+    exit 1
+  }
+  exit 0
+fi
+
+if [ -f turbo.json ] && git rev-parse --quiet --verify "origin/$default_branch" > /dev/null; then
+  export TURBO_FILTER="${TURBO_FILTER:---affected}"
+  export TURBO_SCM_BASE="${TURBO_SCM_BASE:-origin/$default_branch}"
+fi
 
 pnpm check || {
   echo "pre-push: pnpm check failed. Fix the failures above, commit, then push again." >&2

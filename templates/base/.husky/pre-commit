@@ -13,5 +13,4 @@ command -v gitleaks > /dev/null 2>&1 || {
 }
 
 gitleaks git --pre-commit --redact --staged --no-banner --config .gitleaks.toml
-pnpm rules:check
 pnpm exec lint-staged

@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: build-interviews-before-planning
 expected_outcome: |
-  The spec intent/app-version/spec.md is merged and has no plan, and the request names no files, order of work, or tests. The agent reads the intent, the spec, and the code, asks one question, with the answer it recommends first, by the session's question tool or in the reply, shows no plan yet, changes no code and makes no commit.
+  The spec intent/app-version/spec.md is merged and has no plan, and the request names no files, order of work, or tests. The agent reads the intent, the spec, and the code, asks one round of numbered questions in plain chat text, with the answer it recommends beside each, shows no plan yet, changes no code and makes no commit.
 context:
   scaffold_script: scaffold.sh
 graders:

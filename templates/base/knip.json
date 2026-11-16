@@ -1,4 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["scripts/changed-documents.ts"],
   "ignoreDependencies": ["@swc/core"]
 }

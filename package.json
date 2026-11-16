@@ -64,7 +64,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm rules:check && pnpm plugin:check && pnpm gates:check && pnpm plan:check && pnpm harness:check && pnpm bands:check && pnpm changesets:check && pnpm lint:check && pnpm format:check && pnpm sort-package-json:check && pnpm typecheck && pnpm test:coverage && pnpm knip && pnpm build && pnpm check:publint"
+    "verify": "node plugins/sdlc/source/scripts/run-checks.ts rules:check plugin:check gates:check plan:check harness:check bands:check changesets:check lint:check format:check sort-package-json:check typecheck test:coverage knip build --then check:publint"
   },
   "dependencies": {
     "@clack/prompts": "1.8.1"

@@ -375,6 +375,16 @@
     "expected": "pass"
   },
   {
+    "name": "checks: a file written outside the project and none changed inside it",
+    "input": {
+      "session_id": "s-35",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits."
+    },
+    "changedFiles": ["../outside-the-project/notes.json"],
+    "expected": "pass"
+  },
+  {
     "name": "checks: a file changed in a project that is a folder of its repository",
     "input": {
       "session_id": "s-35",

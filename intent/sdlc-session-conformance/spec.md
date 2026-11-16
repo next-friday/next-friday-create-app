@@ -1,6 +1,6 @@
 # Spec: Make an sdlc-mode session follow its playbook and claim only what it proved
 
-From `intent/sdlc-session-conformance/intent.md`. Status: accepted.
+From `intent/sdlc-session-conformance/intent.md`. Status: done.
 
 Request: "Write the spec", translated from the originator's Thai. Skills at `9827ef2`.
 

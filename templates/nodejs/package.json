@@ -13,7 +13,7 @@
   "scripts": {
     "bands:check": "node scripts/check-bands.ts",
     "build": "tsc -p tsconfig.build.json",
-    "check": "pnpm verify:static && pnpm test:changed && pnpm build",
+    "check": "node scripts/run-checks.ts verify:static test:changed build",
     "clean": "rm -rf dist coverage .eslintcache node_modules/.cache",
     "depcruise": "depcruise --config .dependency-cruiser.json src eslint.config.ts vitest.config.ts",
     "format": "prettier --write --cache .",
@@ -38,8 +38,8 @@
     "test:coverage": "vitest run --coverage --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm verify:static && pnpm test:coverage && pnpm build",
-    "verify:static": "pnpm rules:check && pnpm gates:check && pnpm plan:check && pnpm bands:check && pnpm lint:check && pnpm format:check && pnpm sort-package-json:check && pnpm typecheck && pnpm knip && pnpm depcruise"
+    "verify": "node scripts/run-checks.ts verify:static test:coverage build",
+    "verify:static": "node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check format:check sort-package-json:check typecheck knip depcruise"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",

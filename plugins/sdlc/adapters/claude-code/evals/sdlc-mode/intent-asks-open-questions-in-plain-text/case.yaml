@@ -1,0 +1,31 @@
+schema_version: "1.1"
+name: intent-asks-open-questions-in-plain-text
+expected_outcome: |
+  The request reports a problem and says nothing of why it matters or what is out of scope. The agent asks what the problem is, why it matters, and what is out of scope as open questions in plain chat text, offers no answer to them, and does not use the question picker. It writes no intent yet.
+graders:
+  - name: no-question-picker
+    type: tool_used
+    tool: AskUserQuestion
+    min: 0
+    max: 0
+  - name: reply-asks-a-question
+    type: regex
+    pattern: '\?'
+    flags: mu
+  - name: reply-offers-no-recommended-answer
+    type: regex
+    pattern: '\brecommend'
+    flags: imu
+    match: not_contains
+  - name: no-intent-written
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md'
+    min: 0
+    max: 0
+  - name: no-intent-created
+    type: regex
+    pattern: 'intent\.md$'
+    flags: m
+    match: not_contains
+    target: files

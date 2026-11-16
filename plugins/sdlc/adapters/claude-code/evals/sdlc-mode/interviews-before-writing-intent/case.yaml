@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: interviews-before-writing-intent
 expected_outcome: |
-  The agent restates the goal, picks the intent playbook, and asks one question, with the answer it recommends first, by the session's question tool or in the reply. It writes no intent yet.
+  The agent restates the goal, picks the intent playbook, and asks its open questions in plain chat text, with no answer offered. It writes no intent yet. The restated goal is the session's first message, so the grader reads the whole trace.
 graders:
   - name: no-commit-command
     type: tool_used
@@ -17,6 +17,7 @@ graders:
     max: 0
   - name: reply-restates-the-request
     type: regex
+    target: trace
     pattern: '(?=[\s\S]*Goal:)(?=[\s\S]*Problem:)(?=[\s\S]*Smallest change:)'
     flags: mu
   - name: no-intent-written
@@ -33,7 +34,7 @@ graders:
     target: files
   - name: reply-lists-the-seven-steps-with-a-status
     type: regex
-    pattern: '(?=[\s\S]*Let the originator describe the problem in their own words[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Read the code, the docs, and the existing `?intent/`? folders[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Interview the originator, one question at a time[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Write `?intent/<change>/intent\.md`? from the template below[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the originator corrects the draft[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Commit `?intent\.md`? on a new branch[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the product owner accepts or rejects the intent[^\n]*\b(?:done|open|skip:))'
+    pattern: '(?=[\s\S]*Let the originator describe the problem in their own words[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Read the code, the docs, and the existing `?intent/`? folders[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Interview the originator until they have said five things[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Write `?intent/<change>/intent\.md`? from the template below[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the originator corrects the draft[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Commit `?intent\.md`? on a new branch[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the product owner accepts or rejects the intent[^\n]*\b(?:done|open|skip:))'
     flags: mu
   - name: no-push-or-pull-request-command
     type: tool_used

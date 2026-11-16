@@ -2,13 +2,15 @@ import {describe, expect, it} from "vitest";
 import {readdirSync, readFileSync} from "node:fs";
 
 describe("turborepo template", () => {
-  it("lets turbo run the dev task of every app at once", () => {
-    const turbo = JSON.parse(
-      readFileSync(new URL("../templates/turborepo/turbo.json", import.meta.url), "utf8"),
-    ) as {concurrency: string};
+  it.each(["dev", "start"])("lets turbo run the %s task of every app at once", script => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../templates/turborepo/package.json", import.meta.url), "utf8"),
+    ) as {scripts: Record<string, string>};
 
+    const concurrencyMatch = /--concurrency=(?<limit>\d+)/u.exec(manifest.scripts[script] ?? "");
+    const concurrency = concurrencyMatch?.groups?.limit;
     const apps = readdirSync(new URL("../templates/turborepo/apps", import.meta.url));
 
-    expect(Number(turbo.concurrency)).toBeGreaterThan(apps.length);
+    expect(Number(concurrency)).toBeGreaterThan(apps.length);
   });
 });
