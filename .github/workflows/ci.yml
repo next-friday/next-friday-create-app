@@ -332,6 +332,7 @@ jobs:
         timeout-minutes: 3
         env:
           NO_COLOR: "1"
+          TURBO_LOG_ORDER: stream
         shell: bash
         run: |
           set -euo pipefail
