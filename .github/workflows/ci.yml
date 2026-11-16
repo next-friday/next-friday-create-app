@@ -326,6 +326,31 @@ jobs:
           git add --all
           pnpm verify
           pnpm build
+      - name: Start both apps with pnpm dev
+        if: matrix.stack == 'turborepo'
+        working-directory: ci-${{ matrix.stack }}
+        timeout-minutes: 3
+        env:
+          NO_COLOR: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Turbo refuses to start two persistent dev tasks when `concurrency` is 2, so this fails fast if that value comes back.
+          log="$RUNNER_TEMP/dev.log"
+          pnpm dev >"$log" 2>&1 &
+          dev_pid=$!
+          for _ in $(seq 120); do
+            if grep --quiet '/app:dev:.*Ready' "$log" && grep --quiet '/backoffice:dev:.*Ready' "$log"; then
+              kill "$dev_pid"
+              exit 0
+            fi
+            kill -0 "$dev_pid" 2>/dev/null || break
+            sleep 1
+          done
+          cat "$log"
+          echo "Both apps did not print Ready." >&2
+          kill "$dev_pid" 2>/dev/null || true
+          exit 1
 
   compatibility:
     name: Compatibility (${{ matrix.os }}, Node ${{ matrix.node }})
