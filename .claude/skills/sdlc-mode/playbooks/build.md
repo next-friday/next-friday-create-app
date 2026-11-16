@@ -39,9 +39,8 @@ This playbook turns a merged spec into a plan the engineer accepts, and then int
    - For UI work, when the session has a browser tool, also compare a screenshot of the page with the mock the spec or the request names. Adjust until it matches.
    - When a check cannot run in this session, say which one and why, and never report it as passed.
    - Before you push, run each check CI runs on the changed files that this session can run and the `pre-push` hook does not run. Say which ones it cannot run.
-   - A check that could not run, a CI job that was skipped, and a run still in progress each leave a requirement unproved. The reply then stays at `Not done:` with the requirement and the reason, as `../SKILL.md` says.
    - Under **Checks**, list each requirement of the spec by number with its result, or with "not run" and the reason.
-10. Go on in the same turn, without asking. Follow `playbooks/open-pr.md`, which goes on to `playbooks/review.md` for a pull request that changes a file outside `intent/`. Pushing the branch and opening the pull request are part of this task.
+10. Go on in the same turn, without asking. Follow `playbooks/open-pr.md`, and then `playbooks/review.md`. Pushing the branch and opening the pull request are part of this task.
 
 **Hands off to:** `playbooks/open-pr.md`. An agent runs it in the same turn, as soon as step 9 passes.
 

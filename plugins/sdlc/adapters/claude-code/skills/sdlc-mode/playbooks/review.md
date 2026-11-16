@@ -4,7 +4,7 @@
    - A pull request that changes only files under `intent/` gets no agent review. Skip steps 2 to 4 and go to step 5.
    - With no pull request, or no way to reach its host, review the branch's diff against the default branch and put the findings in your reply.
    - When a pull request exists and this session cannot post on it, say on the first line that the findings are not on the pull request. Say on the **Now** line that a person posts them there, and leave step 3 `open`.
-2. Review with a fresh context, once. For a pull request that changes a file outside `intent/`, always start a subagent that has not seen the work, however small the diff.
+2. Review with a fresh context, once. Always start a subagent that has not seen the work, however small the diff.
    - Start it on the `review` model, as `../SKILL.md` step 4 says.
    - Give it only the diff, `REVIEW.md`, the project's `AGENTS.md`, the change's `spec.md` and `plan.md`, and the four policy files in force, found as `playbooks/design.md` step 2 says. Add no point of focus of your own.
    - The reviewer reads the diff. It does not run a suite, a check, or a build again. It runs one focused test only for a doubt it names in its report.

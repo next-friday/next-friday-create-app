@@ -12,7 +12,7 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 | End-to-end tests                              | `pnpm test:e2e`                                            | `2 passed (9.4s)`, with `DATABASE_URL` pointing at a running database                                                        |
 | Regenerate after a collection                 | `pnpm generate:types`, `pnpm generate:importmap`           | `INFO: Compiling TS types for Collections and Globals...`, then nothing; `No new imports found, skipping writing import map` |
 | Create a migration                            | `pnpm migrate:create <name>`                               | `INFO: Migration created at` the new file under `migrations/`, then `INFO: Done.`                                            |
-| What `pre-push` runs                          | `pnpm check`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
+| What `pre-push` runs for a push of code                          | `pnpm check`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
 | Every check except `pnpm test:e2e`            | `pnpm verify`                                              | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
 | Render rules after a change                   | `pnpm rules:sync`                                          | `Synced 37 agent rule files; 0 updated.`                                                                                     |
 | Compare the harness with a create-app version | `pnpm harness:check <version>`                             | ends with `none differs.`                                                                                                    |
@@ -23,7 +23,7 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 - Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-While it works, the agent runs the checks of the files it changed. The full set runs once, in the `pre-push` hook, and the reply's **Checks** quotes the hook's output from the push.
+While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check`, `pnpm plan:check`, and `pnpm format:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
 
 The `verifier` subagent starts the app with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 

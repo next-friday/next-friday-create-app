@@ -22,6 +22,6 @@ Branch from the latest `origin/main`, and open the pull request ready for review
 
    When no workflow run started on the pull request's head, the **Not yet** line says that no CI ran and why.
 
-6. Follow `playbooks/review.md` in the same turn, without asking, when the pull request changes a file outside `intent/`. A pull request that changes only files under `intent/` gets no agent review: stop at the gate of the playbook that opened it.
+6. Go on in the same turn, without asking. Follow `playbooks/review.md`, whose step 1 says which pull request gets no agent review.
 
-**Hands off to:** `playbooks/review.md`. An agent runs it in the same turn, as soon as step 5 is done, for a pull request that changes a file outside `intent/`.
+**Hands off to:** `playbooks/review.md`. An agent runs it in the same turn, as soon as step 5 is done.

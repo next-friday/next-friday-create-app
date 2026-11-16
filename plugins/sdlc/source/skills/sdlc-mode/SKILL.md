@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Do these steps in order.
 
-1. **Match the request** to the first row that fits, and read that row's file before you act. When the reply shape gives the task a **Request**, write those lines once, as your first message, before your first tool call. Never write them again in a reply.
+1. **Match the request** to the first row that fits, and read that row's file before you act. Write the **Request** lines as your first message, before your first tool call, as the **Request** rule of the reply shape says.
 
    | The request                                                                                                                                                                                      | What to do                                                                                                                     |
    | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
@@ -31,7 +31,7 @@ Do these steps in order.
 2. **Open the task list** when the session offers a task-list tool.
    - Its first items are the matched playbook's numbered steps, before any other task. Each item is the step's first sentence, copied word for word. The first sentence is the text up to the first full stop followed by a space.
    - A step you decide never to do stays in the list with `skip: <reason>`. A step marked **Gate** is never skipped.
-   - When the session offers no such tool, put the steps in the reply under **Steps**. Leave them out only for `question`, for a reply that stops in a few lines, and for a reply that reports the result of a gate, as the reply shape says.
+   - When the session offers no such tool, put the steps in the reply under **Steps**. Leave them out where the **Steps** rule of the reply shape says.
    - When a playbook's **Hands off to** line chains another playbook, add that playbook's steps when you start it.
 3. **Do the playbook's steps yourself.** Stop only at a step marked **Gate**, or before an action that cannot be undone. At a **Gate**, wait for the person it names. When a playbook's **Hands off to** line says an agent runs the next file "in the same turn", read that file and continue without asking. Otherwise stop at the **Gate**. Mark each step done in the task list as you finish it. Write a file before you create its branch, so that the file stands when a git command fails.
    - **Files.** Write and edit each file with your file-editing tool. Two things may write files from the shell: a generator that the project's `README.md` names, and `git mv`.
@@ -81,7 +81,6 @@ Every `**Result:**` line starts with `Done.` or `Not done:`. So does an `**Answe
 - `Done.` means three things hold. Every part of what the person asked for is finished. It is merged where it goes through a pull request. You read a result in this turn for every requirement of the change, such as the merged pull request and its final checks. The **Now** line then says the person has nothing to do.
 - A `done` step in **Steps** needs the same: a result read in this turn for every requirement of the change.
 - A check that could not run, a CI job that was skipped, and a run still in progress each keep the reply at `Not done:`, with the requirement and the reason.
-- After you open a pull request, wait for no check. After a person says the pull request merged, read its checks once, and report a run still in progress as `Not done:`.
 - Anything else is `Not done:`, followed by what is left and who does it. This covers a pull request that waits for review or a merge, a question that waits for an answer, and a **Gate**. It also covers a part that a spec, a plan, or you set aside as a separate change.
 - Never call the task done, complete, or finished elsewhere in a reply whose first line says `Not done:`.
 - A plain question about something other than the task's state gets `**Answer:**` alone.
