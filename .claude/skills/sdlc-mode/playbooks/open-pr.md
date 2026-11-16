@@ -11,7 +11,7 @@ Branch from the latest `origin/main`, and open the pull request ready for review
    - Write `Closes #<issue>` for each issue that already exists and that the change closes. Otherwise write what the template's own section asks for.
    - Give each check you ran, with its result copied from the output.
 
-   **A file the token cannot push.** The host can refuse a file because the token lacks a permission, such as GitHub's `workflow` scope for `.github/workflows/`. Say what you cannot push and why, and ask the person which way out they want. They can push the branch with their own credentials. They can give the token that permission. Or you open the pull request without the file and hand the file over in an issue with its checksum. Do what they choose. A pull request that waits for such a file says so on its first line and on the **Not yet** line.
+   **A file the token cannot push.** The host can refuse a file because the token lacks a permission, such as GitHub's `workflow` scope for `.github/workflows/`. Say what you cannot push and why. When the request already names the way out, take it. Otherwise ask the person which way out they want. They can push the branch with their own credentials. They can give the token that permission. Or you open the pull request without the file and hand the file over in an issue with its checksum. Do what they choose. A pull request that waits for such a file says so on its first line and on the **Not yet** line.
 
    **No pull request from this session.** Say so, give the pushed branch's name, and go on to step 6.
 

@@ -17,7 +17,7 @@ This playbook turns a merged spec into a plan the engineer accepts, and then int
    - **Files that change.** List every file, marked new, changed, or deleted, with one line on what it does afterwards.
    - **Order of work.** Write numbered steps. Each step ends with the check that proves it.
    - **Risks.** Say what the change could break and which step is the riskiest. Name each option you chose not to take, and why.
-   - **Proof.** Give the tests and commands that show every requirement of the spec is met, by requirement number. Give the test or review step for each policy requirement the spec cites.
+   - **Proof.** Give the tests and commands that show every requirement of the spec is met, by requirement number. Start each line with the number alone, such as `1:` or `2, 3:`, because the plan check reads it. Give the test or review step for each policy requirement the spec cites.
 
    Only when two designs compete and the files do not settle which one, start a subagent on the `advise` model, as `../SKILL.md` step 4 says. Give it the plan and `spec.md`, and say in the reply what it advised.
 

@@ -3,7 +3,8 @@ import {existsSync, readFileSync} from "node:fs";
 
 const defaultBranch = "origin/main";
 const recordPathPattern = /^intent\/[^/]+\/(?:intent|spec|plan)\.md$/;
-const keptLinePattern = /Status: |^\s*Decision: /u;
+const statusPattern = /Status: [a-z]+\./u;
+const decisionPattern = /^Decision: /u;
 const quotedLineLimit = 60;
 
 /**
@@ -33,14 +34,25 @@ function readDefaultBranchFile(mergeBase: string, filePath: string): string | un
 }
 
 /**
+ * Reduce a line to what must stay the same: its text with the status word taken out.
+ * @param line A line of a record.
+ * @returns The trimmed line, with `Status: <word>.` reduced to `Status:`.
+ */
+function normalizeLine(line: string): string {
+  return line.trim().replace(statusPattern, "Status:");
+}
+
+/**
  * Find what a branch removes from an intent, a spec, or a plan that the default branch holds.
  * @param defaultBranchText The file on the default branch, or undefined when it is not there.
- * @param text The file on this branch, or undefined when this branch deletes it.
- * @returns At most one message: the file is deleted, or lines other than its status line and its decisions are removed.
+ * @param text The file on this branch, or undefined when this branch deletes or moves it.
+ * @param isSpec True for a spec, whose decisions the product owner may change.
+ * @returns At most one message: the file is gone, or a line is removed or changed in more than its status word.
  */
 function findRewriteProblems(
   defaultBranchText: string | undefined,
   text: string | undefined,
+  isSpec: boolean,
 ): string[] {
   if (defaultBranchText === undefined) {
     return [];
@@ -48,54 +60,56 @@ function findRewriteProblems(
 
   if (text === undefined) {
     return [
-      "is on the default branch and this branch deletes it; a record stays, so write a new round in a new folder",
+      "is on the default branch and this branch deletes or moves it; a record stays where it is, so write a new round in a new folder",
     ];
   }
 
-  const keptLines = new Set(text.split("\n").map(line => line.trim()));
+  const keptLines = new Set(text.split("\n").map(line => normalizeLine(line)));
 
   const removedLines = defaultBranchText
     .split("\n")
-    .map(line => line.trim())
-    .filter(line => line !== "" && !keptLinePattern.test(line) && !keptLines.has(line));
+    .map(line => normalizeLine(line))
+    .filter(line => line !== "" && !(isSpec && decisionPattern.test(line)) && !keptLines.has(line));
 
   return removedLines.length === 0
     ? []
     : [
-        `is on the default branch and this branch removes ${removedLines.length} of its lines, such as "${removedLines.at(0)?.slice(0, quotedLineLimit) ?? ""}"; change only its status line and its decisions, and write a new round in a new folder`,
+        `is on the default branch and this branch removes ${removedLines.length} of its lines, such as "${removedLines.at(0)?.slice(0, quotedLineLimit) ?? ""}"; change only its status word, or a decision of a spec, and write a new round in a new folder`,
       ];
 }
 
 /**
- * Report each intent, spec, and plan of the default branch that this branch deletes or rewrites.
- * @returns One line per problem, and none when the default branch is not available.
+ * Report each intent, spec, and plan of the default branch that this branch deletes, moves, or rewrites.
+ * @returns One line per problem, or one line that says the default branch cannot be found.
  */
 function findRewriteLines(): string[] {
+  let mergeBase = "";
+
   try {
-    const mergeBase = runGit(["merge-base", "HEAD", defaultBranch]);
-
-    const statusLines = runGit([
-      "-c",
-      "core.quotePath=false",
-      "diff",
-      "--name-status",
-      "--find-renames",
-      `${mergeBase}...HEAD`,
-    ]).split("\n");
-
-    return statusLines
-      .filter(line => !line.startsWith("R"))
-      .map(line => line.split("\t").at(-1) ?? "")
-      .filter(changedPath => recordPathPattern.test(changedPath))
-      .flatMap(changedPath =>
-        findRewriteProblems(
-          readDefaultBranchFile(mergeBase, changedPath),
-          existsSync(changedPath) ? readFileSync(changedPath, "utf8") : undefined,
-        ).map(message => `${changedPath}: ${message}`),
-      );
+    mergeBase = runGit(["merge-base", "HEAD", defaultBranch]);
   } catch {
-    return [];
+    return [
+      `${defaultBranch} cannot be found, so the records cannot be checked; run "git fetch origin main"`,
+    ];
   }
+
+  return runGit([
+    "-c",
+    "core.quotePath=false",
+    "diff",
+    "--no-renames",
+    "--name-only",
+    `${mergeBase}...HEAD`,
+  ])
+    .split("\n")
+    .filter(changedPath => recordPathPattern.test(changedPath))
+    .flatMap(changedPath =>
+      findRewriteProblems(
+        readDefaultBranchFile(mergeBase, changedPath),
+        existsSync(changedPath) ? readFileSync(changedPath, "utf8") : undefined,
+        changedPath.endsWith("/spec.md"),
+      ).map(message => `${changedPath}: ${message}`),
+    );
 }
 
 /**
@@ -110,32 +124,59 @@ function isSelfTestFailure(expectedPart: string | undefined, problems: string[])
     : problems.length !== 1 || !problems.at(0)?.includes(expectedPart);
 }
 
+const removedOneLinePart = "removes 1 of its lines";
+
 const selfTestCases: [name: string, expectedPart: string | undefined, problems: string[]][] = [
   [
-    "a record whose status line and decision change",
+    "a spec whose status word and decision change",
     undefined,
     findRewriteProblems(
       "# Spec: A\n\nStatus: accepted.\n\n1. A.\n   Decision: yes.\n",
       "# Spec: A\n\nStatus: done.\n\n1. A.\n   Decision: no.\n\nA new line.\n",
+      true,
+    ),
+  ],
+  [
+    "an intent whose status word changes on the author line",
+    undefined,
+    findRewriteProblems(
+      "Author: @a (Team). Status: accepted.\n",
+      "Author: @a (Team). Status: done.\n",
+      false,
     ),
   ],
   [
     "a record the default branch does not hold",
     undefined,
-    findRewriteProblems(undefined, "# Intent: A\n"),
+    findRewriteProblems(undefined, "# Intent: A\n", false),
   ],
   [
-    "a record on the default branch is deleted",
-    "this branch deletes it",
-    findRewriteProblems("# Plan: A\n", undefined),
+    "a record on the default branch is deleted or moved",
+    "deletes or moves it",
+    findRewriteProblems("# Plan: A\n", undefined, false),
   ],
   [
     "a record on the default branch is rewritten",
-    "removes 1 of its lines",
+    removedOneLinePart,
     findRewriteProblems(
       "# Intent: A\n\nThe export gives 0.9 reports.\n",
       "# Intent: A\n\nThe export gives 1.0 reports.\n",
+      false,
     ),
+  ],
+  [
+    "the author on a status line is rewritten",
+    removedOneLinePart,
+    findRewriteProblems(
+      "Author: @a (Team). Status: accepted.\n",
+      "Author: @b (Team). Status: accepted.\n",
+      false,
+    ),
+  ],
+  [
+    "a decision changes in a file that is not a spec",
+    removedOneLinePart,
+    findRewriteProblems("Decision: yes.\n", "Decision: no.\n", false),
   ],
 ];
 

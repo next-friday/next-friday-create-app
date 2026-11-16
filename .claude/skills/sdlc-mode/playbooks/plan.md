@@ -6,7 +6,7 @@ This playbook writes the intent. The build plan, `intent/<change>/plan.md`, come
 2. Read the code, the docs, and the existing `intent/` folders. Find the rest yourself. The author is the originator's handle on the host. Read it from the host when the session shows whose account it runs as, and ask for it otherwise. Never take it from `git config user.name`, which names the machine's user.
 3. Interview the originator, one question at a time. Ask until they have said five things. The five are the problem, who is affected, the outcome and what success looks like as the user would see it, the constraints, and what is out of scope.
    - **When all five are already said in the originator's own words, go to step 4 in the same turn.** A request that only looks complete, because you could infer an answer, does not count. Ask.
-   - **When one is missing, ask one question and stop,** as `../SKILL.md` step 6 says. Write no draft until all five are said.
+   - **When one is missing, ask one question and stop,** as `../SKILL.md` step 6 says. Write no draft until all five are said. Wait for the answer, and build the next question on it.
    - Each question asks one thing and offers a concrete answer you recommend, first among the choices. A recommended answer is a fact or a choice, such as "Only the checkout page", never an instruction to the person. When you have no answer to recommend, say so and ask plainly.
 4. Write `intent/<change>/intent.md` from the template below. Use exactly the template's five headings.
    - `<change>` is a short kebab-case name for a folder that does not exist yet. A later round of the same work gets its own folder, such as `<change>-2`, even when an earlier intent says one folder holds every round.
