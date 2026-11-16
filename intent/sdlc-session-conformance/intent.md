@@ -72,6 +72,7 @@ What only the second audit showed:
 36. The intent template's author line holds a team, `(<team>)`, and no rule says where it comes from. One session took the GitHub organization's name and the other the template's own `author` value from `package.json`.
 37. `playbooks/open-pr.md:3` says to "Name the branch as the project's contributing guide says", and `templates/turborepo/CONTRIBUTING.md` gives no form for a branch name; only the `pre-commit` hook's message does.
 38. With `CONTAINER_IMAGE` set to `false`, CI builds no image, so the session built three images on the machine to prove the spec's requirements, which took 528 seconds.
+39. The harness has no way to watch a pull request when a person asks for it. `playbooks/review.md:13` says to "wait for no check and subscribe to no events", and to sweep the pull request "only when a person asks", and names no tool for that sweep. One session read CI by waiting 202 seconds in a sleep.
 
 ## Proposed outcome
 
@@ -90,6 +91,7 @@ A session that runs a playbook does each step the playbook names, and a reply st
 11. **One read of `pnpm verify` shows every step.** Its last lines name each step and its result.
 12. **The review stays in the session.** The session starts the reviewer and waits for its report in one call, without polling. The originator chose this over a review on the pull request, which needs a Claude Team or Enterprise plan or `claude-code-action` in CI; the project this harness is used in has neither. Item 30 is the one surplus that stays.
 13. **The harness asks for no more than the playbook does.** Where items 28, 29, 31, and 32 show a surplus, the harness drops it or the intent's spec gives the reason it stays.
+14. **A program watches a pull request, and only when a person asks.** When a person asks the session to watch a pull request, a command polls the host and returns once at a verdict; the session sends no request while it waits. The originator took this from `pstack`: "Babysitting starts when the user asks for it", "Watcher output drives wakeups. Never add a second sleep loop" (`pstack/skills/poteto-mode/playbooks/babysit.md`), and "Watch each PR with PR and CI event subscriptions when your harness has them" (`pstack/skills/poteto-mode/playbooks/orchestrate.md`). A pull request that holds only documents gets one status read, not a watch.
 
 This change ships before the one in `intent/first-pull-request-ci/`, by the originator's decision: the harness is repaired first.
 
@@ -139,3 +141,4 @@ Out of scope: the models rule, which the session followed; a second models rule 
 18. Whether a check that fails for a reason of the machine counts toward the two failures that send a session to `advise`.
 19. Where the team on an intent's author line comes from, and what a spec quotes when the request is not in the language the files are written in.
 20. Whether a requirement that only a container image proves is checked on the machine when CI is set to build none.
+21. What watches the pull request of outcome 14. `pstack` ships its own watcher of about 3,800 lines with its tests, which needs `bun` and serves stacks of pull requests the harness does not have. The host's own `gh pr checks --watch` and Claude Code's `/autofix-pr`, which starts a cloud session subscribed to the pull request and needs the Claude GitHub App on the repository, are the smaller choices. None has been run here.
