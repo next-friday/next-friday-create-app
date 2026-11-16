@@ -36,7 +36,7 @@ This playbook turns a merged spec into a plan the engineer accepts, and then int
    - Then run the `verifier` subagent once, on the `explore` model, as `../SKILL.md` step 4 says, and fix what it reports. When you cannot start a subagent, do what `../../../agents/verifier.md`, relative to this playbook, says yourself.
    - For UI work, when the session has a browser tool, also compare a screenshot of the page with the mock the spec or the request names. Adjust until it matches.
    - When a check cannot run in this session, say which one and why, and never report it as passed.
-   - Do not run the checks again before the push. The project's `pre-push` hook runs them, so read its output and fix what it reports. Run them by hand before a push only when the project has no such hook.
+   - Before you push, run each check CI runs on the changed files that this session can run. Say which ones it cannot run.
 10. Go on in the same turn, without asking. Follow `playbooks/open-pr.md`, and then `playbooks/review.md`. Pushing the branch and opening the pull request are part of this task.
 
 **Hands off to:** `playbooks/open-pr.md`. An agent runs it in the same turn, as soon as step 9 passes.

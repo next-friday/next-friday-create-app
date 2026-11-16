@@ -1,10 +1,10 @@
 # Open the pull request
 
-When the request names a branch or a pull request that exists, work on that branch, and create no other branch and no other pull request. Otherwise branch from the latest `origin/main`. Open the pull request ready for review, never as a draft. Name the branch as the project's contributing guide says. Never merge a pull request. A person merges it with `--squash`, bottom-up for a stack of pull requests.
+Branch from the latest `origin/main`, and open the pull request ready for review, never as a draft. Name the branch as the project's contributing guide says. Never merge a pull request. A person merges it with `--squash`, bottom-up for a stack of pull requests.
 
 1. Clean the diff against the default branch. Remove debug output, commented-out code, changes the plan does not name, and comments that add nothing the code does not show.
 2. Do what the project's `AGENTS.md` and `CONTRIBUTING.md` require for this kind of change.
-3. When step 1 or 2 changed a file, commit it. The project's `pre-push` hook runs the checks on the push. Run them by hand first only when the project has no such hook.
+3. When step 1 or 2 changed a file, run the checks the project's agent instructions name again, and commit only when they pass.
 4. The push hook refuses a push whose commits change a file the change's `plan.md` does not name without changing `plan.md` in the same commit.
 5. Push the branch and open the pull request. When the branch already has one, update it. Fill the body from `.github/pull_request_template.md` with these three things.
    - Say what changed and why, with the paths of `intent/<change>/spec.md` and `plan.md` when they exist.
