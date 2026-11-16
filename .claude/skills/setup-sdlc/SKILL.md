@@ -28,7 +28,7 @@ Do these steps in order. Run again with the same answers, the skill writes the s
    | `medium`    | `high`                                 |
    | `small`     | `medium`                               |
 
-5. **Write the rule** at the path of the `rules-file` line, as the whole file, overwriting it, with a newline after the last line, and never in the project: each person's sessions offer different models. Start it as the `rules-header` line says. Then write these lines and no others, each role's model as the `role-format` line says. For the budget `balanced`, write `budget: balanced (per role)`. For the budget `medium` in a session that offers `sonnet`, `haiku`, and `opus`:
+5. **Write the rule** at the path of the `rules-file` line, as the whole file, overwriting it, with a newline after the last line, and never in the project: each person's sessions offer different models. Start it as the `rules-header` line says. Then write these lines and no others, each role's model as the `role-format` line says. For the budget `balanced`, write `budget: balanced (per role)`, and give each role line its role's default effort from step 3: `main: sonnet high`, `explore: haiku xhigh`, `advise: opus medium`. For the budget `medium` in a session that offers `sonnet`, `haiku`, and `opus`:
 
    ```markdown
    # SDLC models
