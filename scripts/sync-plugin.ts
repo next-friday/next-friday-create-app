@@ -13,6 +13,7 @@ import {tmpdir} from "node:os";
 
 import {
   findEscapingReferences,
+  findMissingPlaybooks,
   findMissingReferences,
   findVendorNames,
   findVersionKey,
@@ -985,6 +986,17 @@ const selfTestCases: SelfTestCase[] = [
     ),
   },
   {
+    name: "a playbook path that the skill's own folder does not hold fails",
+    expected: [
+      `${path.join("p", "skills", "a", "SKILL.md")}: playbooks/b.md names no rendered file`,
+    ],
+    problems: findMissingPlaybooks(
+      path.join("p", "skills", "a", "SKILL.md"),
+      "see `playbooks/b.md`",
+      [path.join("p", "skills", "c", "playbooks", "b.md")],
+    ),
+  },
+  {
     name: "a reference to a file the source does not render fails",
     expected: [
       `${path.join("p", "skills", "a", "SKILL.md")}: ../c/SKILL.md names no rendered file`,
@@ -1233,7 +1245,10 @@ if (selfTestFailures.length > 0) {
       ...[...expected].flatMap(([file, content]) => findToolWords(file, content)),
       ...[...expected]
         .filter(([file]) => file.includes(`${path.sep}skills${path.sep}`))
-        .flatMap(([file, content]) => findMissingReferences(file, content, renderedFiles)),
+        .flatMap(([file, content]) => [
+          ...findMissingReferences(file, content, renderedFiles),
+          ...findMissingPlaybooks(file, content, renderedFiles),
+        ]),
       ...listFiles(pluginRoot, true)
         .filter(file => textExtensions.has(path.extname(file)))
         .map(file => path.join(pluginRoot, file))

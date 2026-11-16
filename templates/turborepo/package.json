@@ -28,7 +28,7 @@
     "loop:measure": "node scripts/measure-loop.ts",
     "migrate": "pnpm --filter ./apps/backoffice migrate",
     "migrate:create": "pnpm --filter ./apps/backoffice migrate:create",
-    "plan:check": "node scripts/check-plan.ts",
+    "plan:check": "node scripts/check-plan.ts && node scripts/check-records.ts",
     "prepare": "husky && pnpm --filter \"./apps/*\" exec next typegen",
     "rules:check": "node scripts/sync-agent-rules.ts --check",
     "rules:sync": "node scripts/sync-agent-rules.ts",

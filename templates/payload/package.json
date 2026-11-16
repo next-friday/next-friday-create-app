@@ -29,7 +29,7 @@
     "migrate": "payload migrate",
     "migrate:create": "payload migrate:create",
     "payload": "payload",
-    "plan:check": "node scripts/check-plan.ts",
+    "plan:check": "node scripts/check-plan.ts && node scripts/check-records.ts",
     "prepare": "husky && next typegen",
     "rules:check": "node scripts/sync-agent-rules.ts --check",
     "rules:sync": "node scripts/sync-agent-rules.ts",
