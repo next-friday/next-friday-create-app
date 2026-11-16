@@ -1,5 +1,16 @@
 # @next-friday/create-app
 
+## 10.1.0
+
+### Minor Changes
+
+- 4edc71f: In a generated project, each role of the `sdlc` harness has its own default reasoning effort: `main` on `sonnet` at `high`, `explore` on `haiku` at `xhigh`, and `advise` on `opus` at `medium`. `/setup-sdlc` offers the budget `balanced`, which keeps those efforts, as its first and recommended choice; `unlimited`, `large`, `medium`, and `small` still set one effort for every role. With no models rule, `/sdlc-mode` starts each subagent at its role's default effort instead of `xhigh`.
+- 4edc71f: In a generated project, `/sdlc-mode` hands the person only what they can use as it is: a whole file, a whole prompt, or a whole command, never a fragment or a diff to apply by hand.
+
+### Patch Changes
+
+- 4edc71f: In a generated project, the `verifier` subagent starts on `haiku`, the `explore` default, when the call names no model. `/sdlc-mode` writes the intent of a new round of work in a new folder, and never deletes or rewrites an intent, spec, or plan on the default branch beyond its `Status:` line.
+
 ## 10.0.0
 
 ### Major Changes
