@@ -1,6 +1,7 @@
 {
   "verifier": {
     "description": "Runs the app and checks the change works before the session reports done",
+    "model": "haiku",
     "readonly": true,
     "tools": ["Bash", "Read"]
   }
