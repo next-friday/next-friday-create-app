@@ -79,8 +79,20 @@ function findRewriteProblems(
 }
 
 /**
+ * Tell whether this repository has a remote named `origin`: a project with none has no default branch to compare with yet.
+ * @returns False when there is no such remote, or git cannot run here.
+ */
+function hasOriginRemote(): boolean {
+  try {
+    return runGit(["remote"]).split("\n").includes("origin");
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Report each intent, spec, and plan of the default branch that this branch deletes, moves, or rewrites.
- * @returns One line per problem, or one line that says the default branch cannot be found.
+ * @returns One line per problem, or one line that says the default branch cannot be found; none in a project with no `origin` remote.
  */
 function findRewriteLines(): string[] {
   let mergeBase = "";
@@ -88,9 +100,11 @@ function findRewriteLines(): string[] {
   try {
     mergeBase = runGit(["merge-base", "HEAD", defaultBranch]);
   } catch {
-    return [
-      `${defaultBranch} cannot be found, so the records cannot be checked; run "git fetch origin main"`,
-    ];
+    return hasOriginRemote()
+      ? [
+          `${defaultBranch} cannot be found, so the records cannot be checked; run "git fetch origin main"`,
+        ]
+      : [];
   }
 
   return runGit([
