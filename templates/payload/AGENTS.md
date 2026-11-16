@@ -4,18 +4,18 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 
 ## Commands
 
-| Task                               | Command                                                    | Healthy output                                                                                                               |
-| :--------------------------------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| Start with reload                  | `pnpm dev`                                                 | `✓ Ready in 251ms`                                                                                                           |
-| One test                           | `pnpm vitest run src/environment.test.ts -t "<test name>"` | `Tests  1 passed \| 2 skipped (3)`                                                                                           |
-| Unit tests                         | `pnpm test`, or `pnpm test:coverage`                       | `Tests  13 passed (13)`                                                                                                      |
-| End-to-end tests                   | `pnpm test:e2e`                                            | `2 passed (9.4s)`, with `DATABASE_URL` pointing at a running database                                                        |
-| Regenerate after a collection      | `pnpm generate:types`, `pnpm generate:importmap`           | `INFO: Compiling TS types for Collections and Globals...`, then nothing; `No new imports found, skipping writing import map` |
-| Create a migration                 | `pnpm migrate:create <name>`                               | `INFO: Migration created at` the new file under `migrations/`, then `INFO: Done.`                                            |
-| What `pre-push` runs               | `pnpm check`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
-| Every check except `pnpm test:e2e` | `pnpm verify`                                              | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
-| Render rules after a change        | `pnpm rules:sync`                                          | `Synced 37 agent rule files; 0 updated.`                                                                                     |
-| Compare the harness with a create-app version | `pnpm harness:check <version>` | ends with `none differs.` |
+| Task                                          | Command                                                    | Healthy output                                                                                                               |
+| :-------------------------------------------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| Start with reload                             | `pnpm dev`                                                 | `✓ Ready in 251ms`                                                                                                           |
+| One test                                      | `pnpm vitest run src/environment.test.ts -t "<test name>"` | `Tests  1 passed \| 2 skipped (3)`                                                                                           |
+| Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                       | `Tests  13 passed (13)`                                                                                                      |
+| End-to-end tests                              | `pnpm test:e2e`                                            | `2 passed (9.4s)`, with `DATABASE_URL` pointing at a running database                                                        |
+| Regenerate after a collection                 | `pnpm generate:types`, `pnpm generate:importmap`           | `INFO: Compiling TS types for Collections and Globals...`, then nothing; `No new imports found, skipping writing import map` |
+| Create a migration                            | `pnpm migrate:create <name>`                               | `INFO: Migration created at` the new file under `migrations/`, then `INFO: Done.`                                            |
+| What `pre-push` runs                          | `pnpm check`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
+| Every check except `pnpm test:e2e`            | `pnpm verify`                                              | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
+| Render rules after a change                   | `pnpm rules:sync`                                          | `Synced 37 agent rule files; 0 updated.`                                                                                     |
+| Compare the harness with a create-app version | `pnpm harness:check <version>`                             | ends with `none differs.`                                                                                                    |
 
 ## Verifying your work
 

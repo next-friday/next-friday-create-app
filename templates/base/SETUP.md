@@ -12,7 +12,7 @@ Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of 
 | Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc-mode` with the intent's path, writes `spec.md`                                     |
 | Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-mode build` writes `plan.md` and the code in one pull request; `pnpm plan:check` and the push hook check them |
 | Test     | The agent, before it reports done                                                | The `verifier` subagent runs the app; `pre-push` and CI run the checks                                               |
-| Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` reviews the pull request once; the production gate hook blocks a deploy without approval    |
+| Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` reviews the pull request once; the production gate hook blocks a deploy without approval       |
 | Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                               |
 
 A session starts with a list of where each change stands. A small, well-bounded change that is not a defect skips intent and spec: it goes from a `small/` branch to one pull request, which a code owner reviews (`.claude/skills/sdlc-mode/playbooks/small.md`).
