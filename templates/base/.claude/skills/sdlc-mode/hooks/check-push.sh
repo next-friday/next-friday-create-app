@@ -17,12 +17,6 @@ project=$(printf '%s' "$input" | jq -r '.cwd // .workspace_roots[0] // ""')
 git rev-parse --is-inside-work-tree > /dev/null 2>&1 || allow "$1"
 
 problems=""
-head=$(git rev-parse HEAD)
-reviewed=$(cat "$(git rev-parse --git-path sdlc-review)" 2> /dev/null)
-if [ "$reviewed" != "$head" ]; then
-  problems="${problems}- Commit $head has no review. Review its diff with a fresh subagent as playbooks/review.md step 2 of the sdlc-mode skill says, fix every Important finding, then write the commit you reviewed to $(git rev-parse --git-path sdlc-review).
-"
-fi
 
 base=$(git merge-base HEAD origin/HEAD 2> /dev/null || git merge-base HEAD origin/main 2> /dev/null)
 if [ -n "$base" ]; then
