@@ -1,6 +1,6 @@
 # Intent: Make an sdlc-mode session follow its playbook and claim only what it proved
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 

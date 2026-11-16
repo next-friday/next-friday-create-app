@@ -10,6 +10,7 @@ Pile 1, playbook text (requirements 1 to 4, 6 to 10, 16 to 24, 26 to 32, 34, 37,
 
 - `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): steps 3, 4, and 6 and the reply rules say what the spec requires on waiting, files, questions, `Done.`, **Request**, and **Steps**.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/intent.md`, `design.md`, `build.md`, `open-pr.md`, and `review.md` (changed): the steps the spec names.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/fix.md` (changed): steps 2 and 3 point at `SKILL.md` step 6 in place of "one question at a time".
 - `plugins/sdlc/source/agents/verifier.md` (changed): the verifier runs the app and runs no check its brief lists.
 - `plugins/sdlc/source/skills/setup-sdlc/SKILL.md` (changed): a fourth role, `review`.
 - `plugins/sdlc/adapters/tool-words.json` (changed): a wait line and a plan-mode line for each tool; the `question-tool` line goes.
@@ -32,6 +33,7 @@ Pile 2, hooks and scripts (requirements 5, 11, 12, 14, 15, 25):
 Pile 3, the `turborepo` stack and the stacks' documents (requirements 10 for `AGENTS.md`, 13 for `AGENTS.md`, 33, 35, 36):
 
 - `templates/turborepo/package.json` (changed): `dev` and `start` pass their own `--concurrency`, so a fourth app starts.
+- `test/turborepo-template.test.ts` (changed): checks the `--concurrency` of the `dev` and `start` scripts against the number of apps.
 - `templates/turborepo/README.md` (changed): names every root file that adding an app changes, and which of them a person commits.
 - `templates/turborepo/AGENTS.md` (changed): no task counts; the `--affected` form; the agent's narrow checks.
 - `AGENTS.md` of the other four stacks (changed): the agent's narrow checks in "Verifying your work".

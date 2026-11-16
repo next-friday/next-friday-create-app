@@ -23,7 +23,7 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 - Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.
+While it works, the agent runs the checks of the files it changed. The full set runs once, in the `pre-push` hook, and the reply's **Checks** quotes the hook's output from the push.
 
 The `verifier` subagent starts the app with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 

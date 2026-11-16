@@ -48,6 +48,7 @@ Agent rules live in `.agents/rules/` with their scope in `.agents/rules.json`. A
 We use trunk-based development. `main` is the only long-lived branch.
 
 - Branch from `main` and merge back within a day or two. Do not create `develop` or release branches.
+- Name the branch `<type>/<short-description>`, for example `feat/add-health-endpoint`.
 - Merge unfinished work behind a feature flag or keep it unreachable instead of holding a long-lived branch.
 - Pull requests are squash-merged, so the pull request title becomes the commit on `main`.
 - After a pull request that only reformats code merges, the next pull request lists its commit on `main` in `.git-blame-ignore-revs` at the repository root, creating the file the first time, with a `#` comment that names the change, as [GitHub Docs](https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files) shows. GitHub then hides that commit in the blame view.

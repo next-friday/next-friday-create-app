@@ -8,23 +8,28 @@ Turborepo workspace in TypeScript on pnpm and Node.js `>=26.13.0 <27`. `apps/app
 | :-------------------------------------------- | :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
 | Start both apps with reload                   | `pnpm dev`                                                                                 | `✓ Ready in 300ms` from each app                                                                                             |
 | One test                                      | `pnpm --filter ./apps/backoffice exec vitest run src/environment.test.ts -t "<test name>"` | `Tests  1 passed \| 4 skipped (5)`                                                                                           |
-| Tests in one app                              | `TURBO_FILTER=--filter=./apps/app pnpm test`                                               | `Tasks:    1 successful, 1 total`                                                                                            |
-| Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                                                       | `Tasks:    2 successful, 2 total`                                                                                            |
-| End-to-end tests                              | `pnpm test:e2e`                                                                            | `Tasks:    4 successful, 4 total`, with `DATABASE_URL` pointing at a running database                                        |
+| Tests in one app                              | `TURBO_FILTER=--filter=./apps/app pnpm test`                                               | Turborepo's summary line, `Tasks:` with every task successful                                                                |
+| Build the changed apps                        | `TURBO_FILTER=--affected TURBO_SCM_BASE=origin/main pnpm build`                            | Turborepo's summary line, `Tasks:` with every task successful                                                                |
+| Test the changed apps                         | `TURBO_FILTER=--affected TURBO_SCM_BASE=origin/main pnpm test`                             | Turborepo's summary line, `Tasks:` with every task successful                                                                |
+| Type-check the changed apps                   | `TURBO_FILTER=--affected TURBO_SCM_BASE=origin/main pnpm typecheck`                        | Turborepo's summary line, `Tasks:` with every task successful                                                                |
+| Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                                                       | Turborepo's summary line, `Tasks:` with every task successful                                                                |
+| End-to-end tests                              | `pnpm test:e2e`                                                                            | Turborepo's summary line, `Tasks:` with every task successful, with `DATABASE_URL` pointing at a running database            |
 | Regenerate after a collection                 | `pnpm generate:types`, `pnpm generate:importmap`                                           | `INFO: Compiling TS types for Collections and Globals...`, then nothing; `No new imports found, skipping writing import map` |
 | Create a migration                            | `pnpm migrate:create <name>`                                                               | `INFO: Migration created at` the new file under `migrations/`, then `INFO: Done.`                                            |
-| What `pre-push` runs                          | `pnpm check`                                                                               | exits 0; the output ends with the summary `Tasks:    2 successful, 2 total`                                                  |
-| Every check except `pnpm test:e2e`            | `pnpm verify`                                                                              | exits 0; the output ends with the summary `Tasks:    2 successful, 2 total`                                                  |
+| What `pre-push` runs                          | `pnpm check`                                                                               | exits 0; the last lines list every step with its result, and a failed step names its exit code                               |
+| Every check except `pnpm test:e2e`            | `pnpm verify`                                                                              | exits 0; the last lines list every step with its result, and a failed step names its exit code                               |
 | Render rules after a change                   | `pnpm rules:sync`                                                                          | `Synced 37 agent rule files; 0 updated.`                                                                                     |
 | Compare the harness with a create-app version | `pnpm harness:check <version>`                                                             | ends with `none differs.`                                                                                                    |
 
+Lint, format, Knip, and `package.json` ordering run over the whole workspace whatever the filter says.
+
 ## Verifying your work
 
-- Build: `pnpm build` (prints `Tasks:    2 successful, 2 total`)
-- Test: `pnpm test:coverage` (all green, and prints `Tasks:    2 successful, 2 total`)
+- Build: `pnpm build` (the last line is Turborepo's `Tasks:` summary with every task successful)
+- Test: `pnpm test:coverage` (all green, and the last line is Turborepo's `Tasks:` summary with every task successful)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.
+While it works, the agent runs the checks of the files it changed. The full set runs once, in the `pre-push` hook, and the reply's **Checks** quotes the hook's output from the push.
 
 The `verifier` subagent starts the apps with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 

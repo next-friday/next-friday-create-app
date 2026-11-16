@@ -48,9 +48,11 @@ To reuse task output across CI runs, create a Vercel team, add the repository va
 
 ## Apps
 
-Root files name the apps through `apps/*`, so adding or removing an app changes no root file except `prettier.config.ts`, whose `tailwindStylesheet` names one stylesheet.
+Root files name the apps through `apps/*`, so adding an app changes two root files. `pnpm-lock.yaml` changes when you run `pnpm install`. `prettier.config.ts` changes when the new app's Tailwind stylesheet should replace the one its `tailwindStylesheet` names. The agent's settings deny it that file, so a person edits and commits `prettier.config.ts`. Removing an app changes `pnpm-lock.yaml` only, unless it is the app `tailwindStylesheet` names.
 
-**Add a Next.js app.** Copy `apps/app` with Turborepo's generator, then give the new app its own port in its `dev` script and in its `playwright.config.ts`:
+`pnpm dev` and `pnpm start` run every app at once and pass `--concurrency=10`, Turborepo's default, because `concurrency` in `turbo.json` limits the checks on a two-core CI runner to 3 and Turborepo refuses more persistent tasks than its concurrency. Turborepo asks for a concurrency above the number of persistent tasks, so nine is the most apps they start. A project with more apps raises `--concurrency` in those two scripts to at least one more than its number of apps.
+
+**Add a Next.js app.** Copy `apps/app` with Turborepo's generator, which asks questions at a prompt, then give the new app its own port in its `dev` script and in its `playwright.config.ts`:
 
 ```sh
 pnpm exec turbo gen workspace --copy <the package name in apps/app/package.json> --destination apps/<name> --name <a new package name>

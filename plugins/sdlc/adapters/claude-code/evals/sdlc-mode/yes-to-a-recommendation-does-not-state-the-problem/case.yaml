@@ -1,0 +1,33 @@
+schema_version: "1.1"
+name: yes-to-a-recommendation-does-not-state-the-problem
+expected_outcome: |
+  The request gives no words for the problem or for what is out of scope, and tells the agent to take its own recommendations. The agent does not write the problem or the scope from its own inference: it asks for them as open questions, and it writes no intent yet.
+graders:
+  - name: reply-asks-a-question
+    type: regex
+    pattern: '\?'
+    flags: mu
+  - name: no-intent-written
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md'
+    min: 0
+    max: 0
+  - name: no-intent-created
+    type: regex
+    pattern: 'intent\.md$'
+    flags: m
+    match: not_contains
+    target: files
+  - name: no-commit-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bcommit\b'
+    min: 0
+    max: 0
+  - name: no-push-or-pull-request-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bpush\b|\bpr\s+create\b'
+    min: 0
+    max: 0

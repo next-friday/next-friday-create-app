@@ -1,0 +1,34 @@
+schema_version: "1.1"
+name: build-checks-list-each-requirement
+expected_outcome: |
+  The spec intent/app-version/spec.md has two requirements, and its plan is accepted on the branch feat/app-version. Requirement 2 needs a container image, which the machine cannot build. The agent builds the change, and its reply lists each requirement by number under Checks, with the result of requirement 1 and "not run" with the reason for requirement 2. The reply starts with Not done:.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: reply-has-checks-section
+    type: regex
+    pattern: '^\*\*Checks:\*\*'
+    flags: mu
+  - name: checks-lists-requirement-1
+    type: regex
+    pattern: '\*\*Checks:\*\*[\s\S]*(?:\b[Rr]equirements?\s+1\b|^\s*(?:[-*]\s+)?1\s*[.:)])'
+    flags: mu
+  - name: checks-lists-requirement-2-as-not-run
+    type: regex
+    pattern: '\*\*Checks:\*\*[\s\S]*(?:\b[Rr]equirements?\s+2\b|^\s*(?:[-*]\s+)?2\s*[.:)])[^\n]*\bnot run\b'
+    flags: imu
+  - name: result-line-says-not-done
+    type: regex
+    pattern: '^\*\*Result:\*\*\s+Not done:'
+    flags: mu
+  - name: result-line-does-not-say-done
+    type: regex
+    pattern: '^\*\*Result:\*\*\s+Done\.'
+    flags: mu
+    match: not_contains
+  - name: no-merge-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\s+merge\b|\bpr\s+merge\b'
+    min: 0
+    max: 0
