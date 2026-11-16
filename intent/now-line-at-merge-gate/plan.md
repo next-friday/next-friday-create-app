@@ -1,4 +1,4 @@
-# Plan: The Now line tells a person to merge a change that is not proved
+# Plan: The Now line tells a person to merge a change that is not proved (fix)
 
 Accepted by: @joetakara.
 
