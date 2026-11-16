@@ -8,7 +8,7 @@ graders:
   - name: no-done-file-is-deleted
     type: tool_used
     tool: Bash
-    input_match: '\b(?:rm|git\s+rm|mv|git\s+mv)\s[^"]*intent/export-sync/'
+    input_match: '\b(?:rm|git\s+rm|mv|git\s+mv)\s[^"]*intent/export-sync(?:/|(?![\w-]))|\bcd\s+[^"]*intent/export-sync(?![\w-])[^"]*\b(?:rm|mv)\s'
     min: 0
     max: 0
   - name: no-done-file-is-written

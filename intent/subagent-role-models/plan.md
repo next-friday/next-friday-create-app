@@ -10,10 +10,10 @@ Accepted by: @joetakara.
 - `.claude/agents/verifier.md`, `templates/base/.claude/agents/verifier.md`, and `plugins/sdlc/adapters/claude-code/agents/verifier.md` (changed, rendered by `pnpm plugin:sync`): the frontmatter holds `model: haiku`. The Cursor copies do not change.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/plan.md` (changed): step 4 writes the intent in a folder that does not exist yet, and a later round of the same work gets its own folder.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/design.md` (changed): step 1, when `spec.md` already exists, says that new work starts from an intent in a new folder.
-- `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the reply shape forbids deleting or rewriting a merged intent, spec, or plan, except its `Status:` line; and, from the `small/` branch this one replaces, the agent hands over only what a person can use as it is.
+- `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the reply shape forbids deleting or rewriting a merged intent, spec, or plan, except its `Status:` line; this branch also carries, from the `small/` branch it replaces, the rule that the agent hands over only what a person can use as it is.
 - The rendered copies of those three skill files in `.claude/skills/`, `templates/base/.claude/skills/`, and `plugins/sdlc/adapters/claude-code/skills/` (changed, by `pnpm plugin:sync`).
 - `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/new-round-gets-a-new-intent-folder/` (new): `case.yaml`, `prompt.md`, `scaffold.sh`, and one grader. A done intent folder says one folder holds every sync and that its earlier spec and plan were removed, and the person asks for the next round.
-- `.changeset/ready-to-use-handoff.md` (new, from the `small/` branch): `minor`. `.changeset/subagent-role-models.md` (new): `patch`.
+- `.changeset/ready-to-use-handoff.md` (new, carried from the `small/` branch): `minor`. `.changeset/subagent-role-models.md` (new): `patch`.
 
 ## Order of work
 
