@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Do these steps in order.
 
-1. **Match the request** to the first row that fits, and read that row's file before you act. When the task's first reply will hold **Request**, as the reply shape says, write those lines once, as your first message, before your first tool call. Never write them again in a reply.
+1. **Match the request** to the first row that fits, and read that row's file before you act. When the reply shape gives the task a **Request**, write those lines once, as your first message, before your first tool call. Never write them again in a reply.
 
    | The request                                                                                                                                                                                      | What to do                                                                                                                     |
    | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |

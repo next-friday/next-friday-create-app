@@ -4,20 +4,20 @@
 
 ## Commands
 
-| Task                           | Command                                                     |
-| :----------------------------- | :---------------------------------------------------------- |
-| Every check (pre-push runs it) | `pnpm verify`                                               |
-| Tests                          | `pnpm test`, or `pnpm test:coverage`                        |
-| One test                       | `pnpm vitest run test/stacks.test.ts -t "<test name>"`      |
-| Lint, types, unused code       | `pnpm lint:check`, `pnpm typecheck`, `pnpm knip`            |
-| Build `dist/main.mjs`          | `pnpm build`                                                |
-| Render agent rules             | `pnpm rules:sync`; `pnpm rules:check` fails on stale copies |
-| Render the `sdlc` harness      | `pnpm plugin:sync`; `pnpm plugin:check` fails on stale ones |
-| Release note, when one is due  | `pnpm changeset` (see `.changeset/README.md`)               |
+| Task                                                        | Command                                                     |
+| :---------------------------------------------------------- | :---------------------------------------------------------- |
+| Every check (pre-push runs it for a push that changes code) | `pnpm verify`                                               |
+| Tests                                                       | `pnpm test`, or `pnpm test:coverage`                        |
+| One test                                                    | `pnpm vitest run test/stacks.test.ts -t "<test name>"`      |
+| Lint, types, unused code                                    | `pnpm lint:check`, `pnpm typecheck`, `pnpm knip`            |
+| Build `dist/main.mjs`                                       | `pnpm build`                                                |
+| Render agent rules                                          | `pnpm rules:sync`; `pnpm rules:check` fails on stale copies |
+| Render the `sdlc` harness                                   | `pnpm plugin:sync`; `pnpm plugin:check` fails on stale ones |
+| Release note, when one is due                               | `pnpm changeset` (see `.changeset/README.md`)               |
 
 ## Verifying your work
 
-Run `pnpm build` (its last line starts with `✔ Build complete`), `pnpm test:coverage` (all green; never skip or delete a failing test), and `pnpm lint:check` (prints nothing after the `eslint` line) before reporting a task complete, and paste the output. `pnpm verify` runs all three.
+Run `pnpm build` (its last line starts with `✔ Build complete`), `pnpm test:coverage` (all green; never skip or delete a failing test), and `pnpm lint:check` (prints nothing after the `eslint` line) to check a change to code. `pnpm verify` runs all three. While it works, the agent runs the checks of the files it changed. The full set runs once, in the `pre-push` hook, and the reply's **Checks** quotes the hook's output from the push.
 
 For a change to the prompts or the arguments, also run `node dist/main.mjs` with those arguments in a new temporary directory after `pnpm build`. Exercise the changed behavior and the two nearest neighboring flows. Report what you ran, what you saw, and any behavior that does not match `plan.md`.
 

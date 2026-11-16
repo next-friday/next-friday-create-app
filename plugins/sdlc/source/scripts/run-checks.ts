@@ -108,7 +108,7 @@ function isAnsweredFromCache(output: string): boolean {
     summaries.every(summary => {
       const [cached, total] = summary.match(/\d+/gu) ?? [];
 
-      return cached === total;
+      return total !== "0" && cached === total;
     })
   );
 }
@@ -159,7 +159,7 @@ function runSteps(steps: Step[], runStep: (name: string) => StepResult): StepOut
 }
 
 /**
- * Run `pnpm run <name>`, passing its output on as it comes.
+ * Run `pnpm run <name>`, and print its output when it ends.
  * @param name The package script's name.
  * @returns The exit code, and whether Turborepo answered every task from its cache.
  */

@@ -20,7 +20,6 @@ Pile 2, hooks and scripts (requirements 5, 11, 12, 14, 15, 25):
 
 - `plugins/sdlc/source/scripts/run-checks.ts` (new): runs the steps of `verify` and `check`, and prints one line for each step with its result and whether Turborepo's cache answered.
 - `plugins/sdlc/source/scripts/changed-documents.ts` (new): reads the one rule on which changes are documents, and says whether a set of changed files holds only documents.
-- `scripts/sync-plugin.ts` (changed): renders the two new scripts into `templates/base/scripts/`.
 - `templates/base/.husky/pre-push` and `templates/base/.husky/pre-commit` (changed): the push runs by what changed, and scopes Turborepo to the affected apps; `rules:check` leaves `pre-commit`.
 - `templates/base/.claude/settings.json` (changed): `env.CLAUDE_CODE_FORK_SUBAGENT` is `"0"`.
 - `templates/base/SETUP.md` (changed): says what that setting does and how a person removes it.
@@ -39,14 +38,14 @@ Pile 3, the `turborepo` stack and the stacks' documents (requirements 10 for `AG
 - `AGENTS.md` of the other four stacks (changed): the agent's narrow checks in "Verifying your work".
 - `CONTRIBUTING.md` of each stack (changed): the form of a branch name.
 
-After the three piles, in one session: the rendered copies under `plugins/sdlc/adapters/`, `.claude/skills/`, and `templates/base/` (changed by `pnpm plugin:sync`), `.changeset/session-conformance.md` (new, `patch`), `intent/sdlc-session-conformance/intent.md` and `spec.md` (`Status: done.`), and this plan.
+After the three piles, in one session: the rendered copies under `plugins/sdlc/adapters/`, `.claude/skills/`, and `templates/base/` (changed by `pnpm plugin:sync`), `.changeset/session-conformance.md` (new, `minor`), `intent/sdlc-session-conformance/intent.md` and `spec.md` (`Status: done.`), and this plan.
 
 ## Order of work
 
 1. Find three facts before any edit. Check: each is written here.
    - `"concurrency"` in `templates/turborepo/turbo.json` came with `intent/ci/`, whose spec asks for "a `--concurrency` that fits the runner's memory" and whose plan calls it "a starting value for a two-core runner". The value has a reason, so it stays, and the `dev` and `start` scripts pass their own.
    - All five stacks define `check` as `pnpm verify:static && pnpm test:changed && pnpm build` and `verify:static` as the same ten steps. `verify` adds `test:coverage` and `build`, and `nestjs` adds `test:e2e`.
-   - In this repository, `eslint --fix` on one `.ts` file took 5.3 seconds cold and 2.1 seconds with its cache, and `prettier --write` took 0.2 seconds. The slow part of the edit hook is ESLint. The spec changes nothing in that hook.
+   - In this repository, the slow part of the edit hook is ESLint. The spec changes nothing in that hook.
 2. Start the three agents, each in a worktree from the build branch, each with its pile, the spec, and this plan. Each is started so that its report returns in one call; the session does not poll, sleep, or message them. Check: three reports.
 3. Read each agent's diff against the spec, requirement by requirement. Send a pile back once with what is wrong. Check: each requirement of the pile has its line in the diff.
 4. Bring the three worktrees' changes onto the build branch. Check: `git status` shows no conflict, and no file is changed by two piles.
@@ -84,4 +83,4 @@ After the three piles, in one session: the rendered copies under `plugins/sdlc/a
 38: `pnpm plugin:sync`, then `pnpm plugin:check`.
 39: `pnpm verify` in the root and in a generated project of each stack.
 40: no new case under `evals/` holds `type: llm`.
-41: `.changeset/session-conformance.md` exists, with the type `patch`.
+41: `.changeset/session-conformance.md` exists, with the type `minor`, which `.changeset/README.md` gives for a new script in the generated project.

@@ -79,11 +79,11 @@ Three jobs in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) run only in
 
 ## Git hooks
 
-| Hook         | What it does                                                                                        |
-| :----------- | :-------------------------------------------------------------------------------------------------- |
-| `pre-commit` | Rejects commits on `main`, scans staged changes with gitleaks (`.gitleaks.toml`), runs lint-staged. |
-| `commit-msg` | Checks the message with `@next-friday/commitlint-config-friday`.                                    |
-| `pre-push`   | Rejects pushes to `main`, then runs `pnpm verify`.                                                  |
+| Hook         | What it does                                                                                                                                                                            |
+| :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre-commit` | Rejects commits on `main`, scans staged changes with gitleaks (`.gitleaks.toml`), runs lint-staged.                                                                                     |
+| `commit-msg` | Checks the message with `@next-friday/commitlint-config-friday`.                                                                                                                        |
+| `pre-push`   | Rejects pushes to `main`, then runs `pnpm verify`. A push that changes only documents runs `pnpm rules:check`, `pnpm plugin:check`, `pnpm plan:check`, and `pnpm format:check` instead. |
 
 ## Release intent
 

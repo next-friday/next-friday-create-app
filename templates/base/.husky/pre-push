@@ -29,8 +29,8 @@ $ref_files"
 done
 
 if [ "$are_changed_files_known" = true ] && printf '%s\n' "$changed_files" | node scripts/changed-documents.ts; then
-  pnpm plan:check && pnpm format:check || {
-    echo "pre-push: pnpm plan:check or pnpm format:check failed. Fix the failures above, commit, then push again." >&2
+  pnpm rules:check && pnpm plan:check && pnpm format:check || {
+    echo "pre-push: pnpm rules:check, pnpm plan:check, or pnpm format:check failed. Fix the failures above, commit, then push again." >&2
     exit 1
   }
   exit 0
