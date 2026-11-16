@@ -1,7 +1,8 @@
 ---
 type: llm
-focus: trace
+focus: last_message
 weight: 1
 ---
 
-The reply says which row of the `/sdlc-mode` table is closest and why it does not fit
+PASS if the reply names the row of the `/sdlc-mode` table that is closest to the request and says why the request does not fit it.
+FAIL if the reply names no row, or gives no reason.

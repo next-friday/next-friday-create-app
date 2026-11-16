@@ -1,4 +1,4 @@
-# Plan phase: write `intent.md`
+# Intent phase: write `intent.md`
 
 This playbook writes the intent. The build plan, `intent/<change>/plan.md`, comes later and is not written here.
 

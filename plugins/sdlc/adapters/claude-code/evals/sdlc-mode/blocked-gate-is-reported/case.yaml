@@ -23,3 +23,7 @@ graders:
     input_match: '\bgit\b[^"]*\bcommit\b'
     min: 0
     max: 0
+  - name: reply-points-to-an-intent
+    type: regex
+    pattern: '/(?:sdlc:)?sdlc-mode\b|intent\.md|\b(?:an|the) intent\b'
+    flags: imu

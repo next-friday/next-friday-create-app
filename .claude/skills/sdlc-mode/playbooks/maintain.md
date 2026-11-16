@@ -8,7 +8,7 @@ This playbook starts from a finding such as an alert, a monitoring ticket, a fai
    - Write no file outside `intent/`, and start no deploy.
    - Act only through a route that `bands.yaml` lists for that tier. The route `pull_request` is the pull request in step 5. Any other route is a runbook of that name, which you name in the intent and never run. Only a session that a release manager started with `RELEASE_APPROVAL` runs a runbook, and a job never does.
    - When the tier's action is only to log, put the finding in your reply and stop.
-3. Write `intent/<change>/intent.md` from the template in `playbooks/plan.md`. Use exactly the template's five headings.
+3. Write `intent/<change>/intent.md` from the template in `playbooks/intent.md`. Use exactly the template's five headings.
    - **Problem.** Give the anomaly and its evidence, which is the number, its source, and the time.
    - **Proposed outcome.** Say what the fixed system does, as its user would see it.
    - **Open questions.** List everything the evidence does not settle, including the cause when you could not prove it. Never state a cause you did not verify.
@@ -21,6 +21,6 @@ This playbook starts from a finding such as an alert, a monitoring ticket, a fai
    - An open pull request with no such comment is undecided. Say so, and never report it as scheduled.
    - A dismissal tunes the bands. The service owner adjusts `bands.yaml` so the same noise raises fewer findings.
    - The service owner asks the product owner to decide a product-facing finding.
-   - You do none of these. Report the pull request's URL and stop, as `playbooks/review.md` step 5 says.
+   - You do none of these. Report the pull request's URL and stop, as `playbooks/review.md` step 5 says. The reply asks the person nothing. It names the intent file and does not repeat its open questions.
 
 **Hands off to:** `playbooks/design.md`. An agent runs it when the service owner has merged the intent's pull request and a person or a job sends `/sdlc-mode` with the intent's path.

@@ -26,8 +26,8 @@ snapshot() {
   cp "$index" "$scratch/index" 2> /dev/null
   content=$(
     export GIT_INDEX_FILE="$scratch/index" GIT_OBJECT_DIRECTORY="$scratch/objects" GIT_ALTERNATE_OBJECT_DIRECTORIES="$objects"
-    git -C "$repository" add -A -- ':(top)' ':(top,exclude)intent' 2> /dev/null
-    git -C "$repository" ls-files -s -- ':(top)' ':(top,exclude)intent' | cksum
+    git -C "$project" add -A -- . ':(exclude)intent' 2> /dev/null
+    git -C "$project" ls-files -s -- . ':(exclude)intent' | cksum
   )
   rm -rf "$scratch"
   printf '%s|%s' "$repository" "$content"

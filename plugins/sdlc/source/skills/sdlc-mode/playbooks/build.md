@@ -2,7 +2,7 @@
 
 This playbook turns a merged spec into a plan the engineer accepts, and then into working code. You own the work. Plan it, do it, and verify it yourself.
 
-1. Find the change. It is the `intent/<change>/` folder whose `spec.md` or `plan.md` the request names. Its `spec.md` must be on the default branch beside its `intent.md`. In each case below, say only that, in two or three lines, and stop. Write no file.
+1. Find the change. It is the `intent/<change>/` folder whose `spec.md` or `plan.md` the request names. Its `spec.md` must be on the default branch beside its `intent.md`. In each case below, say only that, in two or three lines, and stop. The reply is those lines and the **Now** line. It holds no **Request**, no **Steps**, and no **Checks**. Write no file.
    - **No change is named, or the folder has no `spec.md` on any branch.** List each `intent/*/` on the default branch that has a `spec.md` and no `plan.md`, or say that there is none.
    - **The spec exists only on another branch.** Say that the spec is not merged yet, and name that branch.
    - **`plan.md` is on the default branch and `spec.md` says `Status: done.`** Say that the change is built, and name both files.
@@ -21,7 +21,7 @@ This playbook turns a merged spec into a plan the engineer accepts, and then int
 
    Only when two designs compete and the files do not settle which one, start a subagent on the `advise` model, as `../SKILL.md` step 4 says. Give it the plan and `spec.md`, and say in the reply what it advised.
 
-   Show the whole plan and name the file only as `intent/<change>/plan.md`. In plan mode you cannot write the file, so show the plan as the plan.
+   Show the whole plan once, and do not restate its sections before it. Name the file only as `intent/<change>/plan.md`. In plan mode you cannot write the file, so show the plan as the plan.
 
 5. **Gate: the engineer accepts the plan.** Stop after showing it. The engineer accepts it in this conversation, in words such as "accepted" or "go", or corrects it. After a correction, revise and show the whole plan again. When the spec classes the change as higher risk, say that a tech lead or an architect accepts it. Write no file before the acceptance. In plan mode, the engineer's approval of the plan is the acceptance.
 6. Create a branch as `playbooks/open-pr.md` says. In its first commit, write `intent/<change>/plan.md` with the `Accepted by:` line set to the handle of the engineer who accepted it. Take the handle as the engineer gives it, or as the host shows whose account the session runs as. Ask for it only when neither holds. Every area of concern of the spec must have a `Decision:` line on the default branch before the build starts. When one has none, say so in two or three lines and stop, because the product owner decides it in a pull request to the spec. Never propose or write a decision during the build.

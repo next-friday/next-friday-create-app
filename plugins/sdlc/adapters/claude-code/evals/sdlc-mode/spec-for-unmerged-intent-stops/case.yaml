@@ -37,3 +37,18 @@ graders:
     input_match: '\bgit\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch\s+(?!-{1,2}(?:a|r|v|vv|l|list|show-current|contains|merged|no-merged|all|remotes|format|sort|points-at)\b)[\w-]|worktree\s+add)'
     min: 0
     max: 0
+  - name: no-push-or-pull-request-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bpush\b|\bpr\s+create\b'
+    min: 0
+    max: 0
+  - name: reply-says-not-merged
+    type: regex
+    pattern: '(?:\bnot|n.t)\b[^.\n]*\bmerged\b|\bunmerged\b|(?:\bnot|n.t) (?:yet )?on\b|\bonly on\b'
+    flags: imu
+  - name: reply-is-short
+    type: regex
+    pattern: '(?:[^\n]*\n){16}'
+    flags: u
+    match: not_contains

@@ -1,6 +1,7 @@
 ---
 name: compliance-policy
-description: The organization's compliance policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches collecting, storing, showing, sending, or deleting data about a person.
+description: The organization's compliance policy. It covers collecting, storing, showing, sending, or deleting data about a person.
+disable-model-invocation: true
 ---
 
 # Compliance policy

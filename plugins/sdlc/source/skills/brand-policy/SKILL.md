@@ -1,6 +1,7 @@
 ---
 name: brand-policy
-description: The organization's brand policy. Read it when /sdlc-mode writes a spec.md or a plan.md, makes a small change or a fix, or reviews a pull request, and whenever a change touches user-visible text, a colour, a typeface, a logo, or a message.
+description: The organization's brand policy. It covers user-visible text, a colour, a typeface, a logo, or a message.
+disable-model-invocation: true
 ---
 
 # Brand policy

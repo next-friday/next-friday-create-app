@@ -1,7 +1,8 @@
 ---
 type: llm
-focus: trace
+focus: last_message
 weight: 1
 ---
 
-The reply reports that the push was refused because the branch has no plan, and names the step the check enforces
+PASS if the reply says the push was refused because the branch adds no plan, and names the step that check enforces: the engineer accepting the plan, step 5 of the build playbook.
+FAIL if the reply does not say why the push was refused, or names no step.

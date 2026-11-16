@@ -32,3 +32,24 @@ graders:
     type: regex
     pattern: '\badvise\b[^\n]*\bopus\b'
     flags: im
+  - name: reply-shows-the-main-model
+    type: regex
+    pattern: '\bmain\b[^\n]*\bsonnet\b[^\n]*\bhigh\b'
+    flags: mu
+  - name: reply-shows-the-explore-model
+    type: regex
+    pattern: '\bexplore\b[^\n]*\bhaiku\b[^\n]*\bhigh\b'
+    flags: mu
+  - name: reply-reports-the-description-step-as-done
+    type: regex
+    pattern: 'Project description[^\n]*\b(?:done|already)\b'
+    flags: imu
+  - name: reply-leaves-branch-protection-to-a-person
+    type: regex
+    pattern: 'Branch protection[^\n]*\b(?:person|admin|you|owner|someone)\b'
+    flags: imu
+  - name: reply-does-not-claim-branch-protection
+    type: regex
+    pattern: 'Branch protection[^\n]*:\s*\**(?:done|verified)\b'
+    flags: imu
+    match: not_contains

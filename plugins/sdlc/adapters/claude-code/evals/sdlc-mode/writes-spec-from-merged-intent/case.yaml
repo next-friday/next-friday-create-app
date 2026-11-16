@@ -27,3 +27,56 @@ graders:
     target:
       source: file
       path: intent/csv-export/spec.md
+  - name: policies-has-one-line-per-policy
+    type: regex
+    pattern: '^## Policies$(?=(?:(?!^## )[\s\S])*\bbrand\b)(?=(?:(?!^## )[\s\S])*\bsecurity\b)(?=(?:(?!^## )[\s\S])*\bcompliance\b)(?=(?:(?!^## )[\s\S])*\bUX\b)'
+    flags: imu
+    target:
+      source: file
+      path: intent/csv-export/spec.md
+  - name: no-policy-is-called-unwritten
+    type: regex
+    pattern: "not (?:yet )?written"
+    flags: imu
+    match: not_contains
+    target:
+      source: file
+      path: intent/csv-export/spec.md
+  - name: reply-names-the-product-owner
+    type: regex
+    pattern: "product owner"
+    flags: imu
+  - name: no-merge-or-approve-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\s+merge\b|\bpr\s+merge\b|\bpr\s+review\b'
+    min: 0
+    max: 0
+  - name: brand-policy-is-read
+    type: regex
+    target: trace
+    pattern: '# Brand policy\b'
+    flags: u
+  - name: security-policy-is-read
+    type: regex
+    target: trace
+    pattern: '# Security policy\b'
+    flags: u
+  - name: compliance-policy-is-read
+    type: regex
+    target: trace
+    pattern: '# Compliance policy\b'
+    flags: u
+  - name: ux-policy-is-read
+    type: regex
+    target: trace
+    pattern: '# UX policy\b'
+    flags: u
+  - name: each-concern-has-a-decision
+    type: regex
+    pattern: '^## Areas of concern$(?:(?!^## )[\s\S])*?^\d+\.(?:(?!Decision:|^## )[\s\S])*?(?=^\d+\.|^## |(?![\s\S]))'
+    flags: mu
+    match: not_contains
+    target:
+      source: file
+      path: intent/csv-export/spec.md

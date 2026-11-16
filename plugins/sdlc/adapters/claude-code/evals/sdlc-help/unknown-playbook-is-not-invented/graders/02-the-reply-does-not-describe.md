@@ -1,7 +1,8 @@
 ---
 type: llm
-focus: trace
+focus: last_message
 weight: 1
 ---
 
-After saying so, the reply stops or offers one next step; it does not go on to give rollback instructions
+PASS if the reply stops after saying there is no rollback playbook, or offers one next step, such as the playbooks that do exist or how to ask for the work.
+FAIL if the reply gives steps or commands for rolling back.

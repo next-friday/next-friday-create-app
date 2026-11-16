@@ -74,11 +74,20 @@ Run each from the repository root. Each one runs its self-tests first and exits 
 
 The cases run with `claude plugin eval`, which loads the skills as the plugin `sdlc`, so a case's prompt names its skill with the prefix `sdlc:`. A case's tag says which command runs it:
 
-| Command                | Cases                | Tools granted                                                                                                                          |
-| :--------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm evals:run`       | tagged `no-shell`    | `Write` and `Edit`.                                                                                                                    |
-| `pnpm evals:run:write` | tagged `needs-write` | `Write`, `Edit`, and `Bash`. `claude plugin eval` runs `Bash` only under an OS sandbox, which on Linux needs `bubblewrap` and `socat`. |
+| Command                  | Cases                | Tools granted                                                                                                                          |
+| :----------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm evals:run`         | tagged `no-shell`    | `Write` and `Edit`.                                                                                                                    |
+| `pnpm evals:run:write`   | tagged `needs-write` | `Write`, `Edit`, and `Bash`. `claude plugin eval` runs `Bash` only under an OS sandbox, which on Linux needs `bubblewrap` and `socat`. |
+| `pnpm evals:run:scripts` | tagged `script-only` | The same as `pnpm evals:run:write`. These cases have no `llm` grader, so the run calls no judge.                                       |
 
-For a change, run only the cases of what changed: add `--case <glob>` to the command, for example `pnpm evals:run:write --case 'deploy-*'`; `--case` filters cases by name glob (`claude plugin eval --help`). Run both commands in full before a release.
+An eval run starts one agent session for each run of each case, so a full run costs money and takes minutes. A case has at most one `llm` grader, for the one thing no script can decide, and the two full commands judge it with `--judge-model sonnet`, because a small judge can mark a correct answer wrong ([Test plugins with evals](https://code.claude.com/docs/en/plugin-evals.md)). Spend a run in this order:
+
+1. Read the trace of a failing run before you run anything again. The cause is in the reply and the tool calls of that run.
+2. Change one thing, then run only its cases, one run each: `pnpm evals:run:write --case '<name>' --runs 1`. `--case` filters cases by name glob, and `--runs` sets the runs for each case (`claude plugin eval --help`).
+3. When that passes, run the same cases at the default three runs.
+4. After a change to a skill, run `pnpm evals:run:scripts`.
+5. Run `pnpm evals:run` and `pnpm evals:run:write` in full once, before the pull request is ready to merge. Change no skill, hook, or eval file while a run is going.
+
+Set `--max-cost-usd <n>` to stop a run at a budget. Use a `regex`, `tool_used`, or `file_exists` grader wherever a script can decide the result: it costs nothing and gives the same verdict every time. Write an `llm` grader as PASS and FAIL conditions on the last message. An `llm` grader on the trace sees only the first 12 and the last 12 messages of the session. Prove a new grader against a kept session (`--keep-temp`) before you trust its verdict.
 
 A grader that requires no file, commit, or branch passes whatever the skill says unless its case may use the tool it forbids, so each case runs under the command that grants that tool.

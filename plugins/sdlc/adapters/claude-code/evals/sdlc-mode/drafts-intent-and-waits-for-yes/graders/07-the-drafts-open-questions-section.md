@@ -1,7 +1,8 @@
 ---
 type: llm
-focus: trace
+focus: last_message
 weight: 1
 ---
 
-The draft's Open questions section lists what is still unknown or unverified, and says "None" only when nothing is
+PASS if the Open questions section of the draft in the reply says "None", or lists things that are still unknown or unverified.
+FAIL if the reply shows no Open questions section, or the section says "None" while the reply itself names something it could not check.

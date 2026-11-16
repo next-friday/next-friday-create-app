@@ -46,6 +46,7 @@ type HookCase = {
   input: Record<string, unknown>;
   merged?: boolean;
   name: string;
+  projectFolder?: string;
   savedReply?: string;
   snapshotArgument?: string;
 };
@@ -95,6 +96,18 @@ const projectSkillsDirectory = ".claude/skills";
 const toolWordsDirectory = "sdlc-mode/tool-words";
 const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-mode/hooks`;
 const pluginLoaderScript = path.join(templateRoot, ".cursor", "hooks", "load-project-plugins.sh");
+
+const repositoryVariables = execFileSync("git", ["rev-parse", "--local-env-vars"], {
+  encoding: "utf8",
+})
+  .trim()
+  .split("\n");
+
+// Git sets these in a hook, where they point every git command of a hook case at this repository instead of the case's own.
+for (const name of repositoryVariables) {
+  Reflect.deleteProperty(process.env, name);
+}
+
 const textExtensions = new Set([".json", ".md", ".sh", ".ts", ".yaml", ".yml"]);
 const ignoredDirectories = new Set(["results"]);
 
@@ -505,9 +518,16 @@ function runHookCase(script: string, hookCase: HookCase): string {
       cwd: createCaseRepository(stateDirectory),
     };
 
+    const project = path.join(input.cwd, hookCase.projectFolder ?? "");
+
+    mkdirSync(project, {
+      recursive: true,
+    });
+
     const caseInput = {
       ...input,
-      workspace_roots: [input.cwd],
+      cwd: project,
+      workspace_roots: [project],
     };
 
     writeCaseFiles(input.cwd, hookCase.filesBeforeTurn ?? [], "before\n");

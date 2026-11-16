@@ -29,3 +29,11 @@ graders:
     input_match: '\bgit\b[^"]*\bcommit\b'
     min: 0
     max: 0
+  - name: reply-gives-an-example-message
+    type: regex
+    pattern: '(?:^|`)\s*/(?:sdlc:)?sdlc-mode [^`\n]{8,}'
+    flags: mu
+  - name: reply-lists-a-project-file
+    type: regex
+    pattern: '[\w./-]+\.md\b'
+    flags: mu
