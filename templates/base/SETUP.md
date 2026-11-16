@@ -75,7 +75,7 @@ In `.github/CODEOWNERS`, add these lines in this order. GitHub uses the last mat
 
 Replace every owner above with a GitHub user or team that has write access to the repository. Also replace the owner placeholder in `.github/zizmor.yml`.
 
-Code owners need: write access to the repository for each owner; for a team, a visible team that itself has write access; and, in a private repository, GitHub Pro, Team, or Enterprise (**paid:** in a private repository; **free alternative:** make the repository public) ([code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)). Until the ruleset of step 3 requires their review, a code owner is asked for a review and a pull request merges without it.
+Code owners need: write access to the repository for each owner; for a team, a visible team that itself has write access; and, in a private repository, GitHub Pro, Team, or Enterprise (paid in a private repository; the free alternative is to make the repository public) ([code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)). Until the ruleset of step 3 requires their review, a code owner is asked for a review and a pull request merges without it.
 
 Replace `security@example.com` in `SECURITY.md` with the contact the security policy owner names, such as the security email of the company or of the client.
 
@@ -88,15 +88,15 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 - **Actions → General → Workflow permissions.** Select **Read repository contents and packages permissions**. Every workflow requests the extra permissions it needs.
 - **General → Pull Requests.** Select **Automatically delete head branches**, so a branch is deleted when its pull request merges.
 - **General → Pull Requests → Allow squash merging.** Set the default commit message to the pull request title alone ([configure commit squashing](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/configuring-commit-squashing-for-pull-requests)). Each commit on `main` is then the pull request title and number, with only co-author trailers in the body; the pull request description holds the why.
-- **Advanced Security.** Enable Dependabot alerts and Dependabot security updates. If the organization has [GitHub Secret Protection](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security), also enable secret scanning and push protection; a private repository needs it for both, and it needs a GitHub Team or GitHub Enterprise plan (**paid:** in a private repository; **free alternative:** gitleaks and TruffleHog scan for secrets in CI either way).
+- **Advanced Security.** Enable Dependabot alerts and Dependabot security updates. If the organization has [GitHub Secret Protection](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security), also enable secret scanning and push protection; a private repository needs it for both, and it needs a GitHub Team or GitHub Enterprise plan (paid in a private repository; the free alternative is to gitleaks and TruffleHog scan for secrets in CI either way).
 - **Rules → Rulesets.** Protect `main` with:
   - squash merges only, a linear history, and no force pushes or deletion;
   - the required checks `All Checks` and `Validate pull request title`;
   - a pull request before merging, with at least one approval, review from Code Owners, and stale approvals dismissed when new commits are pushed. Claude Code Review follows the severity, exclusion, and nit-cap rules in `REVIEW.md` only on a default branch protected this way ([customize Code Review](https://code.claude.com/docs/en/code-review-customize)).
 
-  Rulesets in a private repository need GitHub Pro, Team, or Enterprise (**paid:** in a private repository; **free alternative:** make the repository public). Without a ruleset, a person can merge a pull request with no review, and the agent says so on each pull request.
+  Rulesets in a private repository need GitHub Pro, Team, or Enterprise (paid in a private repository; the free alternative is to make the repository public). Without a ruleset, a person can merge a pull request with no review, and the agent says so on each pull request.
 
-- **Secrets and variables → Actions → Variables.** In a private repository, set `CODE_SCANNING` to `true` to run CodeQL, Scorecard, and Dependency Review, which need GitHub Code Security there (**paid:** in a private repository; **free alternative:** public repositories run them without it). Set `CONTAINER_IMAGE` to `false` to skip the job that builds and scans the container image, for a project that ships no image.
+- **Secrets and variables → Actions → Variables.** In a private repository, set `CODE_SCANNING` to `true` to run CodeQL, Scorecard, and Dependency Review, which need GitHub Code Security there (paid in a private repository; the free alternative is to public repositories run them without it). Set `CONTAINER_IMAGE` to `false` to skip the job that builds and scans the container image, for a project that ships no image.
 - Create the `needs triage` label, which the issue forms apply: `gh label create "needs triage"`.
 
 **Check.** A test pull request shows the two required checks and asks for a code owner's review.
