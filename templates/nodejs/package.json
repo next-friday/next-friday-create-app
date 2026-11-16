@@ -19,6 +19,7 @@
     "format": "prettier --write --cache .",
     "format:check": "prettier --check --cache .",
     "gates:check": "node scripts/check-agent-gates.ts",
+    "harness:check": "node scripts/check-harness.ts",
     "knip": "knip",
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",

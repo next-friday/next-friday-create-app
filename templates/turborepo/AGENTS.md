@@ -16,6 +16,7 @@ Turborepo workspace in TypeScript on pnpm and Node.js `>=26.13.0 <27`. `apps/app
 | What `pre-push` runs               | `pnpm check`                                                                               | exits 0; the output ends with the summary `Tasks:    2 successful, 2 total`                                                  |
 | Every check except `pnpm test:e2e` | `pnpm verify`                                                                              | exits 0; the output ends with the summary `Tasks:    2 successful, 2 total`                                                  |
 | Render rules after a change        | `pnpm rules:sync`                                                                          | `Synced 37 agent rule files; 0 updated.`                                                                                     |
+| Compare the harness with a create-app version | `pnpm harness:check <version>` | ends with `none differs.` |
 
 ## Verifying your work
 

@@ -13,6 +13,7 @@ Next.js App Router web app with React and Tailwind CSS, in TypeScript on pnpm an
 | What `pre-push` runs               | `pnpm check`                                                | exits 0; the last output is the route table of `next build` with `ƒ /health` |
 | Every check except `pnpm test:e2e` | `pnpm verify`                                               | exits 0; the last output is the route table of `next build` with `ƒ /health` |
 | Render rules after a change        | `pnpm rules:sync`                                           | `Synced 37 agent rule files; 0 updated.`                                     |
+| Compare the harness with a create-app version | `pnpm harness:check <version>` | ends with `none differs.` |
 
 ## Verifying your work
 

@@ -13,6 +13,7 @@ NestJS HTTP API in TypeScript on pnpm and Node.js `>=26.13.0 <27`.
 | What `pre-push` runs        | `pnpm check`                                        | exits 0; the last line is `$ tsc -p tsconfig.build.json` |
 | Every check                 | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json` |
 | Render rules after a change | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                 |
+| Compare the harness with a create-app version | `pnpm harness:check <version>` | ends with `none differs.` |
 
 ## Verifying your work
 

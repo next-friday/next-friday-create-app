@@ -45,6 +45,7 @@
     "format": "prettier --write --cache .",
     "format:check": "prettier --check --cache . && editorconfig-checker",
     "gates:check": "node scripts/check-agent-gates.ts",
+    "harness:check": "node plugins/sdlc/source/scripts/check-harness.ts --self-test",
     "knip": "knip",
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
@@ -62,7 +63,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm rules:check && pnpm plugin:check && pnpm gates:check && pnpm plan:check && pnpm bands:check && pnpm changesets:check && pnpm lint:check && pnpm format:check && pnpm sort-package-json:check && pnpm typecheck && pnpm test:coverage && pnpm knip && pnpm build && pnpm check:publint"
+    "verify": "pnpm rules:check && pnpm plugin:check && pnpm gates:check && pnpm plan:check && pnpm harness:check && pnpm bands:check && pnpm changesets:check && pnpm lint:check && pnpm format:check && pnpm sort-package-json:check && pnpm typecheck && pnpm test:coverage && pnpm knip && pnpm build && pnpm check:publint"
   },
   "dependencies": {
     "@clack/prompts": "1.8.1"
