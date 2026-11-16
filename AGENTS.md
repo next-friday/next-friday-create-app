@@ -19,9 +19,11 @@
 
 Run `pnpm build` (its last line starts with `✔ Build complete`), `pnpm test:coverage` (all green; never skip or delete a failing test), and `pnpm lint:check` (prints nothing after the `eslint` line) before reporting a task complete, and paste the output. `pnpm verify` runs all three.
 
+For a change to the prompts or the arguments, also run `node dist/main.mjs` with those arguments in a new temporary directory after `pnpm build`. Exercise the changed behavior and the two nearest neighboring flows. Report what you ran, what you saw, and any behavior that does not match `plan.md`.
+
 ## Conventions
 
-1. **Edit `src/`, `test/`, and `templates/`; never edit `dist/` or a rendered copy.** `pnpm rules:sync` renders `.agents/`, and `pnpm plugin:sync` renders `plugins/sdlc/source/`.
+1. **Edit `src/`, `test/`, and `templates/`; never edit `dist/` or a rendered copy.** The sources are `.agents/` and `plugins/sdlc/source/`. `pnpm rules:sync` renders `.agents/` into `.claude/rules/`, `.cursor/rules/`, and `REVIEW.md`. `pnpm plugin:sync` renders `plugins/sdlc/source/` into `.claude/skills/`, `plugins/sdlc/adapters/claude-code/`, and `templates/base/`. Edit a source, never its rendered copy.
 2. **Preserve CLI arguments, prompts, and stack names** unless a major changeset declares the break. `.changeset/README.md` says when a change needs a changeset.
 3. **When you change a `base` file that a stack replaces, make the same change in each replacement.** `CONTRIBUTING.md` lists them.
 4. **Store `.gitignore` as `_gitignore` and commit no `pnpm-lock.yaml` under `templates/`.**
