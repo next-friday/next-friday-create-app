@@ -50,3 +50,8 @@ graders:
     input_match: 'Author: [^\\]*Eval Author'
     min: 0
     max: 0
+  - name: open-questions-names-the-other-repository
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md[\s\S]*## Open questions(?:\\n)+[\s\S]*(?:web-app|Finance Tools)'
+    min: 1

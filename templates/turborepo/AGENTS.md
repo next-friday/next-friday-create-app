@@ -21,12 +21,12 @@ Turborepo workspace in TypeScript on pnpm and Node.js `>=26.13.0 <27`. `apps/app
 ## Verifying your work
 
 - Build: `pnpm build` (prints `Tasks:    2 successful, 2 total`)
-- Test: `pnpm test:coverage` (all green, and prints `Tasks:    2 successful, 2 total`; never skip or delete a failing test)
+- Test: `pnpm test:coverage` (all green, and prints `Tasks:    2 successful, 2 total`)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
 Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.
 
-The `verifier` subagent starts the apps with `pnpm dev` and exercises the changed behavior and the two nearest neighboring flows.
+The `verifier` subagent starts the apps with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 
 For a change to a page, the visual check uses the `playwright` MCP server from `.mcp.json`.
 
@@ -49,7 +49,7 @@ When Claude makes a mistake twice, add the correction here.
 
 - **Failing tests**: when a test fails, fix the code, not the test. Never skip, delete, or weaken a test to make a check pass.
 - **Next.js docs live per app**: this Next.js version differs from your training data. Read the guide in `apps/app/node_modules/next/dist/docs/` or `apps/backoffice/node_modules/next/dist/docs/` before writing Next.js code; the workspace root has no `next` package.
-- **Database for `pnpm dev` and end-to-end tests**: the backoffice needs a PostgreSQL database in `DATABASE_URL` and `PAYLOAD_SECRET` in `.env`. `CONTRIBUTING.md` says how to run end-to-end tests.
+- **Database for `pnpm dev` and end-to-end tests**: the backoffice needs a PostgreSQL database in `DATABASE_URL`, and `PAYLOAD_SECRET` and `APP_URL`, in `.env`. `pnpm build`, `pnpm check`, and `pnpm verify` need the three variables too. `CONTRIBUTING.md` says how to run end-to-end tests.
 - **Issues**: open an issue only to hand work to another person, never to give a pull request a number to close. A pull request closes an issue that already exists with `Closes #<issue>`.
 - **What belongs in the repository**: files, commit messages, and pull requests hold the change, its reason, and the checks. Write no date, log, history, mistake count, token figure, or session note into a file.
 - **Sourced requirements**: add a requirement to an intent, spec, or plan only when a person decided it or a named source says it. This includes a requirement a review bot suggests. When no person decided it and no source says it, leave it out and answer the thread with that.

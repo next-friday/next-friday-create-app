@@ -35,5 +35,5 @@ graders:
     max: 0
   - name: reply-asks-to-accept-or-correct-the-plan
     type: regex
-    pattern: '\baccept'
+    pattern: '^\*\*Now:\*\*[^\n]*\baccept'
     flags: imu

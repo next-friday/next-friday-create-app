@@ -18,7 +18,7 @@ Next.js App Router web app with React and Tailwind CSS, in TypeScript on pnpm an
 ## Verifying your work
 
 - Build: `pnpm build` (prints the `Route (app)` table)
-- Test: `pnpm test:coverage` (all green, then the coverage summary; never skip or delete a failing test)
+- Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
 Run all three before reporting any task complete, and paste the output. `pnpm verify` runs all three.

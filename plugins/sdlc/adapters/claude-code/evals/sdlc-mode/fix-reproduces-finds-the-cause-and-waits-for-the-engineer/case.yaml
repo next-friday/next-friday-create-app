@@ -9,6 +9,11 @@ graders:
     type: regex
     pattern: '1\.NaN\.0'
     flags: mu
+  - name: reproduction-runs-the-code
+    type: tool_used
+    tool: Bash
+    input_match: '\b(?:node|tsx|bun|deno|npx|pnpm)\b[\s\S]*(?:parseVersion|version\.ts)'
+    min: 1
   - name: reply-has-plan-headings
     type: regex
     pattern: '(?=[\s\S]*Files that change)(?=[\s\S]*Order of work)(?=[\s\S]*Risks)(?=[\s\S]*Proof)'
@@ -43,5 +48,5 @@ graders:
     max: 0
   - name: reply-asks-to-accept-or-correct-the-plan
     type: regex
-    pattern: '\baccept'
+    pattern: '^\*\*Now:\*\*[^\n]*\baccept'
     flags: imu

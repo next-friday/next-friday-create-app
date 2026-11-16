@@ -1,6 +1,6 @@
 # Spec: Each change is reviewed and kept in step with its plan before it is pushed
 
-From `intent/pre-push-review/intent.md`. Status: done.
+From `intent/pre-push-review/intent.md`. Status: replaced.
 
 Written at `main` `619cb88` with the product owner's scope for the starter: a generated project that builds, tests, lints, and runs CI, with the full `sdlc` plugin.
 
