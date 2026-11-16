@@ -32,16 +32,12 @@ A `/setup-sdlc` session in the second project reported more of the same kind:
 13. The `CODEOWNERS` lines `SETUP.md` step 2 prescribes name paths the new project does not hold: `.agents/skills/` and the four `*-policy` folders under it.
 14. On the private free-plan repository, GitHub answered the ruleset request with HTTP 403 and `Upgrade to GitHub Pro or make this repository public to enable this feature.` This is the evidence for item 10.
 15. The session set five things of `SETUP.md` step 3 itself through `gh` and read each back: the `needs triage` label, read-only workflow permissions, squash-only merging with the pull request title as the message, deletion of merged branches, and Dependabot alerts with security updates. `SETUP.md` gives these to a repository admin, and `/setup-sdlc` reports them as `a person checks this`.
-16. The end of `pnpm verify`'s output showed only the build's summary, so the session ran the test and static steps again one at a time to see their results.
-17. `SECURITY.md` must name a contact email. A project with no shared security address ends up with one person's own address in a file every reader of the repository sees and that stays in the Git history.
+16. `SECURITY.md` must name a contact email. A project with no shared security address ends up with one person's own address in a file every reader of the repository sees and that stays in the Git history.
 
-A `/setup-sdlc` session in the first project reported four more:
+A `/setup-sdlc` session in the first project reported two more:
 
-18. The reply-shape Stop hook sent the session's reply back for a **Checks** section after it wrote the models rule in the person's home directory, while `git status --short` in the project was empty. `/setup-sdlc` writes that rule on every run, so the skill meets its own hook. The session then ran the build, the tests, and the static checks, which prove nothing about that file.
-19. The checks the session ran itself came back from Turborepo's cache (`2 cached, 2 total`), so they were not fresh runs; only the `verifier`, which set `TURBO_FORCE=true`, ran them anew.
-20. The generated `.env` points the backoffice at a PostgreSQL role and database the machine did not have. `/health`, `/api/*`, and `/admin` answered 500 and `pnpm test:e2e` could not run. Nothing at creation or in `/setup-sdlc` creates them or says they are missing.
-21. The rules tell the session to wait for a subagent's report before it goes on, and the session had no blocking way to wait, so it ended two turns early to receive the report.
-22. On the first push, GitHub reported one low-severity Dependabot alert on the default branch. Both projects saw one. Neither session opened it.
+17. The generated `.env` points the backoffice at a PostgreSQL role and database the machine did not have. `/health`, `/api/*`, and `/admin` answered 500 and `pnpm test:e2e` could not run. Nothing at creation or in `/setup-sdlc` creates them or says they are missing.
+18. On the first push, GitHub reported one low-severity Dependabot alert on the default branch. Both projects saw one. Neither session opened it.
 
 ## Proposed outcome
 
@@ -61,21 +57,19 @@ The CLI sets the project up when it creates it, so the first commit holds real v
 7. **What the plan allows.** A person learns at creation, or at the top of `SETUP.md`, which steps a private repository on the free plan cannot do.
 8. **Values the repository already holds.** The CLI and `/setup-sdlc` take a value from the project when the project shows it, such as `repository.url` from the `origin` remote, and ask only for the rest (items 12 and 9).
 9. **Settings an agent can apply.** The settings of `SETUP.md` step 3 that a session set through `gh` are applied for the person, with their agreement, and `/setup-sdlc` reports them `done` (item 15). Which ones is open question 12.
-10. **Owners and contact that fit the project.** The `CODEOWNERS` lines the setup writes name paths the project holds, and `SECURITY.md` does not force one person's own email address into the repository (items 13 and 17).
+10. **Owners and contact that fit the project.** The `CODEOWNERS` lines the setup writes name paths the project holds, and `SECURITY.md` does not force one person's own email address into the repository (items 13 and 16).
 
-The harness stops working against the session that sets a project up:
+A project that needs a database says so when it is created:
 
-11. **Reply-shape hook.** A session that changes no file of the project is not sent back for a **Checks** section, and `/setup-sdlc` ends in one reply (item 18).
-12. **Database.** A person who creates a project that needs PostgreSQL learns at creation what the app expects and whether the machine has it, before a request answers 500 (item 20).
-13. **Waiting for a subagent.** The rule on waiting for a subagent's report says what a session that cannot block does (item 21).
+11. **Database.** A person who creates a project that needs PostgreSQL learns at creation what the app expects and whether the machine has it, before a request answers 500 (item 17).
 
-Items 16, 19, and 22 promise no outcome yet: each rests on one session's report, and open questions 14, 17, and 20 hold them.
+Item 18 promises no outcome yet: neither session opened the alert, and open question 16 holds it.
 
 A project already generated by 10.1.2 can take the same files from the release that ships these repairs, and `pnpm harness:check` then reports no difference for them.
 
 The CI repairs and the questions at creation are one change, by the originator's decision.
 
-Out of scope: checks a project's own later code fails, and repairing projects already generated, which their owners do.
+Out of scope: checks a project's own later code fails, and repairing projects already generated, which their owners do. What the two `/setup-sdlc` sessions reported about the harness itself, such as the reply-shape hook and the wait for a subagent, is in `intent/sdlc-session-conformance/`.
 
 ## Affected users and systems
 
@@ -110,10 +104,6 @@ Out of scope: checks a project's own later code fails, and repairing projects al
 11. Whether the CLI reads `repository.url` from the `origin` remote when one exists, which would settle item 12 without a question.
 12. Whether `/setup-sdlc`, or the CLI, applies the settings of item 15 when the session has `gh` and the person agrees, and which of them stay with a repository admin.
 13. Whether `SETUP.md` step 2 keeps `CODEOWNERS` lines for paths a new project does not hold.
-14. What the end of `pnpm verify` should print so one read shows every step's result. Item 16 is one session's report; the output has not been read.
-15. Whether the template offers a contact other than an email for `SECURITY.md`, such as GitHub's private vulnerability reporting. Whether a private repository on the free plan can use that has not been checked.
-16. Why the reply-shape hook fired in item 18 when the project's tree was unchanged; the hook's input in that session has not been read.
-17. Whether a check answered from Turborepo's cache counts as run, and whether the commands `AGENTS.md` names for an agent should force a fresh run.
-18. What the `turborepo` and `payload` stacks do about the database at creation: create it, check for it and say so, or document the step. Item 20 is one machine's report.
-19. What the waiting rule of item 21 should say for a session that cannot block.
-20. Which package the alert of item 22 names, and whether it comes from a dependency the template chooses.
+14. Whether the template offers a contact other than an email for `SECURITY.md`, such as GitHub's private vulnerability reporting. Whether a private repository on the free plan can use that has not been checked.
+15. What the `turborepo` and `payload` stacks do about the database at creation: create it, check for it and say so, or document the step. Item 17 is one machine's report.
+16. Which package the alert of item 18 names, and whether it comes from a dependency the template chooses.
