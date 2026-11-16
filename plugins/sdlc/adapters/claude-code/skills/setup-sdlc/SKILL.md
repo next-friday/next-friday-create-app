@@ -12,11 +12,11 @@ Do these steps in order. Run again with the same answers, the skill writes the s
 2. **Read the rule** when it exists: the rule in the person's home directory that the agent tool loads in every session. Its path is the `rules-file` line of this agent tool's words: read the files in [`../sdlc-mode/tool-words/`](../sdlc-mode/tool-words/), and take the one whose first line names the agent tool this session runs in. With no file for the agent tool, say that this skill has no words for it, write no rule, and go to step 6. The rule's `budget:` line is the current budget, and a role line whose model is on the list keeps that model. A line for a role that is not in step 3 is from an older version: drop it. When the session cannot read the rule, take the lines the request gives as its content, and otherwise start from the defaults.
 3. **Choose each role's model.** A role without a kept model gets its default. A default the session does not offer becomes the offered model of the same family, the newest when there are several. When the family has none, ask about that role in the question of step 4.
 
-   | Role      | Default  | Default effort | Does                                                                                                      |
-   | :-------- | :------- | :------------- | :-------------------------------------------------------------------------------------------------------- |
-   | `main`    | `sonnet` | `high`         | The model of the session itself, which does the work.                                                     |
-   | `explore` | `haiku`  | `xhigh`        | A subagent that reads and searches files and runs the checks, including the `verifier`.                   |
-   | `advise`  | `opus`   | `medium`       | A subagent that reviews a plan, a failure that came back, or work about to be reported done, and advises. |
+   | Role      | Default  | Default effort | Does                                                                                    |
+   | :-------- | :------- | :------------- | :-------------------------------------------------------------------------------------- |
+   | `main`    | `sonnet` | `high`         | The model of the session itself, which does the work.                                   |
+   | `explore` | `haiku`  | `xhigh`        | A subagent that reads and searches files and runs the checks, including the `verifier`. |
+   | `advise`  | `opus`   | `medium`       | A subagent that advises on a check that failed twice, or on two designs that compete.   |
 
 4. **Fix the budget,** which sets the reasoning effort of the roles. When the request names one of the five labels, that is the budget and you ask nothing about it. Otherwise ask one question, through the session's question tool when it has one, with these choices, `balanced` first as the recommended one, adding the roles of step 3 that have no model. Name the current budget when the rule records one; with no rule, say that `balanced` matches the defaults.
 

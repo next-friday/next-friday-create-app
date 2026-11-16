@@ -9,3 +9,5 @@ In a generated project, every `**Result:**` line of `/sdlc-mode`, and an answer 
 The push hook no longer asks for a review of every commit before a push; the review stays at the pull request (`.claude/skills/sdlc-mode/playbooks/review.md`). A hook that asks for a commit or a push no longer lifts a gate.
 
 The rule `agent-owned-work` is removed from every generated project, with its entry in `.agents/rules.json`: it told the agent never to ask a person, so the agent took the step it could do alone over the step the person had ordered.
+
+The `advise` subagent no longer reviews every plan and every finished change: it runs only when a check fails twice or two designs compete. `/sdlc-mode` reviews a pull request once, reports its URL, and stops; it drives the pull request to green only when a person asks. The session runs the `verifier` once when the work is done.
