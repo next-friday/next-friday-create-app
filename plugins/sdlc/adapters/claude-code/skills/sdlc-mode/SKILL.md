@@ -60,7 +60,7 @@ Run every command, the checks included, before you write the reply. Write the re
 
 - State as a fact only what you opened or ran in this turn, and say what you ran. Mark everything else as inferred or not checked.
 - Answer what was asked and stop. Never hand the person a check you could run.
-- When a playbook step or step 1 says to answer in a few lines, or in two or three lines, and stop, the reply is those lines and the **Now** line. Leave out **Request**, **Steps**, and **Checks**.
+- When a playbook step or step 1 says to answer in a few lines, or in two or three lines, and stop, the reply is those lines and the **Now** line. Leave out **Steps** and **Checks**.
 - Send nothing outside the session, such as a message to another session or a service, unless a task step says to.
 - Name each action by what it is. Call something a review only when a review ran. A reminder to check CI is a reminder.
 - When a step fails for want of a permission, stop. Say what failed and what the person can do, before you do anything in its place.

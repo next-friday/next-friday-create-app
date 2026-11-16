@@ -2,7 +2,7 @@
 
 This playbook turns a merged spec into a plan the engineer accepts, and then into working code. You own the work. Plan it, do it, and verify it yourself.
 
-1. Find the change. It is the `intent/<change>/` folder whose `spec.md` or `plan.md` the request names. Its `spec.md` must be on the default branch beside its `intent.md`. In each case below, say only that, in two or three lines, and stop. The reply is those lines and the **Now** line. It holds no **Request**, no **Steps**, and no **Checks**. Write no file.
+1. Find the change. It is the `intent/<change>/` folder whose `spec.md` or `plan.md` the request names. Its `spec.md` must be on the default branch beside its `intent.md`. In each case below, say only that, in two or three lines, and stop. The reply is those lines and the **Now** line. It holds no **Steps** and no **Checks**. Write no file.
    - **No change is named, or the folder has no `spec.md` on any branch.** List each `intent/*/` on the default branch that has a `spec.md` and no `plan.md`, or say that there is none.
    - **The spec exists only on another branch.** Say that the spec is not merged yet, and name that branch.
    - **`plan.md` is on the default branch and `spec.md` says `Status: done.`** Say that the change is built, and name both files.
