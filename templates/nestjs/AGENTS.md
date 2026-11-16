@@ -37,6 +37,7 @@ The `verifier` subagent starts the app with `pnpm start:dev`. It exercises the c
 3. **Log through Nest's `Logger`.** It goes to the `ConsoleLogger` set in `src/main.ts`.
 4. **Work runs through `/sdlc-mode`;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
 5. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
+6. **Name a branch `<type>/<short-description>`,** where `<type>` is a commit type that `.commitlintrc.json` allows, for example `feat/add-health-endpoint`.
 
 ## Things Claude gets wrong
 

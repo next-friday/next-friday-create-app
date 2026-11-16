@@ -36,7 +36,10 @@ Pile 3, the `turborepo` stack and the stacks' documents (requirements 10 for `AG
 - `templates/turborepo/README.md` (changed): names every root file that adding an app changes, and which of them a person commits.
 - `templates/turborepo/AGENTS.md` (changed): no task counts; the `--affected` form; the agent's narrow checks.
 - `AGENTS.md` of the other four stacks (changed): the agent's narrow checks in "Verifying your work".
-- `CONTRIBUTING.md` of each stack (changed): the form of a branch name.
+- `AGENTS.md` of each stack (changed): the form of a branch name. This departs from requirement 33, which names `CONTRIBUTING.md`, by the product owner's decision: no file of the harness points at `CONTRIBUTING.md`, because a project may delete or rewrite it.
+- `CONTRIBUTING.md` of each stack (changed): the hook table says what the hooks run now.
+- `templates/payload/AGENTS.md` and `templates/turborepo/AGENTS.md` (changed): they hold the facts they pointed at in `CONTRIBUTING.md`.
+- `plugins/sdlc/source/skills/sdlc-mode/playbooks/open-pr.md` step 2 (changed): it names `AGENTS.md` alone.
 
 After the three piles, in one session: the rendered copies under `plugins/sdlc/adapters/`, `.claude/skills/`, and `templates/base/` (changed by `pnpm plugin:sync`), `.changeset/session-conformance.md` (new, `minor`), `intent/sdlc-session-conformance/intent.md` and `spec.md` (`Status: done.`), and this plan.
 
@@ -78,7 +81,7 @@ After the three piles, in one session: the rendered copies under `plugins/sdlc/a
 16, 17, 18, 19, 20, 21, 22, 23, 24, 26: read `SKILL.md` and the playbooks in the diff.
 25: the new case in `check-reply-shape.cases.json`; `pnpm plugin:check`.
 27, 28, 29, 30, 31, 32, 34, 37: read `intent.md`, `design.md`, `build.md`, and `review.md` in the diff.
-33, 36: read each stack's `CONTRIBUTING.md` and `templates/turborepo/AGENTS.md` in the diff.
+33, 36: read each stack's `AGENTS.md` in the diff.
 35: step 6, four apps answer under `pnpm dev`.
 38: `pnpm plugin:sync`, then `pnpm plugin:check`.
 39: `pnpm verify` in the root and in a generated project of each stack.
