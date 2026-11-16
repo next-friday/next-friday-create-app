@@ -48,8 +48,6 @@ Where the template runs one check in several layers (read from the `turborepo` s
 23. ESLint with `--fix` and Prettier run on one file up to four times: in `agent-format-after-edit.sh` after each edit, in `lint-staged` at the commit, over the whole repository at the push, and in CI. The first two run the same commands on the same file.
 24. `pnpm rules:check` runs in `pre-commit` and again inside `pnpm check` at the push.
 
-25. In the `turborepo` stack, CI checks only the apps a change affects, and the machine checks them all. `templates/turborepo/.github/workflows/ci.yml` sets `TURBO_FILTER=--affected` and `TURBO_SCM_BASE` before its checks, and the root scripts read `$TURBO_FILTER`. The `pre-push` hook and the commands `AGENTS.md` gives the agent leave it unset, so a change to one app builds, tests, and type-checks every app on the machine. `AGENTS.md` shows the filter for one case only, "Tests in one app". ESLint, Prettier, Knip, and `sort-package-json` run once over the whole workspace whatever the filter says.
-
 What two `/setup-sdlc` sessions in the same projects reported about the same harness:
 
 25. The reply-shape Stop hook sent a session's reply back for a **Checks** section after the session wrote the models rule in the person's home directory, while `git status --short` in the project was empty. `/setup-sdlc` writes that rule on every run, so the skill meets its own hook, and the session then ran the build, the tests, and the static checks, which prove nothing about that file.
@@ -91,6 +89,10 @@ What `obra/superpowers`, a third community repository, does where the harness st
 47. **A reviewer does not run the suite again.** "The implementer already ran the tests and reported results with TDD evidence for exactly this code. Do not re-run the suite to confirm their report. Run a test only when reading the code raises a specific doubt that no existing run answers" (`skills/subagent-driven-development/task-reviewer-prompt.md`). Item 9 is the suite run again.
 48. **The reviewer's model is named, and the cheapest is not the floor.** "Turn count beats token price", and "Use a mid-tier model as the floor for reviewers" (`skills/subagent-driven-development/SKILL.md`). The two sessions bear it out on one change each: the reviewer on the main model took 67 seconds and 7,800 output tokens, and the three on the `explore` model took 279 to 536 seconds and 59,000 to 103,000 output tokens each (items 7 and 15).
 49. **An open question comes before any option.** "Until you know why they want it, ask open questions, with no example answers attached. Their own words carry intent that your options can't", "Options steer. Ask them to describe it first", and "Only what they said goes in as theirs. Anything you filled in goes in as your proposal, with your reason" (`skills/brainstorming/SKILL.md`). It also asks only what the project does not answer: "Ask a question only when the answer would change what gets built and neither the request nor the project answers it." On options it goes further than item 40, which puts a recommended answer beside every question.
+
+What the originator saw in a workspace of several apps:
+
+50. In the `turborepo` stack, CI checks only the apps a change affects, and the machine checks them all. `templates/turborepo/.github/workflows/ci.yml` sets `TURBO_FILTER=--affected` and `TURBO_SCM_BASE` before its checks, and the root scripts read `$TURBO_FILTER`. The `pre-push` hook and the commands `AGENTS.md` gives the agent leave it unset, so a change to one app builds, tests, and type-checks every app on the machine. `AGENTS.md` shows the filter for one case only, "Tests in one app". ESLint, Prettier, Knip, and `sort-package-json` run once over the whole workspace whatever the filter says.
 
 ## Proposed outcome
 
