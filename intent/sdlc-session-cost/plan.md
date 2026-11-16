@@ -42,8 +42,7 @@ Accepted by: @joetakara.
 - `scripts/sync-plugin.ts` (changed): it removes git's repository variables from its environment. In a hook of a linked worktree they pointed the git commands of a hook case at the real repository.
 - `plugins/sdlc/source/scripts/check-records.ts` (changed), with its rendered copy: the check passes in a project that is not the root of its repository, where the Template job of CI generates each project.
 - `templates/base/SETUP.md` and the `AGENTS.md` of each stack (changed): their tables are formatted, because a project the Template job generates makes no first commit to format them.
-- `.changeset/harness-check.md` (new): one `patch` entry.
-- `.changeset/explore-reads.md` (new): one `patch` entry.
+- `.changeset/explore-reads.md` (new): one `patch` entry for the whole pull request.
 
 ## Order of work
 
