@@ -4,7 +4,7 @@ Accepted by: @joetakara.
 
 ## Files that change
 
-- `plugins/sdlc/source/hooks/check-reply-shape.cases.json` (changed): three cases. A reply that says a check was not run and tells the person to merge is blocked; the same reply with a **Not yet** line passes; a reply whose checks all have a result passes.
+- `plugins/sdlc/source/hooks/check-reply-shape.cases.json` (changed): six cases. A reply that says a check was not run, or was skipped, and tells the person to merge is blocked. It passes with a **Not yet** line, with every check holding a result, with "accepted without a result", and after the merge.
 - `plugins/sdlc/source/hooks/check-reply-shape.sh` (changed): blocks the first case.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/review.md` (changed): step 6 says what the **Not yet** line and the **Now** line hold when a requirement has no result, and what a merge publishes when the pull request adds a changeset.
 - `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the **Not yet** rule names a requirement with no result.

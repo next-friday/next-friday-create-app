@@ -115,8 +115,9 @@ if [ "$changed" = true ] && ! printf '%s\n' "$outside_fences" | grep -q '^\*\*Ch
   problems="${problems}A file outside intent/ changed in this turn and the reply has no **Checks:** section. Run the checks the project names and add **Checks:** with each command and the lines of its output that show the result, or with each check that could not run and why. "
 fi
 
-if [ -z "$not_yet" ] && printf '%s\n' "$last" | tr 'A-Z' 'a-z' | grep -Eq '(^|[^[:alpha:]])merge' \
-  && printf '%s\n' "$outside_fences" | tr 'A-Z' 'a-z' | grep -Eq 'not run|not verified|not proved|unproved|no result'; then
+if [ -z "$not_yet" ] && printf '%s\n' "$last" | tr 'A-Z' 'a-z' | grep -Eq '(^|[^[:alpha:]])merge([^[:alpha:]]|$)' \
+  && printf '%s\n' "$outside_fences" | tr 'A-Z' 'a-z' | grep -Eq 'not run|not verified|unverified|not proved|unproved|not checked|not tested|skipped|no result' \
+  && ! printf '%s\n' "$outside_fences" | tr 'A-Z' 'a-z' | grep -q 'accepted without a result'; then
   problems="${problems}The reply says a check has no result, and the **Now:** line tells the person to merge. Add a **Not yet:** line that names what has no result, and ask on the **Now:** line whether to get the result first or to accept the change without it. "
 fi
 
