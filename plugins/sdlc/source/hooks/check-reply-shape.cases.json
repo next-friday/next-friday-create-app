@@ -728,5 +728,32 @@
       "last_assistant_message": "**Result:** The code is pushed.\n\n- **Not yet:** Do not merge https://github.com/acme/shop/pull/9.\n- **Not yet:** Do not approve the release.\n\n**Now:** Nothing for you to do."
     },
     "expected": "block"
+  },
+  {
+    "name": "unproved: a reply with a check not run tells the person to merge",
+    "input": {
+      "session_id": "shape",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Not done: the pull request waits for a merge.\n\n**Checks:**\n\n- 1: `pnpm verify` passed.\n- 2: not run, because no eval was run.\n\n**Now:** Merge the pull request: https://github.com/acme/shop/pull/9"
+    },
+    "expected": "block"
+  },
+  {
+    "name": "unproved: a Not yet line names what has no result",
+    "input": {
+      "session_id": "shape",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Not done: requirement 2 has no result.\n\n**Checks:**\n\n- 1: `pnpm verify` passed.\n- 2: not run, because no eval was run.\n\n**Not yet:** Do not merge https://github.com/acme/shop/pull/9; requirement 2 has no result.\n\n**Now:** Say whether to run the evals first, or to accept requirement 2 without a result and merge."
+    },
+    "expected": "pass"
+  },
+  {
+    "name": "unproved: every check has a result and the person merges",
+    "input": {
+      "session_id": "shape",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Not done: the pull request waits for a merge.\n\n**Checks:**\n\n- 1: `pnpm verify` passed.\n- 2: the eval passed.\n\n**Now:** Merge the pull request: https://github.com/acme/shop/pull/9"
+    },
+    "expected": "pass"
   }
 ]
