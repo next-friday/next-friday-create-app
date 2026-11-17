@@ -9,6 +9,7 @@ Accepted by: @joetakara.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/review.md` (changed): step 6 says what the **Not yet** line and the **Now** line hold when a requirement has no result, and what a merge publishes when the pull request adds a changeset. Step 5 says that a session watches the pull request it opened, through a tool that subscribes it to the pull request's events, and never in a sleep or by polling. The product owner decided this in the session, in place of requirement 37 of `intent/sdlc-session-conformance/spec.md`, which had a session watch only when a person asks.
 - `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the **Not yet** rule names a requirement with no result.
 - The rendered copies under `plugins/sdlc/adapters/`, `.claude/skills/`, and `templates/base/` (changed by `pnpm plugin:sync`).
+- `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/gate-names-what-has-no-result-before-a-merge/` (new): an eval case, with script graders only, for the reply of the merge gate when a requirement has no result and no tool watches the pull request.
 - `.changeset/now-line-at-merge-gate.md` (new, `patch`).
 
 ## Order of work
@@ -21,7 +22,7 @@ Accepted by: @joetakara.
 
 - The hook reads English words: "not run", "not verified", "not proved", "unproved", "no result", and "merge". A reply in another language passes the hook, and the playbook's rule is then the only guard.
 - A reply that quotes those words about something else is blocked until it gains a **Not yet** line or drops the merge from the **Now** line.
-- No hook and no eval case checks the rule on watching a pull request, so a later edit can remove it and `pnpm plugin:check` still passes.
+- No hook checks the rule on watching a pull request. The eval case checks only the session with no tool to watch with, so a later edit can remove the rest of the rule and `pnpm plugin:check` still passes.
 
 ## Proof
 
