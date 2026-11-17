@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: build-checks-list-each-requirement
 expected_outcome: |
-  The spec intent/app-version/spec.md has two requirements. The person says that the session built the accepted plan and pushed it, that the test of requirement 1 passed, and that requirement 2 was not run because the machine cannot build a container image. The reply lists each requirement by number under Checks, with the result of requirement 1 and "not run" with the reason for requirement 2. The reply starts with Not done:.
+  The spec intent/app-version/spec.md has two requirements. The person says that the session built the accepted plan and pushed it, that the test of requirement 1 passed, and that requirement 2 was not run because the machine cannot build a container image. The reply names requirement 1 as one that has a result under Checks, and gives requirement 2 with "not run" and the reason. The reply starts with Not done:, or with Waiting for you: when it stops at a gate.
 context:
   scaffold_script: scaffold.sh
 graders:
@@ -17,9 +17,9 @@ graders:
     type: regex
     pattern: '\*\*Checks:\*\*[\s\S]*(?:\b[Rr]equirements?\s+2\b|^\s*(?:[-*]\s+)?2\s*[.:)])[^\n]*\bnot run\b'
     flags: imu
-  - name: result-line-says-not-done
+  - name: first-line-says-not-done-or-waiting
     type: regex
-    pattern: '^\*\*Result:\*\*\s+Not done:'
+    pattern: '^\*\*(?:Result:\*\*\s+Not done:|Waiting for you:\*\*)'
     flags: mu
   - name: result-line-does-not-say-done
     type: regex

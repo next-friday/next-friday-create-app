@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: writes-the-models-file
 expected_outcome: |
-  The request states the budget `medium`, so the agent asks no question. The run's home directory is closed to it, so it shows `~/.claude/rules/sdlc-models.md` in the fixed shape, with the default model of each of the four roles and the effort `high`, for the person to save, writes no models file in the project, reports the project description step as done and the branch protection step as one a person does on GitHub, with what the ruleset needs, and does not touch other files.
+  The request states the budget `medium`, so the agent asks no question. The run's home directory is closed to it, so it shows `~/.claude/rules/sdlc-models.md` in the fixed shape, with the default model of each of the four roles and the effort `high`, for the person to save, and writes no models file in the project. The request does not hold the word `project`, so the agent does not read `SETUP.md`, reports no step of it, and touches no file of the project.
 context:
   scaffold_script: scaffold.sh
 graders:
@@ -14,10 +14,17 @@ graders:
     pattern: '^\.agents/sdlc-models\.md$'
     flags: m
     match: not_contains
-  - name: reply-says-what-the-ruleset-needs
-    type: regex
-    pattern: "GitHub Pro, Team, or Enterprise"
-    flags: mu
+  - name: setup-file-is-not-read
+    type: tool_used
+    tool: Read
+    input_match: 'SETUP\.md'
+    min: 0
+    max: 0
+  - name: no-file-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
   - name: package-json-is-unchanged
     type: regex
     pattern: '^  "description": "Orders service for the web shop",$'
@@ -35,16 +42,8 @@ graders:
     pattern: 'budget[^\n]*\?'
     flags: imu
     match: not_contains
-  - name: reply-reports-the-description-step-as-done
+  - name: reply-reports-no-setup-step
     type: regex
-    pattern: 'Project description[^\n]*\b(?:done|already)\b'
-    flags: imu
-  - name: reply-leaves-branch-protection-to-a-person
-    type: regex
-    pattern: 'Branch protection[^\n]*\b(?:person|admin|you|owner|someone)\b'
-    flags: imu
-  - name: reply-does-not-claim-branch-protection
-    type: regex
-    pattern: 'Branch protection[^\n]*:\s*\**(?:done|verified)\b'
+    pattern: "Branch protection|Project description"
     flags: imu
     match: not_contains

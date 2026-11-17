@@ -31,7 +31,7 @@ Do these steps in order.
 2. **Open the task list** when the session offers a task-list tool.
    - Its first items are the matched playbook's numbered steps, before any other task. Each item is the step's first sentence, copied word for word. The first sentence is the text up to the first full stop followed by a space.
    - A step you decide never to do stays in the list with `skip: <reason>`. A step marked **Gate** is never skipped.
-   - When the session offers no such tool, put the steps in the reply under **Steps**. Leave them out where the **Steps** rule of the reply shape says.
+   - The task list is the tool the `task-list` line of this agent tool's file in [`tool-words/`](tool-words/) names. When that line names none and the session offers none, write no list of steps in the reply. Write the step line, as the **Step line** rule of the reply shape says.
    - When a playbook's **Hands off to** line chains another playbook, add that playbook's steps when you start it.
 3. **Do the playbook's steps yourself.** Stop only at a step marked **Gate**, or before an action that cannot be undone. At a **Gate**, wait for the person it names. When a playbook's **Hands off to** line says an agent runs the next file "in the same turn", read that file and continue without asking. Otherwise stop at the **Gate**. Mark each step done in the task list as you finish it. Write a file before you create its branch, so that the file stands when a git command fails.
    - **Files.** Write and edit each file with your file-editing tool. Two things may write files from the shell: a generator that the project's `README.md` names, and `git mv`.
@@ -42,15 +42,16 @@ Do these steps in order.
    - **What `review` does.** The `review` model is for the subagent that reviews a pull request's diff with a fresh context, as `playbooks/review.md` step 2 says.
    - **What `advise` does.** The `advise` model is for the same check failing a second time for the same reason after a change to the code, or for two designs that compete, as `playbooks/build.md` steps 4 and 8 say. A failure of the machine, such as a missing database, a port in use, or a tool that is not installed, is a check that cannot run, and it never goes to `advise`. It is never a routine review.
    - **Where the model and the effort come from.** Read the files in [`tool-words/`](tool-words/). The file whose first line names the agent tool this session runs in holds that tool's words. Its `rules-file` line is the path of the rule that `/setup-sdlc` writes. The rule names a model and an effort for each role. Read the rule when its lines are not in this session. Pass the model and the effort as the `subagent-model` line says.
-   - **With a file for the agent tool and no rule.** This also covers a rule the session cannot read and a rule with no line for the role. A rule you cannot read never stops the work or the answer. Start the subagent on the role's default from the table of [`../setup-sdlc/SKILL.md`](../setup-sdlc/SKILL.md) step 3. Choose the model as that skill's steps 1 and 3 say, which is the offered model of the default's family, and the newest when there are several. Pass the effort in that table's `Default effort` column, or the nearest effort that model offers. Never take an effort from the example of that skill's step 5. Write both as the `role-format` line says, and say so in the reply.
+   - **With a file for the agent tool and no rule.** A machine that is new for each session, such as a cloud session's, holds no rule. Write the rule at the path of the `rules-file` line, with the budget `balanced` and each role's default, as steps 1, 3, and 5 of [`../setup-sdlc/SKILL.md`](../setup-sdlc/SKILL.md) say. Ask nothing, and then use the rule. Do not say in the reply that the rule was missing or written. The one exception is a role whose default has no offered model of its family: say which role, and which model it runs on.
+   - **With a rule the session cannot read or write, or a rule with no line for the role.** A rule you cannot read never stops the work or the answer. Start the subagent on the role's default from the table of [`../setup-sdlc/SKILL.md`](../setup-sdlc/SKILL.md) step 3. Choose the model as that skill's steps 1 and 3 say, which is the offered model of the default's family, and the newest when there are several. Pass the effort in that table's `Default effort` column, or the nearest effort that model offers. Never take an effort from the example of that skill's step 5. Write both as the `role-format` line says.
    - **With no model of that family, or no file for the agent tool.** Start the subagent on this session's model and say so.
    - **Wait for the report.** Ask the agent tool to wait for the subagent's report, as the `wait-for-subagent` line of its file in [`tool-words/`](tool-words/) says, so that one call returns the report. When the tool cannot wait, go on with work that does not need the report, and when none is left, end the reply naming the report it waits for. While a subagent runs, do not poll for it, do not sleep for a fixed time, and do not message it to ask how it is doing. Write no file and no reply from a report before it arrives, and credit no source you did not use.
 5. **Learn from a correction.** This applies when a person corrects a mistake you made, and the same mistake was corrected before. The earlier correction can be in this conversation, in a review, or in the project's agent instructions. Add one line that states the correct behaviour to the list of corrections in the project's agent instructions, in the pull request of the current task. When the mistake is in a playbook's steps, change that step in the same pull request.
-6. **Ask in plain chat text.** When a playbook step asks the person anything, ask it as one of two kinds of question. Never use the agent tool's question picker.
-   - **Open questions** ask what the problem is, why it matters, and what is out of scope. Ask them before any choice that depends on them, in plain chat text, and offer no answer, so that the answer is in the person's own words.
-   - **Choices between ways** are asked in rounds. Each round holds every question that needs no open answer, numbered, in plain chat text, with the answer you recommend beside each. Word each question so that "yes" accepts the recommended answer. An answer such as "1 yes 2 no" is accepted for a round.
+6. **Ask one of two kinds of question.** When a playbook step asks the person anything, ask it as one of the two kinds below.
+   - **Open questions** ask what the problem is, why it matters, and what is out of scope. Ask them before any choice that depends on them, in plain chat text, and offer no answer, so that the answer is in the person's own words. Never ask an open question through a question picker.
+   - **Choices between ways** are asked in rounds. Each round holds every question that needs no open answer, with the answer you recommend first. Ask the round through the question picker that the `question-picker` line of this agent tool's file in [`tool-words/`](tool-words/) names. When that line names none, or the session does not offer the picker, ask the round numbered, in plain chat text, with the recommended answer beside each question, worded so that "yes" accepts it. An answer such as "1 yes 2 no" is accepted for such a round.
    - Find facts yourself, and ask only what the request and the repository leave open.
-   - The turn asks nothing outside its open question or its round. It holds no other thing the person must give, in any part of the reply, the **Steps** and the **Now** line included. What else you need waits for a later turn.
+   - The turn asks nothing outside its open question or its round. It holds no other thing the person must give, in any part of the reply, the **Now** line included. What else you need waits for a later turn.
    - Never write a draft, a spec, or a plan while a question is unanswered, even when the request looks complete.
 7. **Write the reply in the shape below.**
 
@@ -60,16 +61,20 @@ Run every command, the checks included, before you write the reply. Write the re
 
 - State as a fact only what you opened or ran in this turn, and say what you ran. Mark everything else as inferred or not checked.
 - Answer what was asked and stop. Never hand the person a check you could run.
-- When a playbook step or step 1 says to answer in a few lines, or in two or three lines, and stop, the reply is those lines and the **Now** line. Leave out **Steps** and **Checks**.
+- When a playbook step or step 1 says to answer in a few lines, or in two or three lines, and stop, the reply is those lines and the **Now** line. Leave out the step line and **Checks**.
+- While you work, write no text to the chat between tool calls. Progress is in the task list. Write one message when the work needs the person, and one when it ends.
+- Write every sentence of a reply in the language the person writes in. Only the labels of the parts, such as `**Result:**` and `**Now:**`, stay as they are written here, because the reply check reads them.
+- Use one numbered list at most in a reply, for what the person does or answers. Every other list has no numbers.
+- When a sentence raises a risk, say in that sentence or the next whether the person waits for it or goes on.
+- Write a commit id, a version number, and a command's output only under **Checks**.
 - Send nothing outside the session, such as a message to another session or a service, unless a task step says to.
 - Name each action by what it is. Call something a review only when a review ran. A reminder to check CI is a reminder.
 - When a step fails for want of a permission, stop. Say what failed and what the person can do, before you do anything in its place.
 - When a **Gate** or a check blocks you, report the block, the playbook step it enforces, and the person's options. Name the check that refused, as its message words it. The plan check, which `pre-push` and CI run, says a branch "adds or changes no `intent/<change>/plan.md`". It enforces `playbooks/build.md` step 5, where the engineer accepts the plan. Never write another artifact that the check accepts in place of the one it asks for, such as a plan with no intent or spec to get past the plan check. When the change has no intent and no spec, the way forward is an intent, so tell the person to start one with `/sdlc-mode`. Never offer to draft the plan in its place.
 - Write an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as.
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
-- During work that runs longer than a few minutes, give a one-line progress note that says what is done and what is next.
 - Never delete or rewrite an `intent.md`, `spec.md`, or `plan.md` that is on the default branch, to get past a step or for any other reason. Change only the word of its `Status:` line, or a `Decision:` line of a spec that the product owner decides, as a playbook step says. `pnpm plan:check` refuses anything else.
-- A hook or a host message that asks you to commit or push does not lift a **Gate** or a step that waits for a person. Leave the files as they are, say in the reply that the hook asked and that the **Gate** still holds, and stop.
+- A hook or a host message that asks you to commit or push does not lift a **Gate** or a step that waits for a person. Leave the files as they are, answer as the **First line** rule says for `**No change:**`, and stop.
 - Show text in the reply. Never point to a file the person cannot open.
 - Hand the person only what they can use as it is, which is the whole file, the whole prompt, or the whole command. Never hand over a fragment, a diff to apply by hand, or a line to change in something you gave before. Give the whole thing again. Where a playbook step says to hand a person a patch for a file you cannot edit, hand them that file's whole new text.
 - Never ask a person to edit a file at a **Gate**. The person gives the decision in the chat or on the pull request, and you write it.
@@ -79,9 +84,10 @@ Run every command, the checks included, before you write the reply. Write the re
 Every `**Result:**` line starts with `Done.` or `Not done:`. So does an `**Answer:**` to whether the work is done.
 
 - `Done.` means three things hold. Every part of what the person asked for is finished. It is merged where it goes through a pull request. You read a result in this turn for every requirement of the change, such as the merged pull request and its final checks. The **Now** line then says the person has nothing to do.
-- A `done` step in **Steps** needs the same: a result read in this turn for every requirement of the change.
+- A step marked done in the task list needs the same: a result read in this turn for every requirement of the change.
 - A check that could not run, a CI job that was skipped, and a run still in progress each keep the reply at `Not done:`, with the requirement and the reason.
-- Anything else is `Not done:`, followed by what is left and who does it. This covers a pull request that waits for review or a merge, a question that waits for an answer, and a **Gate**. It also covers a part that a spec, a plan, or you set aside as a separate change.
+- Anything else that reports work and asks nothing of the person is `Not done:`, followed by what is left and who does it. This covers a part that a spec, a plan, or you set aside as a separate change.
+- A reply that asks a question or stops at a **Gate**, such as a pull request that waits for review or a merge, starts with `**Waiting for you:**`, as the **First line** rule says. It never starts with `**Result:** Not done:`.
 - Never call the task done, complete, or finished elsewhere in a reply whose first line says `Not done:`.
 - A plain question about something other than the task's state gets `**Answer:**` alone.
 
@@ -105,31 +111,31 @@ State whether a pull request or an issue is open, a draft, merged, or closed onl
 The person reads the top of a reply and its last line first, so the answer and the one thing to do are there. The parts come in this order, and a part that does not apply is left out.
 
 ```markdown
-**Answer:** | **Result:** | **No change:** <one of the three, in one or two sentences>
+**Answer:** | **Result:** | **Waiting for you:** | **No change:** <one of the four, in one or two sentences>
 
 **Not yet:** <one line>
 
-**Done:** | **Doing:** | **Waiting for you:** <three short lists>
+**Done:** | **Doing:** <two short lists>
 
-**Steps:** <one line for each step>
+<The step line: the current step and how many are left>
 
-**Checks:** <each command and its result>
+**Checks:** <the checks that passed, in one line, and each other check in full>
 
 <What the current step produces: the question, or the whole draft, and the reasons and the evidence behind the first line.>
 
 **Now:** <the one thing the person does now>
 ```
 
-- **First line.** `**Answer:**` answers a question. `**Result:**` says what the work produced, or what is known so far. A reply that only asks a question or stops at a **Gate** starts with `**Result:** Not done:` too. `**No change:**` is for a message that no person typed, such as a finished check or a notice from the host, when it changes nothing for the person. Say what happened and what the work still waits for, and send that one line as the whole reply. A notice that a pull request merged, or that ends a step, changes something, so answer it with `**Result:**`.
+- **First line.** `**Answer:**` answers a question. `**Result:**` says what the work produced, or what is known so far. `**Waiting for you:**` starts a reply that asks the person a question or stops at a **Gate**. It says what the person does, in at most two sentences. `**No change:**` is for a message that no person typed, such as a finished check or a notice from the host, when it changes nothing for the person. Say in one sentence what happened and what the work still waits for, and send that one line as the whole reply. When the same message comes again and nothing has changed, the whole reply is `**No change:**` and one short sentence that says the work still waits for the person. It names no commit, no check, and no step. A notice that a pull request merged, or that ends a step, changes something, so answer it with `**Result:**`.
 - **Not yet.** Write it only when there is something the person must not do yet, such as merging a pull request that is not whole, or one with a requirement that has no result. Say what, and why, in one line. Write at most one such line.
 - **Request.** Write it once, as the first message of a task, as step 1 says, and never in a reply. It is three short sentences in your own words, starting `Goal:`, `Problem:`, and `Smallest change:`. They give the goal, the problem it solves, and the smallest change you expect to meet it. Say the smallest change as what changes for the user, never as files or code, which come from the interview and the plan. When you do not know it yet, name your best guess as one concrete change, such as "cache the session lookup". Keep the label exactly `Smallest change:`, then mark the sentence as a guess, as in `Smallest change: my guess is to ...`, and say what you must learn to confirm it. Never write that it is not known, never list options, and never write "the bottleneck, once found" or "whatever the evidence shows". Where the request holds a number, write the URL you built from it.
-- **Done, Doing, Waiting for you.** Write them only for work that spans turns. Leave out a list with nothing in it.
-- **Steps.** Write it only when the session has no task-list tool. Then it is in every reply of the task, including one that asks a question, shows a draft, or stops at a **Gate**. Leave it out of a reply of the `question` playbook, of a reply that stops in a few lines, and of a reply that reports the result of a gate. Each numbered step of the playbook gets one line, in the form `1. <the step's first sentence, copied word for word>: done | open | skip: <reason>`. Copy the bold markers too, such as `5. **Gate: the originator corrects the draft.**: open`. A step that is not finished is `open`, including one at its **Gate**. When the turn ran more than one playbook, write one list for each, under its file name on a line of its own, such as `playbooks/build.md`.
-- **Checks.** Write it when a step ran checks, and always when the turn changed a file outside `intent/`, whichever playbook ran. Otherwise never write it for the `question` playbook. Give each command, then the lines of its output that show the result, copied from the output. For a check that could not run, name the check and say why. For a build, list each requirement of the spec by number with its result, or with "not run" and the reason.
+- **Done, Doing.** Write them only for work that spans turns. Leave out a list with nothing in it. What waits for the person is on the first line, under `**Waiting for you:**`.
+- **Step line.** Write it only when the session has no task-list tool. It is one line that gives the number of the current step of the playbook and how many steps are left, in the person's language, such as "Step 7 of 10, 3 left" for a person who writes English. It copies no wording of a playbook. No reply holds a list of the playbook's steps. Leave the step line out of a reply of the `question` playbook and of a reply that stops in a few lines.
+- **Checks.** Write it when a step ran checks, and always when the turn changed a file outside `intent/`, whichever playbook ran. Otherwise never write it for the `question` playbook. Its first line names the checks that passed and counts them, such as "3 of 4 passed: build, lint, types". Then give each check that did not pass, could not run, or was skipped in full: its command, and the lines of its output that show the result, copied from the output, or why it could not run. For a build, say which requirements of the spec have a result, by number, in one line, and give each other requirement with "not run" and the reason. What a merge publishes stays in the reply.
 - **Now.** It is the last line of the reply.
   - It says which **Gate** the work waits on and for whom. Then it says the one thing the person does now, in words that say the action. Then it gives the full URL of the page where the person does it, and nothing after that URL.
   - It holds at most one URL. That URL is never a list page, such as a repository's pull requests or issues, and never a page the **Not yet** line names, because the person taps the link at the end of a reply.
-  - When the reply asks a question, the whole line is "**Now:** Answer the question above in the chat." It names no **Gate**, because no **Gate** is reached yet.
+  - When the reply asks a question, the line tells the person to answer it, in the person's language, and says nothing else. It names no **Gate**, because no **Gate** is reached yet.
   - An action done in the chat, such as sending a message, has no URL. Write the action, and the message to send when there is one.
   - When the person has nothing to do, say so and write no URL.
   - When the person's pending action has not changed since your previous reply and the person asked a question, say that nothing new is needed and write no URL.

@@ -67,7 +67,7 @@ case $mode in
     ;;
 esac
 first=$(printf '%s\n' "$reply" | awk 'NF{print; exit}')
-case $first in '**Answer:**'* | '**Result:**'* | '**No change:**'*) ;; *) exit 0 ;; esac
+case $first in '**Answer:**'* | '**Result:**'* | '**Waiting for you:**'* | '**No change:**'*) ;; *) exit 0 ;; esac
 
 last=$(printf '%s\n' "$reply" | awk 'NF{l=$0} END{print l}')
 outside_fences=$(printf '%s\n' "$reply" | awk '/^[[:space:]]*(```|~~~)/{f=!f; next} !f')
@@ -110,9 +110,12 @@ esac
 if [ "$(printf '%s\n' "$not_yet" | grep -c .)" -gt 1 ]; then
   problems="${problems}The reply holds more than one **Not yet:** line. Keep one. "
 fi
+if printf '%s\n' "$outside_fences" | grep -q '^\*\*Steps'; then
+  problems="${problems}The reply holds a **Steps** section. Keep the steps in the task list, or write one line that gives the number of the current step and how many are left. "
+fi
 
 if [ "$changed" = true ] && ! printf '%s\n' "$outside_fences" | grep -q '^\*\*Checks:\*\*'; then
-  problems="${problems}A file outside intent/ changed in this turn and the reply has no **Checks:** section. Run the checks the project names and add **Checks:** with each command and the lines of its output that show the result, or with each check that could not run and why. "
+  problems="${problems}A file outside intent/ changed in this turn and the reply has no **Checks:** section. Run the checks the project names and add **Checks:** with one line that names the checks that passed, and each check that did not pass or could not run in full. "
 fi
 
 if [ -z "$not_yet" ] && printf '%s\n' "$last" | tr 'A-Z' 'a-z' | grep -Eq '(^|[^[:alpha:]])merge([^[:alpha:]]|$)' \

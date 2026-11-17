@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: second-run-changes-nothing
 expected_outcome: |
-  The person's rule already holds exactly what a first run writes for the budget `medium`; the run's home directory is closed, so the request gives the rule's lines, and it states the same budget. The agent reads `SETUP.md`, reports the project description step as done and the branch protection step as a person's, shows the same role lines, and changes none of them.
+  The person's rule already holds exactly what a first run writes for the budget `medium`; the run's home directory is closed, so the request gives the rule's lines, and it states the same budget. The request holds the word `project`, so the agent reads `SETUP.md`, reports the project description step as done and the branch protection step as a person's, and changes no line of the rule.
 context:
   scaffold_script: scaffold.sh
 graders:
@@ -24,26 +24,6 @@ graders:
     input_match: 'SETUP\.md'
     min: 1
     arm: both
-  - name: reply-shows-the-budget-and-its-effort
-    type: regex
-    pattern: '\bmedium\b[^\n]*\bhigh\b'
-    flags: im
-  - name: reply-shows-the-advise-model
-    type: regex
-    pattern: '\badvise\b[^\n]*\bopus\b'
-    flags: im
-  - name: reply-shows-the-main-model
-    type: regex
-    pattern: '\bmain\b[^\n]*\bsonnet\b[^\n]*\bhigh\b'
-    flags: mu
-  - name: reply-shows-the-review-model
-    type: regex
-    pattern: '\breview\b[^\n]*\bsonnet\b[^\n]*\bhigh\b'
-    flags: mu
-  - name: reply-shows-the-explore-model
-    type: regex
-    pattern: '\bexplore\b[^\n]*\bhaiku\b[^\n]*\bhigh\b'
-    flags: mu
   - name: reply-reports-the-description-step-as-done
     type: regex
     pattern: 'Project description[^\n]*\b(?:done|already)\b'

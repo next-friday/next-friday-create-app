@@ -32,10 +32,11 @@ graders:
     flags: m
     match: not_contains
     target: files
-  - name: reply-lists-the-seven-steps-with-a-status
+  - name: reply-holds-no-steps-section
     type: regex
-    pattern: '(?=[\s\S]*Let the originator describe the problem in their own words[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Read the code, the docs, and the existing `?intent/`? folders[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Interview the originator until they have said five things[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Write `?intent/<change>/intent\.md`? from the template below[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the originator corrects the draft[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Commit `?intent\.md`? on a new branch[^\n]*\b(?:done|open|skip:))(?=[\s\S]*Gate: the product owner accepts or rejects the intent[^\n]*\b(?:done|open|skip:))'
+    pattern: '^\*\*Steps'
     flags: mu
+    match: not_contains
   - name: no-push-or-pull-request-command
     type: tool_used
     tool: Bash

@@ -7,7 +7,7 @@ This playbook writes the intent. The build plan, `intent/<change>/plan.md`, come
 3. Interview the originator until they have said five things. The five are the problem, who is affected, the outcome and what success looks like as the user would see it, the constraints, and what is out of scope. Ask as `../SKILL.md` step 6 says.
    - **When all five are already said in the originator's own words, go to step 4 in the same turn.** A request that only looks complete, because you could infer an answer, does not count. Ask.
    - **Ask what the problem is, why it matters, and what is out of scope as open questions,** in plain chat text with no answer offered. Write the problem and what is out of scope only from words the originator typed.
-   - **Ask a choice between ways in a round.** Each round holds every question that needs no open answer, numbered, with the answer you recommend beside each. A recommended answer is a fact or a choice, such as "Only the checkout page", never an instruction to the person. When you have no answer to recommend, say so and ask plainly.
+   - **Ask a choice between ways in a round.** Each round holds every question that needs no open answer, with the answer you recommend first, asked as `../SKILL.md` step 6 says for a choice between ways. A recommended answer is a fact or a choice, such as "Only the checkout page", never an instruction to the person. When you have no answer to recommend, say so and ask plainly.
    - **A "yes" to a recommended answer is the originator's decision for a choice.** It is not their word for the problem or for what is out of scope.
    - Write no draft until all five are said.
 4. Write `intent/<change>/intent.md` from the template below. Use exactly the template's five headings.

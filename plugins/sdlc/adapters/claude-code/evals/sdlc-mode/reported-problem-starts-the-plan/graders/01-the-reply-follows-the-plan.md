@@ -4,5 +4,5 @@ focus: trace
 weight: 1
 ---
 
-PASS if the final reply has a Steps block that lists the intent playbook's steps, and the turn asks its questions in plain chat text, as open questions or as one numbered round.
-FAIL if the final reply has no Steps block, the turn asks no question, or the turn asks through the agent tool's question picker.
+PASS if the turn follows the intent playbook and asks its questions: open questions in plain chat text, or one round of choices.
+FAIL if the turn asks no question, asks an open question through the agent tool's question picker, or the final reply lists the playbook's steps.

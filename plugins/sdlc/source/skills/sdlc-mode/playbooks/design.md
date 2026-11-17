@@ -2,7 +2,7 @@
 
 This playbook turns a merged intent into the requirements and design spec.
 
-1. Find the intent. It is the `intent/<change>/intent.md` the request names. It must be on the default branch and have no `spec.md` beside it. In each case below, say only that, in two or three lines, and stop. The reply is those lines and the **Now** line. It holds no **Steps** and no **Checks**. Write no file and add no review of the intent.
+1. Find the intent. It is the `intent/<change>/intent.md` the request names. It must be on the default branch and have no `spec.md` beside it. In each case below, say only that, in two or three lines, and stop. The reply is those lines and the **Now** line. It holds no step line and no **Checks**. Write no file and add no review of the intent.
    - **No intent is named, or the file does not exist on any branch.** List each `intent/*/intent.md` on the default branch that has no `spec.md`, or say that there is none.
    - **The file exists only on another branch.** Say that the intent is not merged yet, and name that branch.
    - **`spec.md` already exists.** Say so and name the file. Say that new work starts from an intent in a new folder, as `playbooks/intent.md` step 4 says.

@@ -1,6 +1,6 @@
 ---
 name: setup-sdlc
-description: Sets the model and reasoning effort for the main work, for exploring, for review, and for advice, from a budget, and reports which steps of SETUP.md are done. Run it with /setup-sdlc.
+description: Sets the model and reasoning effort for the main work, for exploring, for review, and for advice, from a budget. Run it with /setup-sdlc. With the word project, as in /setup-sdlc project, it reports which steps of SETUP.md are done and does the ones an agent can do.
 disable-model-invocation: true
 ---
 
@@ -8,8 +8,13 @@ disable-model-invocation: true
 
 Do these steps in order. Run again with the same answers, the skill writes the same file and redoes no step that is done.
 
+The request decides which steps run:
+
+- **`/setup-sdlc`, with or without a budget label.** Do steps 1 to 5 and step 9. Read no `SETUP.md`, and write or edit no file of the project.
+- **`/setup-sdlc project`.** Do steps 6 to 9. Do steps 1 to 5 first only when no rule exists at the path of the `rules-file` line.
+
 1. **List the models the session offers.** They are the models it can run or start a subagent on, spelled as the session spells them. When it can list none, ask the person to paste the names and wait. Write no model the session does not offer.
-2. **Read the rule** when it exists: the rule in the person's home directory that the agent tool loads in every session. Its path is the `rules-file` line of this agent tool's words: read the files in [`../sdlc-mode/tool-words/`](../sdlc-mode/tool-words/), and take the one whose first line names the agent tool this session runs in. With no file for the agent tool, say that this skill has no words for it, write no rule, and go to step 6. The rule's `budget:` line is the current budget, and a role line whose model is on the list keeps that model. A line for a role that is not in step 3 is from an older version: drop it. When the session cannot read the rule, take the lines the request gives as its content, and otherwise start from the defaults.
+2. **Read the rule** when it exists: the rule in the person's home directory that the agent tool loads in every session. Its path is the `rules-file` line of this agent tool's words: read the files in [`../sdlc-mode/tool-words/`](../sdlc-mode/tool-words/), and take the one whose first line names the agent tool this session runs in. With no file for the agent tool, say that this skill has no words for it, write no rule, and go to the next step the request asks for. The rule's `budget:` line is the current budget, and a role line whose model is on the list keeps that model. A line for a role that is not in step 3 is from an older version: drop it. When the session cannot read the rule, take the lines the request gives as its content, and otherwise start from the defaults.
 3. **Choose each role's model.** A role without a kept model gets its default. A default the session does not offer becomes the offered model of the same family, the newest when there are several. When the family has none, ask about that role in the question of step 4.
 
    | Role      | Default  | Default effort | Does                                                                              |
@@ -19,7 +24,7 @@ Do these steps in order. Run again with the same answers, the skill writes the s
    | `review`  | `sonnet` | `high`         | A subagent that reviews a pull request's diff with a fresh context.               |
    | `advise`  | `opus`   | `medium`       | A subagent that advises as `../sdlc-mode/SKILL.md` step 4 says.                   |
 
-4. **Fix the budget,** which sets the reasoning effort of the roles. When the request names one of the five labels, that is the budget and you ask nothing about it. Otherwise ask one question in plain chat text, as `../sdlc-mode/SKILL.md` step 6 says, with these choices numbered, `balanced` as the recommended one, adding the roles of step 3 that have no model. Name the current budget when the rule records one; with no rule, say that `balanced` matches the defaults.
+4. **Fix the budget,** which sets the reasoning effort of the roles. When the request names one of the five labels, that is the budget and you ask nothing about it. Otherwise ask one question, as `../sdlc-mode/SKILL.md` step 6 says for a choice between ways, with these choices, `balanced` as the recommended one, adding the roles of step 3 that have no model. Name the current budget when the rule records one; with no rule, say that `balanced` matches the defaults.
 
    | Label       | Effort                                 |
    | :---------- | :------------------------------------- |
@@ -55,4 +60,4 @@ Do these steps in order. Run again with the same answers, the skill writes the s
 
 7. **Do the `not done` steps an agent can do.** Such a step is one whose whole work is editing a file of the repository with values the repository or the request already gives. Do not redo a `done` step. Do not edit a file the project's rules or agent settings reserve for a person, such as rules, hooks, lint, format, and commit configuration, and the agent settings themselves; list it with the exact new text and the file it goes in. Commit nothing. After each step, run its **Check** again and report the result.
 8. **List the steps a person does outside the repository,** each with who does it, from `SETUP.md`, and the full URL of the page where it is done when `SETUP.md` or the repository names one.
-9. **Write the reply** by the reply rules in `../sdlc-mode/SKILL.md`. Between the first line and the **Now** line, in this order: the budget line and the four role lines as written; each step of `SETUP.md` with its state; what you did; what a person does. The **Now** line names the first step a person does, with its URL when step 8 found one.
+9. **Write the reply** by the reply rules in `../sdlc-mode/SKILL.md`. Between the first line and the **Now** line, in this order, each only when its steps ran: the budget line and the four role lines as written; each step of `SETUP.md` with its state; what you did; what a person does. For `/setup-sdlc project`, the **Now** line names the first step a person does, with its URL when step 8 found one. Otherwise it says the person has nothing to do, or how to choose the `main` model.

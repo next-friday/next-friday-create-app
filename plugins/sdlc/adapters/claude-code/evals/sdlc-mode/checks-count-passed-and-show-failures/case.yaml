@@ -1,0 +1,24 @@
+schema_version: "1.1"
+name: checks-count-passed-and-show-failures
+expected_outcome: |
+  Three checks passed and requirement 2 was not run. Under Checks, the reply names the checks that passed and counts them in one line, without their output, and gives requirement 2 in full, with "not run" and the reason.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: reply-has-checks-section
+    type: regex
+    pattern: '^\*\*Checks:\*\*'
+    flags: mu
+  - name: checks-count-the-passed
+    type: regex
+    pattern: '\*\*Checks:\*\*[\s\S]*\b3\b[^\n]*\bpassed\b'
+    flags: imu
+  - name: checks-give-requirement-2-as-not-run
+    type: regex
+    pattern: '\*\*Checks:\*\*[\s\S]*\b2\b[^\n]*\bnot run\b'
+    flags: imu
+  - name: checks-hold-no-output-of-a-passed-check
+    type: regex
+    pattern: 'Build complete|Tests\s+3 passed \(3\)'
+    flags: mu
+    match: not_contains

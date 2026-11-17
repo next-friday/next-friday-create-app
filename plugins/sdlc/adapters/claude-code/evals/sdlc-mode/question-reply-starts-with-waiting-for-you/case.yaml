@@ -1,0 +1,24 @@
+schema_version: "1.1"
+name: question-reply-starts-with-waiting-for-you
+expected_outcome: |
+  The request reports a problem and leaves open why it matters and what is out of scope. The agent asks its open questions. The reply that asks them starts with Waiting for you: and says what the person does, never with Result: Not done:, and it ends with a Now line.
+graders:
+  - name: first-line-says-waiting-for-you
+    type: regex
+    pattern: '^\*\*Waiting for you:\*\*'
+    flags: mu
+  - name: no-line-says-result-not-done
+    type: regex
+    pattern: '^\*\*Result:\*\*\s+Not done:'
+    flags: mu
+    match: not_contains
+  - name: reply-ends-with-a-now-line
+    type: regex
+    pattern: '^\*\*Now:\*\*[^\n]*\s*$(?![\s\S])'
+    flags: mu
+  - name: no-intent-written
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md'
+    min: 0
+    max: 0
