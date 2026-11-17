@@ -11,7 +11,7 @@ The product owner has not answered the intent's open questions. Each one is an a
 The pull request gate:
 
 1. **Proposal.** In each stack's `.github/workflows/ci.yml`, the step that runs `pnpm test:e2e` and the step that installs the Playwright browsers run only on a push to the default branch. A pull request runs neither. `nodejs` has neither step and does not change. Area of concern 1.
-2. A pull request still runs the static checks, the tests with coverage, the build, patch coverage, and the secret scan with gitleaks and TruffleHog. Areas of concern 3 and 5.
+2. A pull request still runs the static checks, the tests with coverage, the build, patch coverage at 80, and the secret scan with gitleaks and TruffleHog. Areas of concern 3 and 5.
 3. The job `All Checks` of a push to the default branch fails when an end-to-end test fails, as it does today.
 
 The push gate:
@@ -22,8 +22,8 @@ The push gate:
 
 The commit gate:
 
-7. `templates/base/.husky/commit-msg` and `templates/base/.commitlintrc.json` are deleted, and each stack's `package.json` holds no commitlint package and no commitlint script. Area of concern 6.
-8. No file under `templates/` names commitlint. The list of allowed types and the rule on scope and subject length are stated once, by `templates/base/.github/workflows/validate-pr-title.yml`, and each stack's `AGENTS.md` and `CONTRIBUTING.md` point at it.
+7. `templates/base/.husky/commit-msg`, `templates/base/.commitlintrc.json`, and the commitlint packages and script of each stack's `package.json` stay as they are. commitlint is a company rule, the product owner's decision.
+8. The `commit-msg` hook runs commitlint on every commit, as today.
 9. The `pre-commit` hook runs gitleaks and lint-staged, as today.
 
 Workflows and jobs:
@@ -65,13 +65,13 @@ Delivery:
 
 ## Design
 
-**Proposal:** the change is higher risk. It moves a test gate from before the merge to after it in every generated project, and it removes two hooks. The product owner consults a tech lead before the merge, as `design.md` step 5 says.
+**Proposal:** the change is higher risk. It moves a test gate from before the merge to after it in every generated project, and it takes the build and `format:check` out of `pre-push`. The product owner consults a tech lead before the merge, as `design.md` step 5 says.
 
 - `templates/<stack>/.github/workflows/ci.yml`, four stacks with end-to-end steps: each of those steps gains `if: github.event_name == 'push'`. A push to the default branch already runs the job `checks` when the commit changes code (`templates/nestjs/.github/workflows/ci.yml:55-58`), so no new workflow is needed. All five stacks: the jobs fold as requirement 11 says, and the `triage` job's condition also accepts a failed push (requirement 15).
-- `templates/<stack>/package.json`: the `check` script (line 16) drops `build` and names the static checks without `format:check`. The commitlint packages and scripts go.
+- `templates/<stack>/package.json`: the `check` script (line 16) drops `build` and names the static checks without `format:check`.
 - `templates/base/.husky/pre-push`: the document-only path runs `pnpm rules:check && pnpm plan:check`.
-- `templates/base/.husky/commit-msg`, `templates/base/.commitlintrc.json`, `templates/base/.github/workflows/pr-triage.yml`, `templates/base/.github/labeler.yml`: deleted.
-- The files that name commitlint and change with requirement 8: `templates/base/.agents/hooks/agent-shell-gate.sh`, `templates/base/.claude/settings.json`, `templates/base/.cursor/hooks/agent-constitution-gate.sh`, and in each stack `.agents/rules.json`, the rendered `constitution-changes` rule for both agent tools, `AGENTS.md`, and `CONTRIBUTING.md`.
+- `templates/base/.github/workflows/pr-triage.yml`, `templates/base/.github/labeler.yml`: deleted.
+- `templates/<stack>/.github/workflows/ci.yml`: `diff-cover` runs with `--fail-under 80`, where it has `--fail-under 95`.
 - `small.md`, `fix.md`, `build.md`, `deploy.md`: requirements 14 and 17 to 19. `review.md` does not change.
 - `plugins/sdlc/source/scripts/check-plan.ts`: requirement 20. Today line 1019 holds the self-test that refuses `small/fix-a`.
 - `templates/base/.agents/hooks/agent-test-edit-gate.sh` line 31 and `scripts/check-agent-gates.ts`: requirement 21.
@@ -99,11 +99,11 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
    Decision: all stay. In a private repository the first three do nothing until `CODE_SCANNING` is set, and a public repository runs them. Removing them from the starter removes them from every project that uses them.
 
-3. No policy; open question 3 of the intent. The book does not mention coverage, and no file gives a source for the 95 that `diff-cover` requires.
+3. No policy. The book does not mention coverage, and no file gives a source for the 95 that `diff-cover` requires.
 
-   Decision: patch coverage stays as it is. No reading shows that it slows a pull request.
+   Decision: patch coverage stays on the pull request and fails under 80. The product owner's decision.
 
-4. No policy; open question 4 of the intent. The book lets the agent deploy freely in development (page 45). The starter ships no deploy workflow, and after a merge no session is running to deploy.
+4. No policy; open question 3 of the intent. The book lets the agent deploy freely in development (page 45). The starter ships no deploy workflow, and after a merge no session is running to deploy.
 
    Decision: the team's deploy workflow deploys the development environment on a push to the default branch, as a script with no model, and `SETUP.md` says so. `deploy.md` step 4 keeps asking for a person's word before an agent promotes.
 
@@ -111,7 +111,7 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
    Decision: TruffleHog stays.
 
-6. No policy. Requirements 7, 8, and 21 change files that a person commits, by the project's own rule: `.husky/**`, `.agents/hooks/**`, `.agents/rules/**` and its rendered copies, `.claude/settings.json`, `.cursor/hooks/**`, and `scripts/check-agent-gates.ts`. An agent session's token also cannot push a file under `.github/workflows/`.
+6. No policy. Requirements 5 and 21 change files that a person commits, by the project's own rule: `.husky/**`, `.agents/hooks/**`, and `scripts/check-agent-gates.ts`. An agent session's token also cannot push a file under `.github/workflows/`.
 
    Decision: the build's plan lists those files with their new content, and a person commits them on the pull request's branch.
 
@@ -127,7 +127,6 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
 1. Whether the end-to-end suites leave the pull request: area of concern 1.
 2. Whether the scanners, the `image` job, and the weekly run leave the starter: area of concern 2.
-3. Whether patch coverage stays: area of concern 3.
-4. Whether the agent deploys to the development environment: area of concern 4.
-5. The files the intent did not read are read now. Each stack has its own `.lintstagedrc.json`. `nestjs`, `nextjs`, `nodejs`, and `payload` each have six jobs in `ci.yml` (`changes`, `agent-checks`, `checks`, `image`, `triage`, `ci`), and `turborepo` has those and `affected-apps`. The times the generated project measured were not read; no requirement rests on them.
-6. Carried forward: how many fewer jobs requirement 11 gives. The plan counts them for each stack.
+3. Whether the agent deploys to the development environment: area of concern 4.
+4. The files the intent did not read are read now. Each stack has its own `.lintstagedrc.json`. `nestjs`, `nextjs`, `nodejs`, and `payload` each have six jobs in `ci.yml` (`changes`, `agent-checks`, `checks`, `image`, `triage`, `ci`), and `turborepo` has those and `affected-apps`. The times the generated project measured were not read; no requirement rests on them.
+5. Carried forward: how many fewer jobs requirement 11 gives. The plan counts them for each stack.
