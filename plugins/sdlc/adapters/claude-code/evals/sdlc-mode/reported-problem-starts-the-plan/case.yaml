@@ -1,8 +1,13 @@
 schema_version: "1.1"
 name: reported-problem-starts-the-plan
 expected_outcome: |
-  The message reports a problem through /sdlc-mode without asking a question. The agent follows the intent playbook: it lists the steps and asks its first question. It does not tell the person to send /sdlc-mode again.
+  The message reports a problem through /sdlc-mode without asking a question. The agent follows the intent playbook: it asks its first question, and the reply holds no list of the playbook's steps. It does not tell the person to send /sdlc-mode again.
 graders:
+  - name: reply-holds-no-steps-section
+    type: regex
+    pattern: '^\*\*Steps'
+    flags: mu
+    match: not_contains
   - name: reply-does-not-resend-the-command
     type: regex
     pattern: '(?<!skills)/(?:sdlc:)?sdlc-mode(?![\w/-])'

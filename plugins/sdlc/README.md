@@ -38,7 +38,7 @@ Part of the harness does not load in these cases:
 
 `check-push.sh` runs before a shell command, as a `PreToolUse` hook on `Bash` for Claude Code and a `beforeShellExecution` hook for Cursor. It reads only `git push`, and refuses it when a commit on the branch changes a file that the branch's one `plan.md` does not name without changing that `plan.md`.
 
-`check-reply-shape.sh` is a POSIX `sh` script that reads the hook input with `jq`, run as a `UserPromptSubmit` and a `Stop` hook for Claude Code and as three hooks for Cursor. It checks only a reply whose first line starts with `**Answer:**`, `**Result:**`, or `**No change:**`, and it blocks that reply once, with a reason that asks for the whole reply again, when the reply:
+`check-reply-shape.sh` is a POSIX `sh` script that reads the hook input with `jq`, run as a `UserPromptSubmit` and a `Stop` hook for Claude Code and as three hooks for Cursor. It checks only a reply whose first line starts with `**Answer:**`, `**Result:**`, `**Waiting for you:**`, or `**No change:**`, and it blocks that reply once, with a reason that asks for the whole reply again, when the reply:
 
 - names a pull request or an issue by number outside a URL, a fenced block, and a code span that holds more than the bare number;
 - does not end with a line that starts with `**Now:**`, unless the reply is a `**No change:**` line alone;
@@ -46,7 +46,8 @@ Part of the harness does not load in these cases:
 - links a list page on its `**Now:**` line: a URL that ends with `/pulls` or `/issues`;
 - links, on its `**Now:**` line, a URL that its `**Not yet:**` line names;
 - holds more than one `**Not yet:**` line outside a fenced block;
-- has no line that starts with `**Checks:**` outside a fenced block, when a file outside `intent/` changed during the turn.
+- holds a line that starts with `**Steps` outside a fenced block, because the steps are in the agent tool's task list;
+- has no line that starts with `**Checks:**` outside a fenced block, when a file outside `intent/` changed during the turn and the agent ran a tool that can write a file. In Claude Code the script reads that from the transcript the hook input names, so a file the person changed while the agent only read asks for no **Checks**. With no transcript, any change counts.
 
 To know what changed during the turn, the script takes a snapshot when the person sends a message: `check-reply-shape.sh snapshot` in Claude Code, `check-reply-shape.sh submit` in Cursor. It stores a checksum of the content of every file Git tracks or does not ignore, outside `intent/`, in a file named after the conversation under `${TMPDIR:-/tmp}/sdlc-reply-shape/`. When the agent stops, the script takes the checksum again and compares. It reads the content through a copy of the Git index and a scratch object store, both under that directory and deleted after each run, so staging and committing change nothing, and the project's index and objects are not written. It reads every file that changed since the copy of the index, and every untracked file each time, so a large untracked file that Git does not ignore can take the hook past its ten seconds; the rule then does not apply to that turn. Outside a Git repository, on the first stop with no stored checksum, and when the session's folder moved to another repository, the rule does not apply. Only `intent/` at the repository's root is left out, and the content of a submodule is not read.
 

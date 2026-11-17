@@ -1,11 +1,11 @@
 schema_version: "1.1"
 name: gate-names-what-has-no-result-before-a-merge
 expected_outcome: |
-  The person asks for the reply of the merge gate of a pull request this session opened. Every check passed and the review found nothing, but requirement 2 of the spec was not run. The session lists no tool that subscribes it to a pull request. The reply starts with Not done:, holds a Not yet line that names requirement 2, has a Now line that asks the person to decide and does not simply tell them to merge, and says that nobody watches the pull request.
+  The person asks for the reply of the merge gate of a pull request this session opened. Every check passed and the review found nothing, but requirement 2 of the spec was not run. The session lists no tool that subscribes it to a pull request. The reply stops at the merge gate, so it starts with Waiting for you:, holds a Not yet line that names requirement 2, has a Now line that asks the person to decide and does not simply tell them to merge, and says that nobody watches the pull request.
 graders:
-  - name: result-line-says-not-done
+  - name: first-line-says-waiting-for-you
     type: regex
-    pattern: '^\*\*(?:Answer|Result):\*\*\s+Not done:'
+    pattern: '^\*\*Waiting for you:\*\*'
     flags: mu
   - name: reply-has-a-not-yet-line
     type: regex

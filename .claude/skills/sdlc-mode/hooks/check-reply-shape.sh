@@ -33,6 +33,18 @@ snapshot() {
   printf '%s|%s' "$repository" "$content"
 }
 
+# The transcript shows whether the agent ran a tool that can write, since the last message a person typed: one whose input holds a command, new text for a file, or a prompt for another agent, or a tool of an outside server. With no transcript, the answer is yes.
+agent_could_write() {
+  transcript=$(printf '%s' "$input" | jq -r '.transcript_path // ""')
+  [ -n "$transcript" ] && [ -f "$transcript" ] || return 0
+  jq -s -e '
+    (map(.type == "user" and ((.message.content | type) == "string" or ((.message.content | type) == "array" and any(.message.content[]; .type == "text")))) | rindex(true) // 0) as $start
+    | [.[$start:][] | select(.type == "assistant") | .message.content[]? | select(.type == "tool_use") | {name: (.name // ""), input: (.input // {})}]
+    | any(.[]; (.input | has("command") or has("content") or has("new_string") or has("edits") or has("new_source") or has("prompt")) or (.name | startswith("mcp__")))
+  ' "$transcript" > /dev/null 2>&1
+  [ $? -ne 1 ]
+}
+
 changed_since_snapshot() {
   current=$(snapshot) || return 1
   previous=$(cat "$snapshot_file" 2> /dev/null)
@@ -61,13 +73,13 @@ case $mode in
     ;;
   *)
     changed=false
-    changed_since_snapshot && changed=true
+    changed_since_snapshot && agent_could_write && changed=true
     [ "$(printf '%s' "$input" | jq -r '.stop_hook_active // false')" = true ] && exit 0
     reply=$(printf '%s' "$input" | jq -r '.last_assistant_message // ""')
     ;;
 esac
 first=$(printf '%s\n' "$reply" | awk 'NF{print; exit}')
-case $first in '**Answer:**'* | '**Result:**'* | '**No change:**'*) ;; *) exit 0 ;; esac
+case $first in '**Answer:**'* | '**Result:**'* | '**Waiting for you:**'* | '**No change:**'*) ;; *) exit 0 ;; esac
 
 last=$(printf '%s\n' "$reply" | awk 'NF{l=$0} END{print l}')
 outside_fences=$(printf '%s\n' "$reply" | awk '/^[[:space:]]*(```|~~~)/{f=!f; next} !f')
@@ -109,6 +121,9 @@ case $last in
 esac
 if [ "$(printf '%s\n' "$not_yet" | grep -c .)" -gt 1 ]; then
   problems="${problems}The reply holds more than one **Not yet:** line. Keep one. "
+fi
+if printf '%s\n' "$outside_fences" | grep -q '^\*\*Steps'; then
+  problems="${problems}The reply holds a **Steps** section. Keep the steps in the task list, or write one line that gives the number of the current step and how many are left. "
 fi
 
 if [ "$changed" = true ] && ! printf '%s\n' "$outside_fences" | grep -q '^\*\*Checks:\*\*'; then

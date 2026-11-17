@@ -8,3 +8,5 @@
 - `role-format`: Write each role's model as `opus`, `sonnet`, `haiku`, or `fable`, then its effort.
 - `wait-for-subagent`: the project sets `CLAUDE_CODE_FORK_SUBAGENT` to "0", so that the session can wait: ask to wait for the subagent's report
 - `plan-mode`: the `EnterPlanMode` tool
+- `question-picker`: the `AskUserQuestion` tool
+- `task-list`: the task tools, such as `TaskCreate` and `TaskUpdate`

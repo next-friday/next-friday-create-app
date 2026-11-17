@@ -19,6 +19,8 @@ disable-model-invocation: true
 - **Keeping `/sdlc-mode` on for a session.** A person starts it; nothing routes work into it. How long an invoked skill's text stays in the conversation depends on the agent tool: a person sends `/sdlc-mode` again to restore the full text, or uses the agent tool's own way to keep a command active for a session.
 - **A small change.** `../sdlc-mode/playbooks/small.md`. Its step 1 lists the conditions a change must meet.
 - **Fixing a defect in behaviour that already exists.** `../sdlc-mode/playbooks/fix.md`. Its step 1 says what a defect is, and what starts at an intent instead.
+- **What a reply looks like.** "Reply shape" in `../sdlc-mode/SKILL.md`. A reply that needs the person starts with `**Waiting for you:**`, and the steps are in the agent tool's task list.
+- **Models, and the project's setup steps.** `../setup-sdlc/SKILL.md`. `/setup-sdlc` sets the models and edits no file of the project. `/setup-sdlc project` reports the steps of `SETUP.md` and does the ones an agent can do.
 - **Who decides.** The steps marked **Gate** in the playbooks.
 - **A mistake the agent repeats.** The project's agent instructions.
 - **Company policy.** The four policy files, found as `../sdlc-mode/playbooks/design.md` step 2 says.

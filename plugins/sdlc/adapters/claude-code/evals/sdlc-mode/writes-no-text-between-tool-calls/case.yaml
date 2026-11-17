@@ -1,0 +1,21 @@
+schema_version: "1.1"
+name: writes-no-text-between-tool-calls
+expected_outcome: |
+  The agent reads the files it needs to answer why `pnpm verify` runs knip. It writes no text to the chat between its tool calls, and then writes one reply. It writes no file.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: reply-names-knip
+    type: regex
+    pattern: "knip"
+    flags: mu
+  - name: no-file-written
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+  - name: no-file-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0

@@ -1,0 +1,21 @@
+schema_version: "1.1"
+name: reply-holds-a-step-line-and-no-steps
+expected_outcome: |
+  The session offers no task-list tool. The agent follows the intent playbook and asks its open questions. The reply holds no Steps section and no list of the playbook's steps. It holds one line that gives the number of the current step and how many steps are left.
+graders:
+  - name: reply-holds-no-steps-section
+    type: regex
+    pattern: '^\*\*Steps'
+    flags: mu
+    match: not_contains
+  - name: reply-copies-no-step-of-the-playbook
+    type: regex
+    pattern: "Let the originator describe the problem in their own words"
+    flags: mu
+    match: not_contains
+  - name: no-intent-written
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md'
+    min: 0
+    max: 0

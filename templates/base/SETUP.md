@@ -4,7 +4,7 @@ This project runs an AI-native software development loop in Claude Code and Curs
 
 ## How a change flows
 
-Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 8 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, and `/setup-sdlc` chooses the models and reports which steps below are done. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 8 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, `/setup-sdlc` chooses the models and edits no file of the project, and `/setup-sdlc project` reports which steps below are done and does the ones an agent can do. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                  |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |

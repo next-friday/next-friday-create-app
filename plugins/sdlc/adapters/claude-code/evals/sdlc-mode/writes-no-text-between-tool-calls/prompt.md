@@ -1,8 +1,8 @@
 ---
 tags: [needs-write]
-max_turns: 30
-timeout_seconds: 900
+max_turns: 20
+timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
 ---
 
-/sdlc:sdlc-mode build from intent/app-version/spec.md
+/sdlc:sdlc-mode why does pnpm verify also run knip
