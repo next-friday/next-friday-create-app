@@ -7,6 +7,7 @@ Accepted by: @joetakara.
 Paths are under `plugins/sdlc/` unless they start at the root.
 
 - `source/skills/sdlc-mode/SKILL.md` (changed): step 3 lets a shell command or a script make a change that repeats in many places. Step 2 keeps the task list and no longer puts steps in the reply. Step 4 writes the models rule when none exists. Step 6 asks an open question in plain text and a choice through the picker. The reply shape gains `**Waiting for you:**` as a first line, the step line, and the rules on language, numbering, risks, and totals under **Checks**, and loses **Steps**, the progress note, and the fixed English **Now** sentence.
+- `source/skills/sdlc-mode/playbooks/maintain.md` (changed): a dismissal is a merge, never a closed pull request.
 - `source/skills/sdlc-mode/playbooks/question.md`, `fix.md`, `small.md` (changed): the rules the note under **Risks** lists.
 - `source/skills/sdlc-mode/playbooks/intent.md`, `build.md`, `design.md`, `review.md` (changed): each sentence on **Steps**, the picker, or a round in plain text follows the new rules. `build.md` step 5 names the plan approval. `deploy.md` names none of them and stays as it is.
 - `source/skills/setup-sdlc/SKILL.md` (changed): `/setup-sdlc` does steps 1 to 5 and stops. Steps 6 to 8 run on `/setup-sdlc project`.
@@ -52,6 +53,7 @@ Paths are under `plugins/sdlc/` unless they start at the root.
   - the checks CI runs were run again before the push;
   - a fix reply listed every candidate cause it ruled out;
   - a build, a fix, and a small change read all four policies, where the book asks for them at design and at review. A build now reads the policies the spec says apply, and a fix or a small change reads the ones the change touches.
+- `maintain.md` step 6 no longer lets the service owner close a pull request to dismiss a finding. The book dismisses that way, and the product owner decided that the company's rule comes first: "Follow the company's rule. Never close a pull request" (translated from Thai). A dismissal is a merge of the intent with `Status: rejected.` and the reason.
 - Requirement 10 is not built as the spec words it. The book says to "show the output" of the checks and to "paste the output", so **Checks** keeps each command and the lines of its output that show the result, as before this change.
 - Options not taken:
   - Translating the first-line labels: the hook reads them, and the spec's decision 1 keeps them.
