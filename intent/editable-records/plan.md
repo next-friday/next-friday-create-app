@@ -10,7 +10,7 @@ No file below is denied to the agent.
 - `templates/base/scripts/check-records.ts` (deleted): `pnpm plugin:sync` removes the rendered copy.
 - `package.json` (changed): `plan:check` runs `check-plan.ts` only.
 - `templates/nestjs/package.json`, `templates/nextjs/package.json`, `templates/nodejs/package.json`, `templates/payload/package.json`, `templates/turborepo/package.json` (changed): the same.
-- `plugins/sdlc/source/scripts/check-plan.ts` (changed): `findStatusProblems` returns no problem for a file the branch does not add. The set `editedStatuses` and the self-tests "removes a merged status line" and "sets a merged file to draft" go. The rule on the status a pull request writes in a file it adds stays.
+- `plugins/sdlc/source/scripts/check-plan.ts` (changed): `findStatusProblems` returns no problem for a file the branch does not add, and the set `editedStatuses` goes. The self-tests "removes a merged status line" and "sets a merged file to draft" stay and now expect no problem. The rule that only a fix plan on a `fix/` branch skips the intent and the spec applies to a plan the branch adds, and no longer to a plan the default branch holds. The rule on the status a pull request writes in a file it adds stays.
 - `templates/base/scripts/check-plan.ts` (changed): rendered.
 - `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): line 76 goes.
 - `plugins/sdlc/source/skills/sdlc-mode/playbooks/intent.md` (changed): step 4 says only that `<change>` is a short kebab-case name.
@@ -28,7 +28,7 @@ No file below is denied to the agent.
 
 1. Create `feat/editable-records` from `origin/main`. Commit `plan.md`. Check: `git log -1` shows the commit.
 2. Delete `check-records.ts`, and take it out of the six `plan:check` scripts. Check: `git grep -n check-records -- . ':!intent' ':!CHANGELOG.md'` finds only `plugins/sdlc/README.md`.
-3. Change `check-plan.ts`. Check: `node plugins/sdlc/source/scripts/check-plan.ts` passes its self-tests, and a scratch branch that sets a merged intent to `Status: draft.` passes it.
+3. Change `check-plan.ts`. Check: `node plugins/sdlc/source/scripts/check-plan.ts` passes its self-tests, and a merged intent set to `Status: draft.` in the working tree passes it.
 4. Change `SKILL.md`, `intent.md`, `design.md`, the two `intent/README.md` files, and `plugins/sdlc/README.md`. Check: `git grep -n -i -E "Never delete or rewrite|record stays here|does not exist yet|already exists\.\*\*" -- plugins/sdlc/source intent/README.md templates/base/intent/README.md` finds nothing.
 5. Delete the eval case folder. Check: `git grep -n new-round-gets-a-new-intent-folder -- . ':!intent'` finds nothing.
 6. Run `pnpm plugin:sync`. Check: `pnpm plugin:check` and `pnpm rules:check` pass.
@@ -40,7 +40,7 @@ No file below is denied to the agent.
 
 ## Risks
 
-- The riskiest step is 3. `check-plan.ts` is one file of about 1,300 lines with 77 self-tests, and the status rule shares a function with the rule on an added file, which stays.
+- The riskiest step is 3. `check-plan.ts` is one file of about 1,300 lines with 77 self-tests, and the status rule shares a function with the rule on an added file, which stays. The build found a second rule there that refused a change to a merged record: a fix plan with no intent and no spec could change only on a `fix/` branch. Requirement 4 needs it gone for a merged plan, so step 3 changed it too.
 - With the check and the sentences gone, nothing in the harness stops an agent from rewriting or deleting a record whose work is open. The spec accepts that.
 - Step 7 changes records that are quotes of the product owner. The translations are the agent's.
 - Step 10 costs money. The suites hold 31 cases. Single cases cost about $0.05 to $0.20 each, so both suites are estimated at $2 to $6. The estimate is not measured for a whole suite.
@@ -54,7 +54,7 @@ No file below is denied to the agent.
 
 1: `git ls-files` lists no `check-records.ts`.
 2: the six `plan:check` scripts; `git grep -n check-records -- '*package.json'` finds nothing.
-3: the self-tests of `check-plan.ts`, and the scratch branch of step 3.
+3: the self-tests of `check-plan.ts`, and the edit of step 3: a merged intent set to `Status: draft.` passes the new script and fails the script of the default branch.
 4: `pnpm plan:check` and the `pre-push` hook pass on this branch, which changes thirteen lines of merged records; CI on the pull request.
 5, 6, 7: the search of step 4, and review of the diff.
 8: the search of step 5.

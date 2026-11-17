@@ -2,7 +2,7 @@
 
 From `intent/cloud-session-skills/intent.md`. Status: done.
 
-Request: "เขียน spec ของ intent/cloud-session-skills/intent.md". Skills at 51fc7a0.
+Request: "Write the spec of intent/cloud-session-skills/intent.md". Skills at 51fc7a0.
 
 ## Requirements
 

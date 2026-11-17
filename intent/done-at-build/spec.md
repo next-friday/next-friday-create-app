@@ -2,7 +2,7 @@
 
 From `intent/done-at-build/intent.md`. Status: done.
 
-Request: "เขียน spec ของ done-at-build". Skills at 9a2eaa2.
+Request: "Write the spec of done-at-build". Skills at 9a2eaa2.
 
 ## Requirements
 

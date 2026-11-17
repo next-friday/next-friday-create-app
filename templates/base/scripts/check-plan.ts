@@ -534,7 +534,6 @@ function findMissingPlanProblems(specText: string, hasPlan: boolean): string[] {
 }
 
 const addedStatuses = new Set(["accepted", "rejected"]);
-const editedStatuses = new Set(["accepted", "done", "rejected", "replaced", "withdrawn"]);
 
 /**
  * Read the status a document gives on its status line.
@@ -549,32 +548,29 @@ function readStatus(text: string): string | undefined {
 }
 
 /**
- * Find an intent or a spec whose status would be wrong once its pull request merges.
+ * Find an intent or a spec that its pull request adds with a status that merging it would make wrong.
+ * A file the default branch already holds may carry any status line, or none.
  * @param status The status the branch writes, or undefined when there is none.
  * @param isAdded Whether the branch adds the file, which the default branch does not have yet.
  * @param isPlanMerged Whether the folder's `plan.md` is already on the default branch, so the change was built before this file was written.
- * @returns At most one message.
+ * @returns At most one message, and none for a file the branch does not add.
  */
 function findStatusProblems(
   status: string | undefined,
   isAdded: boolean,
   isPlanMerged = false,
 ): string[] {
-  if (isAdded) {
-    const isAllowed =
-      status !== undefined && (addedStatuses.has(status) || (isPlanMerged && status === "done"));
-
-    return isAllowed
-      ? []
-      : [
-          `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
-        ];
+  if (!isAdded) {
+    return [];
   }
 
-  return status !== undefined && editedStatuses.has(status)
+  const isAllowed =
+    status !== undefined && (addedStatuses.has(status) || (isPlanMerged && status === "done"));
+
+  return isAllowed
     ? []
     : [
-        `a merged file keeps a status line that says accepted, rejected, done, withdrawn, or replaced; it never goes back to "Status: draft."`,
+        `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
       ];
 }
 
@@ -725,8 +721,8 @@ const statusCases: [string, string, boolean, boolean, string?][] = [
   ["adds rejected", "Status: rejected.", true, false],
   ["adds draft", draftLine, true, false, notDecisionMessage],
   ["marks a merged file done", doneLine, false, false],
-  ["removes a merged status line", "# Intent: a", false, false, "keeps a status line"],
-  ["sets a merged file to draft", draftLine, false, false, "never goes back"],
+  ["removes a merged status line", "# Intent: a", false, false],
+  ["sets a merged file to draft", draftLine, false, false],
 ];
 
 type DoneCase = [string, string, BranchChanges, string | undefined, string | undefined, string?];
@@ -1146,7 +1142,7 @@ function findMissingPlanLines(changeFolders: string[]): string[] {
  * Check one existing plan against the spec beside it.
  * @param planPath Path of the plan.
  * @param isAcceptanceRequired Whether the branch changes a file outside `intent/`.
- * @param branchName The branch under check, or undefined when the default branch is missing.
+ * @param branchName The branch under check, or undefined when the default branch is missing or already holds the plan, which may then change on any branch.
  * @returns One line per problem.
  */
 function findPlanFileLines(
@@ -1198,9 +1194,13 @@ function findPlanLines(planPaths: string[]): string[] {
 
   const branchName = branchChanges === undefined ? undefined : readBranchName();
 
-  const checkedLines = changedPlanPaths.flatMap(planPath =>
-    findPlanFileLines(planPath, isAcceptanceRequired, branchName),
-  );
+  const checkedLines = changedPlanPaths.flatMap(planPath => {
+    const isMerged =
+      branchChanges !== undefined &&
+      readDefaultBranchFile(branchChanges.mergeBase, planPath) !== undefined;
+
+    return findPlanFileLines(planPath, isAcceptanceRequired, isMerged ? undefined : branchName);
+  });
 
   return [...missingBranchLines, ...missingLines, ...checkedLines];
 }

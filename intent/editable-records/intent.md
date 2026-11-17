@@ -1,6 +1,6 @@
 # Intent: The harness enforces nothing the book does not say about a record
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 "The book" below is the AI-native SDLC playbook the harness follows, cited by page.
 
