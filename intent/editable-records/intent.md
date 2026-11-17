@@ -1,4 +1,4 @@
-# Intent: A record can be edited and deleted, and names no other organization
+# Intent: The harness enforces nothing the book does not say about a record
 
 Author: @joetakara (Developer Productivity). Status: accepted.
 
@@ -11,12 +11,11 @@ The product owner, translated from Thai:
 - "Never refer to that project. It is a different project."
 - "Open a new intent. This work must be done first."
 
-The product owner decided that a record on the default branch can be edited and deleted.
+The product owner decided, translated from Thai: on what the book does not speak of, "the harness must not enforce". That covers deleting an intent, a spec, or a plan, and forbidding a change to a record that is merged. A rule on another organization's name in a record comes from each organization and its law, and is no rule of the harness.
 
 What the repository shows (read on `origin/main`, `7e1c623`):
 
 - Three records name a project generated from the starter, and two of them link to its repository: `intent/consumer-first-project-gaps/plan.md:46`, `intent/md-only-ci/intent.md:8`, `intent/subagent-role-models/plan.md:24` and `:35`. This repository is public.
-- No rule says that a record names no other organization. `.agents/rules/descriptive-naming.md` forbids an organization's name in a path or an identifier only.
 - `plugins/sdlc/source/scripts/check-records.ts` refuses a branch that deletes, moves, or changes a line of an intent, a spec, or a plan that the default branch holds, except a status word and a decision of a spec. `pre-push` and CI both run it, so nobody can take a name out of a record or delete a finished one.
 - `intent/README.md` says of each change that "its record stays here".
 - That rule came from the plan `intent/subagent-role-models/plan.md`: an agent had rewritten an intent and deleted a finished spec and plan to use a folder again. The plan cites no source for forbidding every change and every deletion.
@@ -24,19 +23,18 @@ What the repository shows (read on `origin/main`, `7e1c623`):
 
 ## Proposed outcome
 
-Everything in this section is a proposal, except the first bullet, which the product owner decided.
+The first two bullets are the product owner's decision. The rest is a proposal of how to carry it out.
 
-- A branch may change any line of an intent, a spec, or a plan that the default branch holds, and may delete it. Git history keeps every revision, as the book says (pages 7 and 13).
+- The harness enforces nothing on changing or deleting an intent, a spec, or a plan. The book counts the changes made to an `intent.md` after its spec is committed (page 13), and does not speak of deleting one.
+- The harness holds no rule on another organization's name in a record.
 - `plugins/sdlc/source/scripts/check-records.ts` is deleted, and `plan:check` no longer runs it.
-- New work still starts in a new folder: an agent does not rewrite a finished record to use its folder again. This stays a rule of the playbooks, with the eval case that tests it, and no script enforces it.
-- A record names no other organization and links to no repository of a generated project. It says "a generated project".
-- The three records that name the project lose the name in the same change.
-- `intent/README.md` and the playbooks say these rules.
+- The sentences that forbid deleting or rewriting a merged record leave `SKILL.md`, the playbooks, and `intent/README.md`.
+- In this repository, the three records that name the project lose the name. This is the product owner's order for this repository, and no rule of the harness.
 
 Out of scope:
 
 - Rewriting git history. The name stays in earlier commits and in the pages of merged pull requests.
-- Deleting finished folders. Each team decides when to clean its `intent/` folder.
+- Deleting finished folders.
 
 ## Affected users and systems
 
@@ -46,10 +44,9 @@ Out of scope:
 ## Constraints
 
 - The script is rendered into `templates/`, so the change needs a changeset. Merging the release pull request that follows publishes `@next-friday/create-app` to npm.
-- With the script gone, only the playbooks' rule and its eval case stand between an agent and the rewriting of a record whose work is open.
+- With the script and the sentences gone, nothing in the harness stops an agent from rewriting a record whose work is open. The eval case that tests that rule goes with it.
 - This intent, its spec, and its plan name no other organization.
 
 ## Open questions
 
-- Whether a check can refuse another organization's name without holding a list of names.
 - Whether `intent/fast-merge-feedback` waits for this change. Its spec is in pull request 290, which is open.
