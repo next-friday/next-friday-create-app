@@ -7,13 +7,13 @@ Accepted by: @joetakara.
 Paths are under `plugins/sdlc/` unless they start at the root.
 
 - `source/skills/sdlc-mode/SKILL.md` (changed): step 2 keeps the task list and no longer puts steps in the reply. Step 4 writes the models rule when none exists. Step 6 asks an open question in plain text and a choice through the picker. The reply shape gains `**Waiting for you:**` as a first line, the step line, and the rules on language, numbering, risks, and totals under **Checks**, and loses **Steps**, the progress note, and the fixed English **Now** sentence.
-- `source/skills/sdlc-mode/playbooks/intent.md`, `build.md`, `design.md` (changed): each sentence on **Steps**, the picker, or a round in plain text follows the new rules. `build.md` step 5 names the plan approval. `deploy.md` names none of them and stays as it is.
+- `source/skills/sdlc-mode/playbooks/intent.md`, `build.md`, `design.md`, `review.md` (changed): each sentence on **Steps**, the picker, or a round in plain text follows the new rules. `build.md` step 5 names the plan approval. `deploy.md` names none of them and stays as it is.
 - `source/skills/setup-sdlc/SKILL.md` (changed): `/setup-sdlc` does steps 1 to 5 and stops. Steps 6 to 8 run on `/setup-sdlc project`.
 - `source/skills/sdlc-help/SKILL.md` (changed): describes the new reply and the two forms of `/setup-sdlc`.
 - `source/hooks/check-reply-shape.sh` (changed): reads `**Waiting for you:**` as a first-line label and blocks a line that starts with `**Steps`. Its message on a missing **Checks** section words the new rule.
 - `source/hooks/check-reply-shape.cases.json` (changed): a blocking case and a passing case for each of the two.
 - `adapters/tool-words.json` (changed): the words `question-picker` and `task-list` for each agent tool.
-- `README.md` (changed): the reply, the hook's checks, and `/setup-sdlc project`.
+- `README.md` (changed): the first-line labels the reply check reads, and its check on a **Steps** section. It does not name `/setup-sdlc` and gains no sentence on it.
 - `adapters/claude-code/evals/sdlc-mode/` (changed, new): the cases that expect a plain-text round for a choice or a **Steps** section follow the new rules. Four new cases, for requirements 1, 3, 5, and 10. The case for requirement 7 is `build-asks-in-numbered-rounds`, renamed `build-asks-a-round-through-the-picker`, because that case already offers the picker.
 - `adapters/claude-code/evals/setup-sdlc/` (changed): `writes-the-models-file` expects no read of `SETUP.md` and no edit of a project file. `second-run-changes-nothing` sends `/setup-sdlc project` and keeps its checks on `SETUP.md`.
 - `adapters/claude-code/`, `/.claude/skills/`, `/templates/base/.claude/skills/` (changed): rendered by `pnpm plugin:sync`.

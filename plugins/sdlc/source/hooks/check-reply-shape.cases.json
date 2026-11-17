@@ -787,7 +787,7 @@
     "name": "waiting: the label is checked, and a good reply passes",
     "input": {
       "stop_hook_active": false,
-      "last_assistant_message": "**Waiting for you:** Answer the question below.\n\nWhich page is slow?\n\n**Now:** Answer the question above in the chat."
+      "last_assistant_message": "**Waiting for you:** Answer the question below.\n\nWhich page is slow?\n\n**Now:** Tell me which page is slow."
     },
     "expected": "pass"
   },
