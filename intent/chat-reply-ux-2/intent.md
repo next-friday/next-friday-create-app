@@ -1,6 +1,6 @@
 # Intent: Make the chat light to read, and move process state into the tool's interface
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 ## Problem
 

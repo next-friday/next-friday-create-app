@@ -1,6 +1,6 @@
 # Spec: Make the chat light to read, and move process state into the tool's interface
 
-From `intent/chat-reply-ux-2/intent.md`. Status: accepted.
+From `intent/chat-reply-ux-2/intent.md`. Status: done.
 
 Request: "Start" (translated from Thai), the product owner's answer after the merge of the intent's pull request, when told that the spec starts on their word. Later, on the setup skill: "Then fix it together with the chat UX matter, at the same time" (translated from Thai). Skills at `31e5f34`.
 
