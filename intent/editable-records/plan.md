@@ -21,6 +21,7 @@ No file below is denied to the agent.
 - `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/new-round-gets-a-new-intent-folder/` (deleted): `case.yaml`, `prompt.md`, `scaffold.sh`.
 - `intent/consumer-first-project-gaps/plan.md`, `intent/md-only-ci/intent.md`, `intent/subagent-role-models/plan.md` (changed): four lines lose the project's name, with the words of requirements 12 to 14.
 - `intent/cloud-session-skills/spec.md`, `intent/consumer-first-project-gaps/spec.md`, `intent/done-at-build/intent.md`, `intent/done-at-build/spec.md`, `intent/loop-autonomy/spec.md`, `intent/md-only-ci/spec.md`, `intent/monorepo-apps/spec.md`, `intent/plan-only-folders/spec.md` (changed): nine lines. Each Thai quote becomes English: "Write the spec of <name>" (five files), "The status must change automatically" (two lines), "Go on and write the spec of loop-autonomy", "Come back and finish the earlier intent".
+- `pnpm-workspace.yaml` (changed): `auditConfig.ignoreGhsas` holds `GHSA-fc5q-39xc-vjpf`, with its owner and reason. No requirement of the spec asks for it: CI's Dependency Audit failed this pull request on an advisory for picomatch that has no patched version, and the product owner accepted the risk in the session.
 - `.changeset/editable-records.md` (new): `patch` for `@next-friday/create-app`.
 - `intent/editable-records/plan.md` (new). `intent/editable-records/intent.md`, `spec.md` (changed): `Status: done.`
 
