@@ -21,9 +21,10 @@ Accepted by: @joetakara.
 
 - The hook reads English words: "not run", "not verified", "not proved", "unproved", "no result", and "merge". A reply in another language passes the hook, and the playbook's rule is then the only guard.
 - A reply that quotes those words about something else is blocked until it gains a **Not yet** line or drops the merge from the **Now** line.
+- No hook and no eval case checks the rule on watching a pull request, so a later edit can remove it and `pnpm plugin:check` still passes.
 
 ## Proof
 
 - The cause: `playbooks/review.md` step 6 says the **Now** line "names the **Gate** and the person who merges", and no rule says what it holds when a requirement has no result. A session wrote `Not done:` with requirements not proved and a **Now** line that said to merge, and the person merged and released.
-- The watch: a session told the person to come back when CI ended, although it listed a tool that subscribes it to the pull request. `playbooks/review.md` step 5 said to "wait for no check and subscribe to no events". Read step 5 in the diff; no hook checks it.
-- The fix: the three cases in `check-reply-shape.cases.json`; `pnpm plugin:check`.
+- The watch: a session told the person to come back when CI ended, although it listed a tool that subscribes it to the pull request. `playbooks/review.md` step 5 said to "wait for no check and subscribe to no events". No hook checks step 5.
+- The fix: the six cases in `check-reply-shape.cases.json`; `pnpm plugin:check`.
