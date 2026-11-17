@@ -2,7 +2,7 @@
 
 From `intent/plan-only-folders/intent.md`. Status: done.
 
-Request: "เขียน spec ของ plan-only-folders". Skills at aed01d3.
+Request: "Write the spec of plan-only-folders". Skills at aed01d3.
 
 ## Requirements
 

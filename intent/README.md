@@ -1,6 +1,6 @@
 # Intent
 
-This folder is the intent home. Every change starts here as an `intent.md`, and its record stays here. Git history keeps the author, the time, and every revision of each file.
+This folder is the intent home. Every change starts here as an `intent.md`. Git history keeps the author, the time, and every revision of each file.
 
 - Each change has its own folder, `intent/<change>/`, where `<change>` is a short kebab-case name. The folder holds `intent.md` (Plan), then `spec.md` (Design), then `plan.md` (Build).
 - **Plan.** An idea, a ticket, or an incident becomes `intent.md`, written by sending the idea with `/sdlc-mode`, which interviews the originator. The originator corrects the draft before it is committed, and the product owner reviews it in its pull request. Merging its pull request accepts it. Merging it with `Status: rejected.` and a one-line reason rejects it, so the decision stays in the history; no pull request is closed by hand. No person edits the status line: the file says `Status: accepted.` from its first commit, so the line is true the moment the pull request merges.

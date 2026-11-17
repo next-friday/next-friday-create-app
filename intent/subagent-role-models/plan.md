@@ -21,7 +21,7 @@ Accepted by: @joetakara.
 The causes:
 
 - **Verifier model:** `sdlc-mode/SKILL.md` step 4 tells the session to pass the role's model on each subagent call, but nothing in the subagent definition names the `explore` default. `grep -c model` prints 0 for `agents.json`, `.claude/agents/verifier.md`, and `templates/base/.claude/agents/verifier.md`. A call that carries no `model`, such as one made outside `sdlc-mode` step 4, starts the `verifier` on the session's model. No such call was observed in this session.
-- **Intent folder:** `plan.md` step 4 says only that `<change>` is a short kebab-case name, and no playbook reads `intent/README.md`, which says each change has its own folder. When a merged intent says one folder holds every round and that its earlier spec and plan were removed, the agent follows it: the new eval case fails 4 runs of 6 today, rewriting `intent.md` and deleting `spec.md` and `plan.md`. `design.md` step 1 then stops at the existing `spec.md` with no next step, and https://github.com/soddee/soddee-b2b-platform/pull/26 deleted the done spec and plan to get past it.
+- **Intent folder:** `plan.md` step 4 says only that `<change>` is a short kebab-case name, and no playbook reads `intent/README.md`, which says each change has its own folder. When a merged intent says one folder holds every round and that its earlier spec and plan were removed, the agent follows it: the new eval case fails 4 runs of 6 today, rewriting `intent.md` and deleting `spec.md` and `plan.md`. `design.md` step 1 then stops at the existing `spec.md` with no next step, and a generated project deleted the done spec and plan to get past it.
 
 1. Set a model on the self-test's sample subagent and expect it in the Claude Code file, and run `pnpm plugin:check`: it fails, because the renderer drops `model`.
 2. Render `model`, add it to `agents.json`, and run `pnpm plugin:sync` then `pnpm plugin:check` and `pnpm typecheck`: both pass, and each Claude Code `verifier.md` holds `model: haiku`.
@@ -32,7 +32,7 @@ The causes:
 
 - The frontmatter `model` is a fallback. Claude Code picks a subagent's model from the call's `model`, then the definition's `model`, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the session's model (https://code.claude.com/docs/en/sub-agents.md, "Choose a model"). A role model that `/setup-sdlc` wrote and the session passes still wins. A person who sets `CLAUDE_CODE_SUBAGENT_MODEL` without `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` will see the `verifier` start on `haiku` instead.
 - Cursor's `verifier.md` gets no model: its subagent fields were not checked against Cursor's documentation in this session.
-- The new folder rule changes how a project that keeps every round in one folder, as https://github.com/soddee/soddee-b2b-platform does, writes its next round. Its earlier rounds stay as they are.
+- The new folder rule changes how a project that keeps every round in one folder, as one generated project does, writes its next round. Its earlier rounds stay as they are.
 - This branch carries the reply-shape rule of https://github.com/next-friday/next-friday-create-app/pull/268, which the product owner moved here, so the release is minor: **@next-friday/create-app 10.1.0**.
 - Options not taken: an eval case for the call's `model` input, because the frontmatter does not change that input, and `verifier-runs-on-the-chosen-model` already covers what step 4 says.
 

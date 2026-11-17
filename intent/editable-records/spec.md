@@ -1,6 +1,6 @@
 # Spec: The harness enforces nothing the book does not say about a record
 
-From `intent/editable-records/intent.md`. Status: accepted.
+From `intent/editable-records/intent.md`. Status: done.
 
 Request: "Write", the product owner's order after the merge of the intent's pull request, when told that the spec is the next step. Skills at `79ddc45`.
 

@@ -534,7 +534,6 @@ function findMissingPlanProblems(specText: string, hasPlan: boolean): string[] {
 }
 
 const addedStatuses = new Set(["accepted", "rejected"]);
-const editedStatuses = new Set(["accepted", "done", "rejected", "replaced", "withdrawn"]);
 
 /**
  * Read the status a document gives on its status line.
@@ -549,32 +548,25 @@ function readStatus(text: string): string | undefined {
 }
 
 /**
- * Find an intent or a spec whose status would be wrong once its pull request merges.
+ * Find an intent or a spec that its pull request adds with a status that merging it would make wrong.
+ * A file the default branch already holds may carry any status line, or none.
  * @param status The status the branch writes, or undefined when there is none.
  * @param isAdded Whether the branch adds the file, which the default branch does not have yet.
  * @param isPlanMerged Whether the folder's `plan.md` is already on the default branch, so the change was built before this file was written.
- * @returns At most one message.
+ * @returns At most one message, and none for a file the branch does not add.
  */
 function findStatusProblems(
   status: string | undefined,
   isAdded: boolean,
   isPlanMerged = false,
 ): string[] {
-  if (isAdded) {
-    const isAllowed =
-      status !== undefined && (addedStatuses.has(status) || (isPlanMerged && status === "done"));
+  const isDecision =
+    status !== undefined && (addedStatuses.has(status) || (isPlanMerged && status === "done"));
 
-    return isAllowed
-      ? []
-      : [
-          `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
-        ];
-  }
-
-  return status !== undefined && editedStatuses.has(status)
+  return !isAdded || isDecision
     ? []
     : [
-        `a merged file keeps a status line that says accepted, rejected, done, withdrawn, or replaced; it never goes back to "Status: draft."`,
+        `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
       ];
 }
 
@@ -725,8 +717,8 @@ const statusCases: [string, string, boolean, boolean, string?][] = [
   ["adds rejected", "Status: rejected.", true, false],
   ["adds draft", draftLine, true, false, notDecisionMessage],
   ["marks a merged file done", doneLine, false, false],
-  ["removes a merged status line", "# Intent: a", false, false, "keeps a status line"],
-  ["sets a merged file to draft", draftLine, false, false, "never goes back"],
+  ["removes a merged status line", "# Intent: a", false, false],
+  ["sets a merged file to draft", draftLine, false, false],
 ];
 
 type DoneCase = [string, string, BranchChanges, string | undefined, string | undefined, string?];
@@ -1146,7 +1138,7 @@ function findMissingPlanLines(changeFolders: string[]): string[] {
  * Check one existing plan against the spec beside it.
  * @param planPath Path of the plan.
  * @param isAcceptanceRequired Whether the branch changes a file outside `intent/`.
- * @param branchName The branch under check, or undefined when the default branch is missing.
+ * @param branchName The branch under check, or undefined when the default branch is missing or already holds the plan, which may then change on any branch.
  * @returns One line per problem.
  */
 function findPlanFileLines(
@@ -1199,7 +1191,11 @@ function findPlanLines(planPaths: string[]): string[] {
   const branchName = branchChanges === undefined ? undefined : readBranchName();
 
   const checkedLines = changedPlanPaths.flatMap(planPath =>
-    findPlanFileLines(planPath, isAcceptanceRequired, branchName),
+    findPlanFileLines(
+      planPath,
+      isAcceptanceRequired,
+      isMergedFile(branchChanges, planPath) ? undefined : branchName,
+    ),
   );
 
   return [...missingBranchLines, ...missingLines, ...checkedLines];
@@ -1217,6 +1213,16 @@ function readDefaultBranchFile(mergeBase: string, filePath: string): string | un
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Tell whether the default branch already holds a file, which may then change or go on any branch.
+ * @param changes What the branch changed, or undefined when the default branch is missing.
+ * @param filePath Path of the file from the repository root.
+ * @returns True when the commit where this branch left the default branch holds the file.
+ */
+function isMergedFile(changes: BranchChanges | undefined, filePath: string): boolean {
+  return changes !== undefined && readDefaultBranchFile(changes.mergeBase, filePath) !== undefined;
 }
 
 /**
@@ -1341,7 +1347,7 @@ function findStatusLines(changeFolders: string[]): string[] {
 }
 
 /**
- * Report each build plan whose folder does not say done in its intent and spec.
+ * Report each build plan that the branch adds and whose folder does not say done in its intent and spec.
  * @param changeFolders The `intent/<change>` folders.
  * @returns One line per problem.
  */
@@ -1351,6 +1357,7 @@ function findDoneLines(changeFolders: string[]): string[] {
 
   return changeFolders
     .filter(folder => isBuildPlan(folder, branchChanges?.changedPaths ?? [], isCodeChanged))
+    .filter(folder => !isMergedFile(branchChanges, path.join(folder, planFileName)))
     .flatMap(folder =>
       findDoneProblems(
         [intentFileName, specFileName].map((fileName): [string, string | undefined] => {

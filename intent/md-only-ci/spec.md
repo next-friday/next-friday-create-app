@@ -2,7 +2,7 @@
 
 From `intent/md-only-ci/intent.md`. Status: done.
 
-Request: "เขียน spec ของ md-only-ci". Skills at 51fc7a0.
+Request: "Write the spec of md-only-ci". Skills at 51fc7a0.
 
 ## Requirements
 
