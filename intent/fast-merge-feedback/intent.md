@@ -53,7 +53,7 @@ The book places "the full test suite" at the commit or the pull request (page 27
 
 - commitlint and the `commit-msg` hook: a company rule. The product owner's decision.
 - `control-band`, `claude-fix-loop`, `spec-on-intent-merge`, and the `triage` job: the book asks for each (pages 49 to 50, 38, 16, 45). `SETUP.md` says what `CLAUDE_CI_ENABLED` turns on.
-- TruffleHog: it runs with `--results=verified,unknown` (`templates/base/.github/workflows/secret-scan.yml:33-36`), which reports secrets it verified with their provider. gitleaks does not verify.
+- TruffleHog: it runs with `--results=verified,unknown` (`templates/base/.github/workflows/secret-scan.yml:33-36`), which reports secrets it verified with their provider. gitleaks does not verify. The product owner's decision: TruffleHog stays.
 
 ### Added
 

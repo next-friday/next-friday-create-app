@@ -109,7 +109,7 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
 5. Security rule 6. gitleaks and TruffleHog scan the same commits, and only TruffleHog verifies a found secret with its provider (`templates/base/.github/workflows/secret-scan.yml:33-36`).
 
-   Decision: TruffleHog stays.
+   Decision: TruffleHog stays. The product owner's decision.
 
 6. No policy. Requirements 5 and 21 change files that a person commits, by the project's own rule: `.husky/**`, `.agents/hooks/**`, and `scripts/check-agent-gates.ts`. An agent session's token also cannot push a file under `.github/workflows/`.
 
