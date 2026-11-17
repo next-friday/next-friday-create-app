@@ -10,7 +10,7 @@ This playbook takes a small, well-bounded change to a pull request. It writes no
    - It adds no dependency, and it changes no schema and no public interface.
    - No decision it needs is left to a person.
 2. Create a branch named `small/<type>-<short-description>` from the latest `origin/main`. `<type>` is never `fix`. The plan check lets a `small/` branch through with no plan while it changes at most five files, and never a `small/fix-` branch.
-3. Read the four policies, found as `playbooks/design.md` step 2 says, and the code the change touches. Make the change so that it meets them.
+3. Read each of the four policies whose description covers what the change touches, found as `playbooks/design.md` step 2 says. A change that touches none of them reads none. Read the code the change touches. Make the change so that it meets them.
 4. Run every check the project's agent instructions name and keep the output. Every check must pass, as `playbooks/build.md` step 9 says. Then run the `verifier` subagent once, as `playbooks/build.md` step 9 says, and fix what it reports. For UI work, also do the visual check of that step.
 5. Open the pull request as `playbooks/open-pr.md` says. Its description says why the change is small, by the conditions of step 1.
 6. **Gate: a code owner approves the pull request, and a person merges it.** You never approve it and never merge it.

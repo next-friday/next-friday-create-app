@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: build-plans-and-waits-for-the-engineer
 expected_outcome: |
-  The spec intent/app-version/spec.md is merged and has no plan, and the request already holds the engineer's answers about the files, the order of work, the tests, and the options ruled out. The agent follows the build playbook: it reads the intent, the spec, and the code, asks no question, shows the plan with the template's four headings, and stops at the gate for the engineer to accept the plan in the conversation. It writes no file, commits nothing, and opens no pull request.
+  The spec intent/app-version/spec.md is merged and has no plan, and the request holds the engineer's wishes for the files, the order of work, the tests, and the options ruled out, which the plan follows. The agent follows the build playbook: it reads the intent, the spec, and the code, asks no question, shows the plan with the template's four headings, and stops at the gate for the engineer to accept the plan in the conversation. It writes no file, commits nothing, and opens no pull request.
 context:
   scaffold_script: scaffold.sh
 graders:

@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: interviews-before-writing-intent
 expected_outcome: |
-  The agent restates the goal, picks the intent playbook, and asks its open questions in plain chat text, with no answer offered. It writes no intent yet. The restated goal is the session's first message, so the grader reads the whole trace.
+  The agent picks the intent playbook and asks its open questions in plain chat text, with no answer offered. It writes no intent yet.
 graders:
   - name: no-commit-command
     type: tool_used
@@ -15,11 +15,6 @@ graders:
     input_match: '\bgit\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch\s+(?!-{1,2}(?:a|r|v|vv|l|list|show-current|contains|merged|no-merged|all|remotes|format|sort|points-at)\b)[\w-]|worktree\s+add)'
     min: 0
     max: 0
-  - name: reply-restates-the-request
-    type: regex
-    target: trace
-    pattern: '(?=[\s\S]*Goal:)(?=[\s\S]*Problem:)(?=[\s\S]*Smallest change:)'
-    flags: mu
   - name: no-intent-written
     type: tool_used
     tool: Write

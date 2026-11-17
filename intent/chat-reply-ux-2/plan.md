@@ -7,6 +7,7 @@ Accepted by: @joetakara.
 Paths are under `plugins/sdlc/` unless they start at the root.
 
 - `source/skills/sdlc-mode/SKILL.md` (changed): step 3 lets a shell command or a script make a change that repeats in many places. Step 2 keeps the task list and no longer puts steps in the reply. Step 4 writes the models rule when none exists. Step 6 asks an open question in plain text and a choice through the picker. The reply shape gains `**Waiting for you:**` as a first line, the step line, and the rules on language, numbering, risks, and totals under **Checks**, and loses **Steps**, the progress note, and the fixed English **Now** sentence.
+- `source/skills/sdlc-mode/playbooks/question.md`, `fix.md`, `small.md` (changed): the rules the note under **Risks** lists.
 - `source/skills/sdlc-mode/playbooks/intent.md`, `build.md`, `design.md`, `review.md` (changed): each sentence on **Steps**, the picker, or a round in plain text follows the new rules. `build.md` step 5 names the plan approval. `deploy.md` names none of them and stays as it is.
 - `source/skills/setup-sdlc/SKILL.md` (changed): `/setup-sdlc` does steps 1 to 5 and stops. Steps 6 to 8 run on `/setup-sdlc project`.
 - `source/skills/sdlc-help/SKILL.md` (changed): describes the new reply and the two forms of `/setup-sdlc`.
@@ -14,7 +15,7 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 - `source/hooks/check-reply-shape.cases.json` (changed): a blocking case and a passing case for each of the two.
 - `adapters/tool-words.json` (changed): the words `question-picker` and `task-list` for each agent tool.
 - `README.md` (changed): the first-line labels the reply check reads, and its check on a **Steps** section. It does not name `/setup-sdlc` and gains no sentence on it.
-- `adapters/claude-code/evals/sdlc-mode/` (changed, new): the cases that expect a plain-text round for a choice or a **Steps** section follow the new rules. Four new cases, for requirements 1, 3, 5, and 10. Requirement 7 has no case: the eval runner offers a session no question picker, so `build-asks-in-numbered-rounds` keeps testing the round in plain text, which is what requirement 7 asks for when there is no picker.
+- `adapters/claude-code/evals/sdlc-mode/` (changed, new): the cases that expect a plain-text round for a choice or a **Steps** section follow the new rules. Three new cases, for requirements 1, 3, and 5. Requirement 7 has no case: the eval runner offers a session no question picker, and the two cases that tested the build interview are removed with the rule they tested.
 - `adapters/claude-code/evals/setup-sdlc/` (changed): `writes-the-models-file` expects no read of `SETUP.md` and no edit of a project file. `second-run-changes-nothing` sends `/setup-sdlc project` and keeps its checks on `SETUP.md`.
 - `adapters/claude-code/`, `/.claude/skills/`, `/templates/base/.claude/skills/` (changed): rendered by `pnpm plugin:sync`.
 - `/templates/base/SETUP.md` (changed): the sentence that names `/setup-sdlc` for the project's steps names `/setup-sdlc project`. The root `README.md` does not name the command and stays as it is.
@@ -41,6 +42,17 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 - Step 4 can block replies that pass today, such as one that quotes a line starting with `**Steps`. The passing cases cover a reply that names **Steps** inside a sentence.
 - Step 6 changes what `/setup-sdlc` does with no word. A person who relied on it for the project's steps now sends `/setup-sdlc project`. The changeset says so.
 - The file rule of `SKILL.md` step 3 changes too, on the product owner's word after the spec merged: "Add this matter: allow `sed`, allow a script" (translated from Thai). A session that had to make the same change in about a thousand places did it one edit at a time, because the rule allowed the shell only for a generator and `git mv`. The rule now tells the agent to reach first for a shell command or a script and to write by hand only what no command can produce, lets one command make a change that repeats, asks for a read of the diff after it, and keeps the files reserved for a person out of the shell's reach. The spec is on the default branch and is not rewritten, so this plan holds the change. It could let a wrong pattern change many files at once; the read of the diff is the check.
+- More rules change on the product owner's word after the spec merged: "Hunt for the bad rules, and compare them with the book. Where the book says to do it, keep it" and "Fix all of them" (translated from Thai). The book is the AI-native SDLC playbook the harness follows. A reader with a fresh context read all of it against the harness, and these rules had no backing in it:
+  - one `diff` command had to go to a subagent;
+  - a draft, a spec, or a plan was shown whole again after each correction;
+  - the engineer had to say the files, the order, the tests, and the options ruled out before a plan was written, where the book has the agent write the plan and the engineer correct it;
+  - a named file was read whole before any search;
+  - three **Request** lines came before the first tool call;
+  - each task-list item copied a playbook sentence word for word;
+  - the checks CI runs were run again before the push;
+  - a fix reply listed every candidate cause it ruled out;
+  - a build, a fix, and a small change read all four policies, where the book asks for them at design and at review. A build now reads the policies the spec says apply, and a fix or a small change reads the ones the change touches.
+- Requirement 10 is not built as the spec words it. The book says to "show the output" of the checks and to "paste the output", so **Checks** keeps each command and the lines of its output that show the result, as before this change.
 - Options not taken:
   - Translating the first-line labels: the hook reads them, and the spec's decision 1 keeps them.
   - A hook check on text written while the agent works: no hook reads it with certainty.
@@ -54,14 +66,15 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 3, 6: `SKILL.md`, "Reply shape"; the search of step 2; the new eval case `writes-no-text-between-tool-calls`.
 4: `SKILL.md` step 2, unchanged in its task-list rule; review of the diff.
 5: the hook case that blocks a `**Steps` line; the new eval case `reply-holds-a-step-line-and-no-steps`.
-7, 8: `SKILL.md` step 6 and `intent.md` step 3; the eval case `build-asks-in-numbered-rounds`, for a session with no picker; no eval covers a round through the picker; the case `intent-asks-open-questions-in-plain-text`, which still refuses the picker for an open question.
+7, 8: `SKILL.md` step 6 and `intent.md` step 3; no eval covers a round through the picker; the case `intent-asks-open-questions-in-plain-text`, which still refuses the picker for an open question.
 9: `build.md` step 5; review of the diff.
-10, 11: `SKILL.md`, the **Checks** rule; the new eval case `checks-count-passed-and-show-failures`.
+10: not built, as **Risks** says: **Checks** keeps each command and its result, as the book asks.
+11: `SKILL.md`, the **Checks** rule; review of the diff.
 12, 13, 14, 15: `SKILL.md`, "Reply shape" and "The parts of a reply"; review of the diff.
 16: the hook's self-tests in `pnpm plugin:check`, with the four new cases.
 17: the rendered `tool-words/claude-code.md` and `tool-words/cursor.md` after step 5.
 18: the searches of steps 3 and 6.
-19: the four new case folders exist and `pnpm plugin:check` passes. The twelve cases this change adds or changes were run once each; the pull request gives their results. The whole suite, as `pnpm evals:run` and `pnpm evals:run:write` run it, was not run, and the pull request names this as unmet.
+19: the three new case folders exist and `pnpm plugin:check` passes. Twelve cases this change added or changed were run once each before the last rules changed; the pull request gives their results, and says which cases were removed or changed after that run. The whole suite, as `pnpm evals:run` and `pnpm evals:run:write` run it, was not run, and the pull request names this as unmet.
 20: `pnpm plugin:sync`, then `pnpm plugin:check`.
 21: `pnpm verify` in the root and in a generated project of each stack.
 22: `.changeset/chat-reply-ux-2.md` holds `minor`; `pnpm verify` runs the changeset check.
