@@ -2,7 +2,7 @@
 
 From `intent/chat-reply-ux-2/intent.md`. Status: accepted.
 
-Request: "Start" (translated from Thai), the product owner's answer after the merge of the intent's pull request, when told that the spec starts on their word. Skills at `31e5f34`.
+Request: "Start" (translated from Thai), the product owner's answer after the merge of the intent's pull request, when told that the spec starts on their word. Later, on the setup skill: "Then fix it together with the chat UX matter, at the same time" (translated from Thai). Skills at `31e5f34`.
 
 Choices the product owner has not made are marked **Proposal**. The product owner corrects them in review. Outcome numbers are those of the intent's **Proposed outcome** section. The plugin's paths are under `plugins/sdlc/`.
 
@@ -48,6 +48,12 @@ Enforcement and delivery:
 21. `pnpm verify` passes in the root and in a generated project of each stack of `src/stacks.ts`.
 22. The change is one pull request with one changeset for `@next-friday/create-app`. **Proposal:** `minor`, because a generated project's replies change shape. Merging its release pull request publishes that version to npm.
 
+The setup skill, which the product owner asked to fix in the same change (area of concern 6):
+
+23. `/setup-sdlc` sets the models and the efforts and stops: it does steps 1 to 5 of the skill, reads no `SETUP.md`, and edits no file of the project. **Proposal:** the steps that read `SETUP.md` and edit the project's files run only when the person sends `/setup-sdlc project`.
+24. When a session that runs `sdlc-mode` finds no models rule at the path of the `rules-file` word, it writes the rule with the `balanced` budget and each role's default, as steps 1, 3, and 5 of `setup-sdlc` say, and asks nothing. This covers a cloud session, whose machine is new each time and holds no rule.
+25. The reply does not mention that the rule was missing or written, unless a role's default has no offered model of its family.
+
 ## Design
 
 **Proposal:** the change is not higher risk. It changes the text of rules and one hook, and no CLI argument, prompt, or stack name.
@@ -63,7 +69,8 @@ Enforcement and delivery:
 - `adapters/tool-words.json`: requirement 17. For Claude Code the words name the `AskUserQuestion` tool and the task tools. For Cursor both say "not verified".
 - `source/skills/sdlc-help/SKILL.md` and `plugins/sdlc/README.md`: the description of a reply.
 - `adapters/claude-code/evals/sdlc-mode/`: the cases that expect a numbered round in plain text for a choice, or a **Steps** section, change to the rules above, and the cases of requirement 19 are added.
-- `.changeset/<name>.md`: requirement 22.
+- `source/skills/setup-sdlc/SKILL.md`: steps 6 to 8 move under the word `project`, and the description says so. `source/skills/sdlc-mode/SKILL.md` step 4: "With a file for the agent tool and no rule" writes the rule of requirement 24 in place of starting each subagent on a default and saying so. Requirements 23 to 25.
+- `.changeset/<name>.md`: requirement 22. It names both matters.
 
 Sources read at their pages for this spec:
 
@@ -101,6 +108,14 @@ Sources read at their pages for this spec:
 5. No policy. The sources name the problem behind requirements 3 and 10 and do not test the remedy. Catalan and others find that engagement falls and ask for more support for reflection, not for silence. Friedman and others find an advantage for medium length, not for totals.
 
    Decision: requirements 3 and 10 stand on the originator's decision, and the spec cites those two sources for the problem only.
+
+6. No policy. The intent does not hold the setup skill. The product owner raised it after the intent merged: a cloud session has no models rule, and `/setup-sdlc` also edits the project's files, so a session cannot run it at every start. An intent on the default branch is not rewritten.
+
+   Decision: requirements 23 to 25 are part of this spec and of its one pull request, on the product owner's word, with no second intent.
+
+7. No policy. Requirement 24 chooses the `balanced` budget for a person who was not asked.
+
+   Decision: `balanced` is written without a question, because it matches the defaults the session uses today when the rule is missing. A person changes it with `/setup-sdlc`.
 
 ## Open questions
 
