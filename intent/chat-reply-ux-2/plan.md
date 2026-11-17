@@ -14,7 +14,7 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 - `source/hooks/check-reply-shape.cases.json` (changed): a blocking case and a passing case for each of the two.
 - `adapters/tool-words.json` (changed): the words `question-picker` and `task-list` for each agent tool.
 - `README.md` (changed): the first-line labels the reply check reads, and its check on a **Steps** section. It does not name `/setup-sdlc` and gains no sentence on it.
-- `adapters/claude-code/evals/sdlc-mode/` (changed, new): the cases that expect a plain-text round for a choice or a **Steps** section follow the new rules. Four new cases, for requirements 1, 3, 5, and 10. The case for requirement 7 is `build-asks-in-numbered-rounds`, renamed `build-asks-a-round-through-the-picker`, because that case already offers the picker.
+- `adapters/claude-code/evals/sdlc-mode/` (changed, new): the cases that expect a plain-text round for a choice or a **Steps** section follow the new rules. Four new cases, for requirements 1, 3, 5, and 10. Requirement 7 has no case: the eval runner offers a session no question picker, so `build-asks-in-numbered-rounds` keeps testing the round in plain text, which is what requirement 7 asks for when there is no picker.
 - `adapters/claude-code/evals/setup-sdlc/` (changed): `writes-the-models-file` expects no read of `SETUP.md` and no edit of a project file. `second-run-changes-nothing` sends `/setup-sdlc project` and keeps its checks on `SETUP.md`.
 - `adapters/claude-code/`, `/.claude/skills/`, `/templates/base/.claude/skills/` (changed): rendered by `pnpm plugin:sync`.
 - `/templates/base/SETUP.md` (changed): the sentence that names `/setup-sdlc` for the project's steps names `/setup-sdlc project`. The root `README.md` does not name the command and stays as it is.
@@ -45,7 +45,7 @@ Paths are under `plugins/sdlc/` unless they start at the root.
   - A hook check on text written while the agent works: no hook reads it with certainty.
   - A second intent or pull request for the setup skill: the spec's decision 6 keeps one change.
   - Removing **Checks**: a reply keeps each check that did not pass.
-  - Running the evals in this change: the engineer chose to write the cases and run them after the cost is known.
+  - Running the whole eval suite in this change: the engineer chose to run only the cases this change adds or changes, once each, after the cost of one run was known.
 
 ## Proof
 
@@ -53,14 +53,14 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 3, 6: `SKILL.md`, "Reply shape"; the search of step 2; the new eval case `writes-no-text-between-tool-calls`.
 4: `SKILL.md` step 2, unchanged in its task-list rule; review of the diff.
 5: the hook case that blocks a `**Steps` line; the new eval case `reply-holds-a-step-line-and-no-steps`.
-7, 8: `SKILL.md` step 6 and `intent.md` step 3; the renamed eval case `build-asks-a-round-through-the-picker`; the case `intent-asks-open-questions-in-plain-text`, which still refuses the picker for an open question.
+7, 8: `SKILL.md` step 6 and `intent.md` step 3; the eval case `build-asks-in-numbered-rounds`, for a session with no picker; no eval covers a round through the picker; the case `intent-asks-open-questions-in-plain-text`, which still refuses the picker for an open question.
 9: `build.md` step 5; review of the diff.
 10, 11: `SKILL.md`, the **Checks** rule; the new eval case `checks-count-passed-and-show-failures`.
 12, 13, 14, 15: `SKILL.md`, "Reply shape" and "The parts of a reply"; review of the diff.
 16: the hook's self-tests in `pnpm plugin:check`, with the four new cases.
 17: the rendered `tool-words/claude-code.md` and `tool-words/cursor.md` after step 5.
 18: the searches of steps 3 and 6.
-19: the four new case folders and the renamed one exist and `pnpm plugin:check` passes. `pnpm evals:run` and `pnpm evals:run:write` are not run in this change; the pull request names this as unmet.
+19: the four new case folders exist and `pnpm plugin:check` passes. The twelve cases this change adds or changes were run once each; the pull request gives their results. The whole suite, as `pnpm evals:run` and `pnpm evals:run:write` run it, was not run, and the pull request names this as unmet.
 20: `pnpm plugin:sync`, then `pnpm plugin:check`.
 21: `pnpm verify` in the root and in a generated project of each stack.
 22: `.changeset/chat-reply-ux-2.md` holds `minor`; `pnpm verify` runs the changeset check.

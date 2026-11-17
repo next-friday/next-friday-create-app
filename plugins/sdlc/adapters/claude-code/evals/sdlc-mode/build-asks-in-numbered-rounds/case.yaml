@@ -1,0 +1,36 @@
+schema_version: "1.1"
+name: build-asks-in-numbered-rounds
+expected_outcome: |
+  The spec intent/app-version/spec.md is merged and has no plan, and the request names no files, order of work, or tests. The agent reads the intent, the spec, and the code, and asks the engineer for the missing things in one round. The eval runner offers no question picker, so the round is numbered questions in plain chat text, with the answer it recommends beside each. It shows no plan yet, and writes no file.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: round-has-numbered-questions
+    type: regex
+    pattern: '(?=[\s\S]*^\s*1[.)]\s[^\n]*\?)(?=[\s\S]*^\s*2[.)]\s[^\n]*\?)'
+    flags: mu
+  - name: round-recommends-an-answer
+    type: regex
+    pattern: '\brecommend'
+    flags: imu
+  - name: reply-has-no-plan-headings
+    type: regex
+    pattern: '(?=[\s\S]*Files that change)(?=[\s\S]*Order of work)(?=[\s\S]*Risks)(?=[\s\S]*Proof)'
+    flags: mu
+    match: not_contains
+  - name: no-file-created
+    type: regex
+    target: files
+    pattern: '^(?!\.git/config\.worktree$|\.git/objects/info/alternates$).+$'
+    flags: m
+    match: not_contains
+  - name: no-file-written
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+  - name: no-file-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
