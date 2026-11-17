@@ -16,10 +16,10 @@ Accepted by: @joetakara.
 
 ## Risks
 
-- The riskiest step is 1: a matcher that answers differently would let a push of code through as documents. Step 2 compares both matchers on the tracked paths of this repository and of its templates.
+- The riskiest step is 1: a matcher that answers differently would let a push of code through as documents. Step 2 compares both matchers on the tracked paths of this repository and of its templates, and the Proof names the one path that differs.
 - Semgrep cannot run in the session that makes this fix, because its rule sets come from a host the session cannot reach. The finding is fixed by removing what the rule names, and it is proved only when a generated project's `Semgrep (OWASP)` job runs.
 
 ## Proof
 
 - The cause: every stack's `sast.yml` runs Semgrep with `p/nodejsscan`, whose rule `regex_dos` reports a regular expression that is built at run time and then tested. `changed-documents.ts` built one from each glob of `.github/file-filters.yml`, so the `Semgrep (OWASP)` job of a generated project failed on the first pull request that held the script.
-- The fix: 17 self-tests of `changed-documents.ts`, seven of them for the new matcher; the old and the new matcher give the same answer for 700 paths.
+- The fix: 12 self-tests of `changed-documents.ts`. The old and the new matcher give the same answer for 822 of 823 paths. The one path is a folder's own name against a pattern that ends in `/**`, such as `intent` against `intent/**`: the new matcher matches it, as `picomatch` 4.0.7 does with `dot: true`, and the old one did not.
