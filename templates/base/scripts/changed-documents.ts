@@ -254,7 +254,7 @@ const selfTestCases: [name: string, expected: boolean, actual: boolean][] = [
   [
     "a star inside a segment",
     true,
-    isGlobMatch([".cursor", "rules", "a.mdc"], [".cursor", "rules", "*.mdc"]),
+    isGlobMatch(["docs", "rules", "a.mdc"], ["docs", "rules", "*.mdc"]),
   ],
   [
     "a star does not cross a slash",
