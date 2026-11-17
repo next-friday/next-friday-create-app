@@ -33,6 +33,18 @@ snapshot() {
   printf '%s|%s' "$repository" "$content"
 }
 
+# The transcript shows whether the agent ran a tool that can write, since the last message a person typed: one whose input holds a command, new text for a file, or a prompt for another agent, or a tool of an outside server. With no transcript, the answer is yes.
+agent_could_write() {
+  transcript=$(printf '%s' "$input" | jq -r '.transcript_path // ""')
+  [ -n "$transcript" ] && [ -f "$transcript" ] || return 0
+  jq -s -e '
+    (map(.type == "user" and ((.message.content | type) == "string" or ((.message.content | type) == "array" and any(.message.content[]; .type == "text")))) | rindex(true) // 0) as $start
+    | [.[$start:][] | select(.type == "assistant") | .message.content[]? | select(.type == "tool_use") | {name: (.name // ""), input: (.input // {})}]
+    | any(.[]; (.input | has("command") or has("content") or has("new_string") or has("edits") or has("new_source") or has("prompt")) or (.name | startswith("mcp__")))
+  ' "$transcript" > /dev/null 2>&1
+  [ $? -ne 1 ]
+}
+
 changed_since_snapshot() {
   current=$(snapshot) || return 1
   previous=$(cat "$snapshot_file" 2> /dev/null)
@@ -61,7 +73,7 @@ case $mode in
     ;;
   *)
     changed=false
-    changed_since_snapshot && changed=true
+    changed_since_snapshot && agent_could_write && changed=true
     [ "$(printf '%s' "$input" | jq -r '.stop_hook_active // false')" = true ] && exit 0
     reply=$(printf '%s' "$input" | jq -r '.last_assistant_message // ""')
     ;;

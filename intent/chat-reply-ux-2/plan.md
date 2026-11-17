@@ -14,6 +14,7 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 - `source/skills/sdlc-help/SKILL.md` (changed): describes the new reply and the two forms of `/setup-sdlc`.
 - `source/hooks/check-reply-shape.sh` (changed): reads `**Waiting for you:**` as a first-line label and blocks a line that starts with `**Steps`. Its message on a missing **Checks** section words the new rule.
 - `source/hooks/check-reply-shape.cases.json` (changed): a blocking case and a passing case for each of the two.
+- `/scripts/sync-plugin.ts` (changed): a hook case can hold a transcript, which the runner writes to a file and names in the case input.
 - `adapters/tool-words.json` (changed): the words `question-picker` and `task-list` for each agent tool.
 - `README.md` (changed): the first-line labels the reply check reads, and its check on a **Steps** section. It does not name `/setup-sdlc` and gains no sentence on it.
 - `adapters/claude-code/evals/sdlc-mode/` (changed, new): the cases that expect a plain-text round for a choice or a **Steps** section follow the new rules. Three new cases, for requirements 1, 3, and 5. Requirement 7 has no case: the eval runner offers a session no question picker, and the two cases that tested the build interview are removed with the rule they tested.
@@ -54,6 +55,9 @@ Paths are under `plugins/sdlc/` unless they start at the root.
   - a fix reply listed every candidate cause it ruled out;
   - a build, a fix, and a small change read all four policies, where the book asks for them at design and at review. A build now reads the policies the spec says apply, and a fix or a small change reads the ones the change touches.
 - `maintain.md` step 6 no longer lets the service owner close a pull request to dismiss a finding. The book dismisses that way, and the product owner decided that the company's rule comes first: "Follow the company's rule. Never close a pull request" (translated from Thai). A dismissal is a merge of the intent with `Status: rejected.` and the reason.
+- Two more rules change on the product owner's word, after another session listed what slowed it: "Fix 2 and 5" (translated from Thai).
+  - `intent.md` step 3 made the agent interview a person whose request already stated its outcome. It now goes to the draft when the request and the repository give the five things, and asks only for what is missing. The book has the originator describe the problem, the agent write the intent, and the originator correct it.
+  - `check-reply-shape.sh` asked for **Checks** whenever a file changed during a turn, also when the person changed it. In Claude Code it now reads the transcript that the hook input names, and asks only when the agent ran a tool that can write a file. `scripts/sync-plugin.ts` gives a hook case a transcript. With no transcript, as in Cursor, any change still counts.
 - Requirement 10 is not built as the spec words it. The book says to "show the output" of the checks and to "paste the output", so **Checks** keeps each command and the lines of its output that show the result, as before this change.
 - Options not taken:
   - Translating the first-line labels: the hook reads them, and the spec's decision 1 keeps them.

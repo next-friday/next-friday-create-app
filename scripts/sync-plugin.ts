@@ -49,6 +49,7 @@ type HookCase = {
   projectFolder?: string;
   savedReply?: string;
   snapshotArgument?: string;
+  transcript?: unknown[];
 };
 
 type ToolWords = {
@@ -470,9 +471,23 @@ function createCaseRepository(parentDirectory: string): string {
 }
 
 /**
+ * Write a case's transcript to a file, one entry on a line.
+ * @param directory Directory that holds the case's state.
+ * @param transcript Entries of the transcript, or nothing for a case that has none.
+ * @returns The hook input field that names the file, or no field.
+ */
+function writeCaseTranscript(directory: string, transcript?: unknown[]): Record<string, string> {
+  const file = path.join(directory, "transcript.jsonl");
+
+  writeFileSync(file, (transcript ?? []).map(entry => `${JSON.stringify(entry)}\n`).join(""));
+
+  return Object.fromEntries(transcript === undefined ? [] : [["transcript_path", file]]);
+}
+
+/**
  * Run a hook script on one case in a private state directory.
  * @param script Path of the script from the repository root.
- * @param hookCase The case. A saved reply is stored first by the script's `save` argument. Changed files make the case run in a new Git repository: the script takes its snapshot, the files are written, and the case input gains the repository as `cwd` and `workspace_roots`. The snapshot is asked for with the argument the case names, or else with `submit` when the input holds `cursor_version`, or else with `snapshot`.
+ * @param hookCase The case. A saved reply is stored first by the script's `save` argument. Changed files make the case run in a new Git repository: the script takes its snapshot, the files are written, and the case input gains the repository as `cwd` and `workspace_roots`. The snapshot is asked for with the argument the case names, or else with `submit` when the input holds `cursor_version`, or else with `snapshot`. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
  * @returns The standard output of the script on the case input.
  */
 function runHookCase(script: string, hookCase: HookCase): string {
@@ -528,6 +543,7 @@ function runHookCase(script: string, hookCase: HookCase): string {
       ...input,
       cwd: project,
       workspace_roots: [project],
+      ...writeCaseTranscript(stateDirectory, hookCase.transcript),
     };
 
     writeCaseFiles(input.cwd, hookCase.filesBeforeTurn ?? [], "before\n");

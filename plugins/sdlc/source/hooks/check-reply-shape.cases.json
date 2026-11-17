@@ -814,5 +814,120 @@
       "last_assistant_message": "**Result:** Not done: the plan is written.\n\nThe list no longer holds a **Steps** section. Step 7 of 10, 3 left.\n\n**Now:** Nothing for you to do."
     },
     "expected": "pass"
+  },
+  {
+    "name": "checks: a person changed the file, and the agent only read",
+    "input": {
+      "session_id": "s-person",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Not done: the plan waits for you.\n\nI read the file you changed.\n\n**Now:** Nothing for you to do yet."
+    },
+    "changedFiles": ["src/version.ts"],
+    "transcript": [
+      {
+        "type": "assistant",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "tool_use",
+              "name": "Edit",
+              "input": {
+                "file_path": "a.ts",
+                "old_string": "a",
+                "new_string": "b"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "I changed src/version.ts myself. Read it."
+        }
+      },
+      {
+        "type": "assistant",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "tool_use",
+              "name": "Read",
+              "input": {
+                "file_path": "src/version.ts"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "assistant",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "tool_use",
+              "name": "Grep",
+              "input": {
+                "pattern": "version"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "expected": "pass"
+  },
+  {
+    "name": "checks: the agent ran a tool that can write, and no Checks section",
+    "input": {
+      "session_id": "s-agent",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** Not done: the plan waits for you.\n\nI read the file you changed.\n\n**Now:** Nothing for you to do yet."
+    },
+    "changedFiles": ["src/version.ts"],
+    "transcript": [
+      {
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "I changed src/version.ts myself. Read it."
+        }
+      },
+      {
+        "type": "assistant",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "tool_use",
+              "name": "Read",
+              "input": {
+                "file_path": "src/version.ts"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "assistant",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "tool_use",
+              "name": "Bash",
+              "input": {
+                "command": "sed -i s/a/b/ src/version.ts"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "expected": "block"
   }
 ]
