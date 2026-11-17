@@ -2,7 +2,7 @@
 
 From `intent/editable-records/intent.md`. Status: accepted.
 
-Request: "Write" (translated from Thai), the product owner's order after the merge of the intent's pull request, when told that the spec is the next step. Skills at `79ddc45`.
+Request: "Write", the product owner's order after the merge of the intent's pull request, when told that the spec is the next step. Skills at `79ddc45`.
 
 A record is an `intent.md`, a `spec.md`, or a `plan.md` under `intent/`. "The book" is the AI-native SDLC playbook the harness follows, cited by page. A stack is one of `nestjs`, `nextjs`, `nodejs`, `payload`, `turborepo` under `templates/`.
 
@@ -31,7 +31,7 @@ This repository's records:
 13. `intent/md-only-ci/intent.md` line 8 names the project today. It changes to "In a generated project, pull request #10".
 14. `intent/subagent-role-models/plan.md` line 24 links to the project's pull request today, and changes to "a generated project deleted". Line 35 links to the project today, and changes to "as one generated project does".
 15. `git grep -i` for the project's name over the tree finds nothing.
-16. No file of the repository holds a Thai character. Today nine lines in eight records hold one: `intent/cloud-session-skills/spec.md`, `intent/consumer-first-project-gaps/spec.md` (two lines), `intent/done-at-build/intent.md`, `intent/done-at-build/spec.md`, `intent/loop-autonomy/spec.md`, `intent/md-only-ci/spec.md`, `intent/monorepo-apps/spec.md`, and `intent/plan-only-folders/spec.md`. Each Thai passage changes to its English translation, marked "(translated from Thai)".
+16. No file of the repository holds a Thai character. Today nine lines in eight records hold one: `intent/cloud-session-skills/spec.md`, `intent/consumer-first-project-gaps/spec.md` (two lines), `intent/done-at-build/intent.md`, `intent/done-at-build/spec.md`, `intent/loop-autonomy/spec.md`, `intent/md-only-ci/spec.md`, `intent/monorepo-apps/spec.md`, and `intent/plan-only-folders/spec.md`. Each Thai passage changes to its English translation.
 
 Delivery:
 
@@ -63,7 +63,7 @@ The book's passages behind requirements 1 to 10:
 - Page 17, the lagging indicator: "Count spec.md commits dated after the first plan.md commit for the same change."
 - Page 20: "The plan and its revisions are logged along with who accepted it."
 
-Requirements 12 to 16 are the product owner's orders for this repository and are no rule of the harness: "Never refer to that project" and "No Thai character in the repo" (both translated from Thai).
+Requirements 12 to 16 are the product owner's orders for this repository and are no rule of the harness: "Never refer to that project" and "No Thai character in the repo".
 
 ## Policies
 
@@ -81,5 +81,5 @@ Requirements 12 to 16 are the product owner's orders for this repository and are
 ## Open questions
 
 1. Whether a check can refuse another organization's name: the intent dropped it. Requirement 11 adds none.
-2. Whether `intent/fast-merge-feedback` waits for this change: the product owner said "This work must be done first" (translated from Thai). This change is built first, and the spec of `fast-merge-feedback` stays in its open pull request.
-3. The product owner decided that a later round of the same change does not go to a new folder: "Follow the book" (translated from Thai). Requirements 9 and 10 carry it.
+2. Whether `intent/fast-merge-feedback` waits for this change: the product owner said "This work must be done first". This change is built first, and the spec of `fast-merge-feedback` stays in its open pull request.
+3. The product owner decided that a later round of the same change does not go to a new folder: "Follow the book". Requirements 9 and 10 carry it.
