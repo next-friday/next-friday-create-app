@@ -6,7 +6,7 @@ Accepted by: @joetakara.
 
 Paths are under `plugins/sdlc/` unless they start at the root.
 
-- `source/skills/sdlc-mode/SKILL.md` (changed): step 2 keeps the task list and no longer puts steps in the reply. Step 4 writes the models rule when none exists. Step 6 asks an open question in plain text and a choice through the picker. The reply shape gains `**Waiting for you:**` as a first line, the step line, and the rules on language, numbering, risks, and totals under **Checks**, and loses **Steps**, the progress note, and the fixed English **Now** sentence.
+- `source/skills/sdlc-mode/SKILL.md` (changed): step 3 lets a shell command or a script make a change that repeats in many places. Step 2 keeps the task list and no longer puts steps in the reply. Step 4 writes the models rule when none exists. Step 6 asks an open question in plain text and a choice through the picker. The reply shape gains `**Waiting for you:**` as a first line, the step line, and the rules on language, numbering, risks, and totals under **Checks**, and loses **Steps**, the progress note, and the fixed English **Now** sentence.
 - `source/skills/sdlc-mode/playbooks/intent.md`, `build.md`, `design.md`, `review.md` (changed): each sentence on **Steps**, the picker, or a round in plain text follows the new rules. `build.md` step 5 names the plan approval. `deploy.md` names none of them and stays as it is.
 - `source/skills/setup-sdlc/SKILL.md` (changed): `/setup-sdlc` does steps 1 to 5 and stops. Steps 6 to 8 run on `/setup-sdlc project`.
 - `source/skills/sdlc-help/SKILL.md` (changed): describes the new reply and the two forms of `/setup-sdlc`.
@@ -40,6 +40,7 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 - The riskiest step is 2. `SKILL.md` governs every reply of every session, and a rule that reads two ways changes all of them. The eval cases of step 7 are written against it and are not run in this change, so a wrong reading shows only in real sessions.
 - Step 4 can block replies that pass today, such as one that quotes a line starting with `**Steps`. The passing cases cover a reply that names **Steps** inside a sentence.
 - Step 6 changes what `/setup-sdlc` does with no word. A person who relied on it for the project's steps now sends `/setup-sdlc project`. The changeset says so.
+- The file rule of `SKILL.md` step 3 changes too, on the product owner's word after the spec merged: "Add this matter: allow `sed`, allow a script" (translated from Thai). A session that had to make the same change in about a thousand places did it one edit at a time, because the rule allowed the shell only for a generator and `git mv`. The rule now lets a shell command or a script make a change that repeats, asks for a read of the diff after it, and keeps the files reserved for a person out of the shell's reach. The spec is on the default branch and is not rewritten, so this plan holds the change. It could let a wrong pattern change many files at once; the read of the diff is the check.
 - Options not taken:
   - Translating the first-line labels: the hook reads them, and the spec's decision 1 keeps them.
   - A hook check on text written while the agent works: no hook reads it with certainty.
@@ -66,4 +67,5 @@ Paths are under `plugins/sdlc/` unless they start at the root.
 22: `.changeset/chat-reply-ux-2.md` holds `minor`; `pnpm verify` runs the changeset check.
 23: `setup-sdlc/SKILL.md`; the changed eval cases of `setup-sdlc`.
 24, 25: `SKILL.md` step 4; review of the diff.
+The file rule: `SKILL.md` step 3, **Files**; review of the diff. No requirement of the spec covers it.
 Brand rule 4: the labels of requirements 1 and 16 are the same words in `SKILL.md`, the hook, and its cases; the search `git grep -n "Waiting for you" plugins/sdlc/source`.
