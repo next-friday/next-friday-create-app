@@ -6,7 +6,7 @@ Author: @joetakara (Developer Productivity). Status: done.
 
 - `playbooks/build.md` step 8 says the pull request that meets the last requirement of a spec sets `Status: done.` in its `intent.md` and `spec.md`, and step 7 puts the whole build in one pull request. So every build pull request should mark its change done.
 - Nothing checks it. The agent forgot it in #245 and again in #251, and each time a second pull request set the line after the merge: #248, and #253, which is open.
-- Until that second pull request merges, the files on `main` say `accepted` for a change that is built, which is the stale status the product owner asked to remove (`intent/consumer-first-project-gaps/spec.md`, area of concern 7: "status ต้องเปลี่ยนแบบอัตโนมัติ").
+- Until that second pull request merges, the files on `main` say `accepted` for a change that is built, which is the stale status the product owner asked to remove (`intent/consumer-first-project-gaps/spec.md`, area of concern 7: "The status must change automatically").
 
 ## Proposed outcome
 

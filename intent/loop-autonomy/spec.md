@@ -2,7 +2,7 @@
 
 From `intent/loop-autonomy/intent.md`. Status: replaced.
 
-Written at `23f15ab` with the `write-spec` skill as committed there. The product owner's prompt, "ทำ spec ของ loop-autonomy ต่อเลย" ("write the loop-autonomy spec now"), added no constraint to the skill's prompt.
+Written at `23f15ab` with the `write-spec` skill as committed there. The product owner's prompt, "Go on and write the spec of loop-autonomy" ("write the loop-autonomy spec now"), added no constraint to the skill's prompt.
 
 ## Requirements
 

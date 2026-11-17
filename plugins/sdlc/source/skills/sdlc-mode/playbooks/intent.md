@@ -10,7 +10,7 @@ This playbook writes the intent. The build plan, `intent/<change>/plan.md`, come
    - **Ask a choice between ways in a round.** Each round holds every question that needs no open answer, with the answer you recommend first, asked as `../SKILL.md` step 6 says for a choice between ways. A recommended answer is a fact or a choice, such as "Only the checkout page", never an instruction to the person. When you have no answer to recommend, say so and ask plainly.
    - **A "yes" to a recommended answer is the originator's decision for a choice.** It is not their word for the problem or for what is out of scope.
 4. Write `intent/<change>/intent.md` from the template below. Use exactly the template's five headings.
-   - `<change>` is a short kebab-case name for a folder that does not exist yet. A later round of the same work gets its own folder, such as `<change>-2`, even when an earlier intent says one folder holds every round.
+   - `<change>` is a short kebab-case name. A later round of the same change may revise the `intent.md` that is there.
    - What is out of scope goes under **Proposed outcome**.
    - Mark each line you filled in yourself as your proposal. Only what the originator said goes in as theirs. Ask no question that the request or the repository answers.
    - Anything else that is unknown, unverified, or not yet decided goes under **Open questions**. Write "None" only when nothing is. Never list what the originator already answered. An originator's "no open questions" does not cover what you could not check yourself, such as code in another repository, so list that.

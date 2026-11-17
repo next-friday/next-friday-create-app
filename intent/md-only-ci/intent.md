@@ -5,7 +5,7 @@ Author: @joetakara (Developer Productivity). Status: done.
 ## Problem
 
 - A pull request or a merge that changes only Markdown files runs the full CI, in this repository and in every generated project.
-- In `soddee/soddee-b2b-platform`, pull request #10 changed only `intent/sync-create-app-9-14-2/intent.md` and `spec.md`:
+- In a generated project, pull request #10 changed only `intent/sync-create-app-9-14-2/intent.md` and `spec.md`:
   - **On the pull request:** Verify ran in full, about 2 minutes, with SAST, OSV-Scanner, and Secret Scan.
   - **On the merge:** Verify ran in full again, 2 minutes 16 seconds. That included the build, Playwright end-to-end tests, two Docker image builds with a Trivy scan, and SAST, OSV-Scanner, and Secret Scan.
 - In this repository, pull request #255 changed only `intent/done-at-build/spec.md`. The pull request ran light. The merge ran Verify in full: 25 jobs in 2 minutes 41 seconds, including 10 Template jobs and 5 Compatibility jobs on Linux, macOS, and Windows.

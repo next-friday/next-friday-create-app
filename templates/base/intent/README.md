@@ -1,6 +1,6 @@
 # Intent
 
-This folder is the intent home. Every change starts here as an `intent.md`, and its record stays here. Git history keeps the author, the time, and every revision of each file.
+This folder is the intent home. Every change starts here as an `intent.md`. Git history keeps the author, the time, and every revision of each file.
 
 - Each change has its own folder, `intent/<change>/`, where `<change>` is a short kebab-case name. The folder holds `intent.md` (Plan), then `spec.md` (Design), then `plan.md` (Build).
 - The playbooks in `.claude/skills/sdlc-mode/playbooks/` say who writes and who accepts each file.

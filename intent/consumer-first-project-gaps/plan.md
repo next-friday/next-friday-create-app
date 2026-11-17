@@ -43,7 +43,7 @@ Accepted by: @joetakara.
 
 ## Proof
 
-- 1: `open-pr.md` names the endpoint and the three cases; reviewed against the live answers for `soddee/soddee-b2b-platform` (403) and this repository (`required_approving_review_count: 0`).
+- 1: `open-pr.md` names the endpoint and the three cases; reviewed against the live answers for a private generated project (403) and this repository (`required_approving_review_count: 0`).
 - 2: `grep -rn "waits for a code owner" plugins/sdlc/source` finds it only under the **Review required** case.
 - 3: `grep -n "no CI ran" plugins/sdlc/source/skills/sdlc-mode/playbooks/open-pr.md` finds the **Not yet** rule.
 - 4: `grep -n "workflow" plugins/sdlc/source/skills/sdlc-mode/playbooks/open-pr.md` finds the stop and the two ways out.

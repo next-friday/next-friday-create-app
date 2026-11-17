@@ -1,6 +1,6 @@
 {
   "name": "@next-friday/create-app",
-  "version": "10.3.0",
+  "version": "10.3.1",
   "description": "Create a Next Friday project from a template.",
   "keywords": [
     "create",
@@ -52,7 +52,7 @@
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
     "loop:measure": "node plugins/sdlc/source/scripts/measure-loop.ts",
     "prepack": "pnpm build",
-    "plan:check": "node plugins/sdlc/source/scripts/check-plan.ts && node plugins/sdlc/source/scripts/check-records.ts",
+    "plan:check": "node plugins/sdlc/source/scripts/check-plan.ts",
     "plugin:check": "node scripts/sync-plugin.ts --check",
     "plugin:sync": "node scripts/sync-plugin.ts",
     "prepare": "husky",

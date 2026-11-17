@@ -2,7 +2,7 @@
 
 From `intent/consumer-first-project-gaps/intent.md`. Status: done.
 
-Request: "เขียน spec ของ consumer-first-project-gaps". Skills at 0d9684f.
+Request: "Write the spec of consumer-first-project-gaps". Skills at 0d9684f.
 
 ## Requirements
 
@@ -90,7 +90,7 @@ Request: "เขียน spec ของ consumer-first-project-gaps". Skills at
 6. **`pnpm plan:check` loosens for the first import** (decision the files do not settle). The intent asks that the first push works and that the person is told how; it does not ask to change the gate.
    Decision: requirement 5 skips the no-plan rule only while the remote default branch has no `package.json`, so every later branch still needs an accepted plan.
 
-7. **When the `Status:` line changes** (decision the product owner made in the chat: "status ต้องเปลี่ยนแบบอัตโนมัติ"). Today the next stage's pull request writes `accepted`, so a merged file says `draft` until then (`intent/playbook-plays/spec.md`; the withdrawn `intent/change-status-index` records the confusion).
+7. **When the `Status:` line changes** (decision the product owner made in the chat: "The status must change automatically"). Today the next stage's pull request writes `accepted`, so a merged file says `draft` until then (`intent/playbook-plays/spec.md`; the withdrawn `intent/change-status-index` records the confusion).
    Decision: the pull request that adds the file writes its accepted status, so the merge itself is the change and needs no bot or second pull request. A workflow that commits after the merge was rejected, because the `main` ruleset (id 26197141) has a `pull_request` rule.
 
 ## Open questions

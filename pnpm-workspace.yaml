@@ -9,3 +9,7 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - "@next-friday/*"
 minimumReleaseAgeExcludePrune: true
+auditConfig:
+  ignoreGhsas:
+    # Accepted risk. Owner: @joetakara. picomatch <=4.0.7 (ReDoS) has no patched version, and it reaches this repository only through development tools.
+    - GHSA-fc5q-39xc-vjpf
