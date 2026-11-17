@@ -4,52 +4,107 @@ const filterFilePath = ".github/file-filters.yml";
 const fullVerificationFilterNames = ["heavy", "ci_policy"];
 const filterKeyPattern = /^([a-z_]+):$/u;
 const filterPatternPattern = /^ {2}- "([^"]+)"$/u;
-const unsupportedGlobCharacters = /[?[\]{}()\\]/u;
+const unsupportedGlobCharacters = ["?", "[", "]", "{", "}", "(", ")", "\\"];
 const selfTestFlag = "--self-test";
 
 type PathFilter = {
-  excludes: RegExp[];
-  includes: RegExp[];
+  excludes: string[][];
+  includes: string[][];
 };
 
 /**
- * Turn a glob of the filter file into a regular expression that matches a whole path, dot files included, as `dorny/paths-filter` matches with `dot: true`.
- * @param glob A pattern without its leading `!`; only literal characters, `*`, and `**` are supported.
- * @returns The expression for the glob.
+ * Split a glob of the filter file into its path segments.
+ * @param glob A pattern without its leading `!`; only literal characters, `*` inside a segment, and `**` as a whole segment are supported.
+ * @returns The segments between the slashes.
  */
-function compileGlob(glob: string): RegExp {
-  if (unsupportedGlobCharacters.test(glob)) {
+function splitGlob(glob: string): string[] {
+  const segments = glob.split("/");
+
+  if (
+    unsupportedGlobCharacters.some(character => glob.includes(character)) ||
+    segments.some(segment => segment.includes("**") && segment !== "**")
+  ) {
     throw new Error(
-      `${filterFilePath}: the pattern "${glob}" uses a glob character this script does not match; use only literal characters, "*", and "**", or extend ${import.meta.filename}`,
+      `${filterFilePath}: the pattern "${glob}" uses a glob character this script does not match; use only literal characters, "*" inside a segment, and "**" as a whole segment, or extend ${import.meta.filename}`,
     );
   }
 
-  let source = "";
-  let index = 0;
+  return segments;
+}
 
-  while (index < glob.length) {
-    if (glob.startsWith("**/", index)) {
-      source += "(?:.*/)?";
-      index += 3;
-    } else if (glob.startsWith("**", index)) {
-      source += ".*";
-      index += 2;
-    } else if (glob[index] === "*") {
-      source += "[^/]*";
-      index += 1;
-    } else {
-      source += (glob[index] ?? "").replaceAll(/[$()*+.?[\\\]^{|}]/gu, String.raw`\$&`);
-      index += 1;
-    }
+/**
+ * Tell whether one path segment matches one glob segment, where `*` stands for any characters of the segment.
+ * @param segment A path segment, without a slash.
+ * @param pattern A glob segment other than `**`.
+ * @returns True when the literal parts of the pattern appear in the segment in order, the first at its start and the last at its end.
+ */
+function isSegmentMatch(segment: string, pattern: string): boolean {
+  const literals = pattern.split("*");
+  const first = literals.at(0) ?? "";
+  const last = literals.at(-1) ?? "";
+
+  if (literals.length === 1) {
+    return segment === pattern;
   }
 
-  return new RegExp(`^${source}$`, "u");
+  if (
+    segment.length < first.length + last.length ||
+    !segment.startsWith(first) ||
+    !segment.endsWith(last)
+  ) {
+    return false;
+  }
+
+  const middle = segment.slice(first.length, segment.length - last.length);
+  const middleLiterals = literals.slice(1, -1);
+  let position = 0;
+
+  for (const literal of middleLiterals) {
+    const found = middle.indexOf(literal, position);
+
+    if (found === -1) {
+      return false;
+    }
+
+    position = found + literal.length;
+  }
+
+  return true;
+}
+
+/**
+ * Tell whether a path matches a glob, dot files included, as `dorny/paths-filter` matches with `dot: true`.
+ * @param pathSegments The segments of a path that are still to match.
+ * @param globSegments The segments of a glob that are still to match; `**` stands for any number of segments, and for one or more when it ends the glob.
+ * @returns True when the glob matches the whole path.
+ */
+function isGlobMatch(pathSegments: string[], globSegments: string[]): boolean {
+  const [pattern, ...laterPatterns] = globSegments;
+  const [segment, ...laterSegments] = pathSegments;
+
+  if (pattern === undefined) {
+    return segment === undefined;
+  }
+
+  if (pattern === "**" && laterPatterns.length === 0) {
+    return segment !== undefined;
+  }
+
+  if (pattern === "**") {
+    return pathSegments.some((_, index) => isGlobMatch(pathSegments.slice(index), laterPatterns));
+  }
+
+  return (
+    segment !== undefined &&
+    isSegmentMatch(segment, pattern) &&
+    isGlobMatch(laterSegments, laterPatterns)
+  );
 }
 
 /**
  * Read the filter file's text into one path filter for each key.
  * @param text The content of `.github/file-filters.yml`; only keys at the start of a line, list items of two spaces and a double-quoted pattern, and blank lines are parsed.
- * @returns The include and exclude expressions of each key; a pattern that starts with `!` excludes.
+ * @returns The include and exclude globs of each key; a pattern that starts with `!` excludes.
  */
 function parseFilters(text: string): Map<string, PathFilter> {
   const filters = new Map<string, PathFilter>();
@@ -76,9 +131,9 @@ function parseFilters(text: string): Map<string, PathFilter> {
         `${filterFilePath}:${lineIndex + 1}: "${line}" is not a shape this script parses; write a key such as "heavy:", then list items such as '  - "**"' under it, or extend ${import.meta.filename}`,
       );
     } else if (pattern.startsWith("!")) {
-      currentFilter.excludes.push(compileGlob(pattern.slice(1)));
+      currentFilter.excludes.push(splitGlob(pattern.slice(1)));
     } else {
-      currentFilter.includes.push(compileGlob(pattern));
+      currentFilter.includes.push(splitGlob(pattern));
     }
   }
 
@@ -101,9 +156,11 @@ function isFullVerificationPath(changedPath: string, filters: Map<string, PathFi
       );
     }
 
+    const pathSegments = changedPath.split("/");
+
     return (
-      filter.includes.some(include => include.test(changedPath)) &&
-      filter.excludes.every(exclude => !exclude.test(changedPath))
+      filter.includes.some(include => isGlobMatch(pathSegments, include)) &&
+      filter.excludes.every(exclude => !isGlobMatch(pathSegments, exclude))
     );
   });
 }
@@ -189,6 +246,29 @@ const selfTestCases: [name: string, expected: boolean, actual: boolean][] = [
     true,
     findParseProblem('heavy:\n  - "src/*.{ts,js}"\n').includes("uses a glob character"),
   ],
+  [
+    "two stars inside a segment",
+    true,
+    findParseProblem('heavy:\n  - "src/a**b"\n').includes("uses a glob character"),
+  ],
+  [
+    "a star inside a segment",
+    true,
+    isGlobMatch([".cursor", "rules", "a.mdc"], [".cursor", "rules", "*.mdc"]),
+  ],
+  [
+    "a star does not cross a slash",
+    false,
+    isGlobMatch(["apps", "a", "b", "AGENTS.md"], ["apps", "*", "AGENTS.md"]),
+  ],
+  [
+    "two stars in the middle match no segment",
+    true,
+    isGlobMatch([".agents", "style.md"], [".agents", "**", "*.md"]),
+  ],
+  ["two stars at the end need a segment", false, isGlobMatch(["intent"], ["intent", "**"])],
+  ["a star between two literals", true, isSegmentMatch("a.test.ts", "a*.t*s")],
+  ["literals that overlap in a short segment", false, isSegmentMatch("ab", "ab*b")],
 ];
 
 const selfTestFailures = selfTestCases
