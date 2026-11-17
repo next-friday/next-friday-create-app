@@ -10,6 +10,7 @@ Accepted by: @joetakara.
 - `plugins/sdlc/source/skills/sdlc-mode/SKILL.md` (changed): the **Not yet** rule names a requirement with no result.
 - The rendered copies under `plugins/sdlc/adapters/`, `.claude/skills/`, and `templates/base/` (changed by `pnpm plugin:sync`).
 - `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/gate-names-what-has-no-result-before-a-merge/` (new): an eval case, with script graders only, for the reply of the merge gate when a requirement has no result and no tool watches the pull request.
+- `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/build-checks-list-each-requirement/` (changed): the case no longer asks the session to build, because the eval sandbox refuses a write to `.git`. The person states what ran, and the graders read the reply.
 - `.changeset/now-line-at-merge-gate.md` (new, `patch`).
 
 ## Order of work
