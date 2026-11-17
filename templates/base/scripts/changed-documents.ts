@@ -8,48 +8,105 @@ const unsupportedGlobCharacters = /[?[\]{}()\\]/u;
 const selfTestFlag = "--self-test";
 
 type PathFilter = {
-  excludes: RegExp[];
-  includes: RegExp[];
+  excludes: string[][];
+  includes: string[][];
 };
 
 /**
- * Turn a glob of the filter file into a regular expression that matches a whole path, dot files included, as `dorny/paths-filter` matches with `dot: true`.
+ * Split a glob of the filter file into its path segments, after checking that it uses only the characters this script matches.
  * @param glob A pattern without its leading `!`; only literal characters, `*`, and `**` are supported.
- * @returns The expression for the glob.
+ * @returns The glob's segments, split at `/`.
  */
-function compileGlob(glob: string): RegExp {
+function compileGlob(glob: string): string[] {
   if (unsupportedGlobCharacters.test(glob)) {
     throw new Error(
       `${filterFilePath}: the pattern "${glob}" uses a glob character this script does not match; use only literal characters, "*", and "**", or extend ${import.meta.filename}`,
     );
   }
 
-  let source = "";
-  let index = 0;
+  return glob.split("/");
+}
 
-  while (index < glob.length) {
-    if (glob.startsWith("**/", index)) {
-      source += "(?:.*/)?";
-      index += 3;
-    } else if (glob.startsWith("**", index)) {
-      source += ".*";
-      index += 2;
-    } else if (glob[index] === "*") {
-      source += "[^/]*";
-      index += 1;
+/**
+ * Tell whether one path segment matches one glob segment, where `*` stands for any run of characters.
+ * @param segment A segment of the changed path.
+ * @param pattern A segment of the glob that is not `**`.
+ * @returns True when the whole segment matches.
+ */
+function isSegmentMatch(segment: string, pattern: string): boolean {
+  let segmentIndex = 0;
+  let patternIndex = 0;
+  let starIndex = -1;
+  let starSegmentIndex = 0;
+
+  while (segmentIndex < segment.length) {
+    if (pattern[patternIndex] === "*") {
+      starIndex = patternIndex;
+      starSegmentIndex = segmentIndex;
+      patternIndex += 1;
+    } else if (pattern[patternIndex] === segment[segmentIndex]) {
+      patternIndex += 1;
+      segmentIndex += 1;
+    } else if (starIndex === -1) {
+      return false;
     } else {
-      source += (glob[index] ?? "").replaceAll(/[$()*+.?[\\\]^{|}]/gu, String.raw`\$&`);
-      index += 1;
+      patternIndex = starIndex + 1;
+      starSegmentIndex += 1;
+      segmentIndex = starSegmentIndex;
     }
   }
 
-  return new RegExp(`^${source}$`, "u");
+  while (pattern[patternIndex] === "*") {
+    patternIndex += 1;
+  }
+
+  return patternIndex === pattern.length;
+}
+
+/**
+ * List where matching can go on after one glob segment matches from a position in the path.
+ * @param pathSegments The changed path, split at `/`.
+ * @param pattern One segment of the glob; `**` stands for any number of path segments, none included.
+ * @param start The index of the first path segment the glob segment may match.
+ * @returns Each index right after a match.
+ */
+function listNextPositions(pathSegments: string[], pattern: string, start: number): number[] {
+  if (pattern === "**") {
+    return Array.from(
+      {
+        length: pathSegments.length - start + 1,
+      },
+      (_, offset) => start + offset,
+    );
+  }
+
+  return start < pathSegments.length && isSegmentMatch(pathSegments[start] ?? "", pattern)
+    ? [start + 1]
+    : [];
+}
+
+/**
+ * Tell whether a whole path matches a glob, dot files included, as `dorny/paths-filter` matches with `dot: true`.
+ * @param pathSegments The changed path, split at `/`.
+ * @param globSegments The glob, split at `/`.
+ * @returns True when the path matches.
+ */
+function isGlobMatch(pathSegments: string[], globSegments: string[]): boolean {
+  let positions = new Set([0]);
+
+  for (const pattern of globSegments) {
+    positions = new Set(
+      [...positions].flatMap(start => listNextPositions(pathSegments, pattern, start)),
+    );
+  }
+
+  return positions.has(pathSegments.length);
 }
 
 /**
  * Read the filter file's text into one path filter for each key.
  * @param text The content of `.github/file-filters.yml`; only keys at the start of a line, list items of two spaces and a double-quoted pattern, and blank lines are parsed.
- * @returns The include and exclude expressions of each key; a pattern that starts with `!` excludes.
+ * @returns The include and exclude globs of each key, split into segments; a pattern that starts with `!` excludes.
  */
 function parseFilters(text: string): Map<string, PathFilter> {
   const filters = new Map<string, PathFilter>();
@@ -101,9 +158,11 @@ function isFullVerificationPath(changedPath: string, filters: Map<string, PathFi
       );
     }
 
+    const pathSegments = changedPath.split("/");
+
     return (
-      filter.includes.some(include => include.test(changedPath)) &&
-      filter.excludes.every(exclude => !exclude.test(changedPath))
+      filter.includes.some(include => isGlobMatch(pathSegments, include)) &&
+      filter.excludes.every(exclude => !isGlobMatch(pathSegments, exclude))
     );
   });
 }
@@ -167,6 +226,16 @@ const selfTestCases: [name: string, expected: boolean, actual: boolean][] = [
   ["only code", false, areAllDocuments(["src/main.ts", "package.json"], sampleFilters)],
   ["documents and code", false, areAllDocuments(["README.md", "src/main.ts"], sampleFilters)],
   ["an empty list", false, areAllDocuments([], sampleFilters)],
+  [
+    "a document deep under an excluded folder",
+    true,
+    areAllDocuments([".agents/skills/policy/rules/style.md"], sampleFilters),
+  ],
+  [
+    "a code file under a folder of documents",
+    false,
+    areAllDocuments([".agents/hooks/gate.sh"], sampleFilters),
+  ],
   [
     "a deleted document",
     true,
