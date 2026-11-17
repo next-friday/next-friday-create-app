@@ -40,10 +40,10 @@ No file below is denied to the agent.
 
 ## Risks
 
-- The riskiest step is 3. `check-plan.ts` is one file of about 1,300 lines with 77 self-tests, and the status rule shares a function with the rule on an added file, which stays. The build found a second rule there that refused a change to a merged record: a fix plan with no intent and no spec could change only on a `fix/` branch. Requirement 4 needs it gone for a merged plan, so step 3 changed it too.
+- The riskiest step is 3. `check-plan.ts` is one file of about 1,300 lines with 77 self-tests, and the status rule shares a function with the rule on an added file, which stays. The build found a second rule there that refused a change to a merged record: a fix plan with no intent and no spec could change only on a `fix/` branch. Requirement 4 needs it gone for a merged plan, so step 3 changed it too. The `verifier` then found a third: the check that a build pull request sets `Status: done.` also read a folder whose plan was already merged, so a branch that changed code, that plan, and the status of its intent failed. The done check now reads only a folder whose plan the branch adds.
 - With the check and the sentences gone, nothing in the harness stops an agent from rewriting or deleting a record whose work is open. The spec accepts that.
 - Step 7 changes records that are quotes of the product owner. The translations are the agent's.
-- Step 10 costs money. The suites hold 31 cases. Single cases cost about $0.05 to $0.20 each, so both suites are estimated at $2 to $6. The estimate is not measured for a whole suite.
+- Step 10 costs money. The estimate was $2 to $6 and the two runs cost $6.47: each case runs three times, with a second arm that has no plugin. `pnpm evals:run` ran its 7 cases. `pnpm evals:run:write` stopped at its ceiling of $4 after 9 cases, so requirement 19 is met in part, and the pull request says so.
 - The name and the Thai text stay in git history and in the pages of merged pull requests.
 - Options not taken:
   - Keeping `check-records.ts` with an exception for a name: the spec deletes it.
@@ -58,12 +58,12 @@ No file below is denied to the agent.
 4: `pnpm plan:check` and the `pre-push` hook pass on this branch, which changes thirteen lines of merged records; CI on the pull request.
 5, 6, 7: the search of step 4, and review of the diff.
 8: the search of step 5.
-9, 10: the diff of `intent.md` and `design.md`; the eval case `writes-spec-from-merged-intent` still passes in step 10.
+9, 10: the diff of `intent.md` and `design.md`, and the `verifier`'s comparison of the three rendered copies. The eval case `writes-spec-from-merged-intent` did not run before the cost ceiling.
 11: review of the diff: no new rule, check, or hook.
 12, 13, 14, 15: the search for the project's name in step 7.
 16: the search for a Thai character in step 7.
 17: `pnpm plugin:sync`, then `pnpm plugin:check` and `pnpm rules:check`.
 18: `pnpm verify` in the root and in a generated project of each stack.
-19: the scores of step 10, in the pull request.
+19: the scores of step 10, in the pull request, for the 16 cases that ran.
 20: `.changeset/editable-records.md` holds `patch`; `pnpm verify` runs the changeset check.
 21: the status lines of `intent.md` and `spec.md`.

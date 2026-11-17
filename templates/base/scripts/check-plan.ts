@@ -560,14 +560,10 @@ function findStatusProblems(
   isAdded: boolean,
   isPlanMerged = false,
 ): string[] {
-  if (!isAdded) {
-    return [];
-  }
-
-  const isAllowed =
+  const isDecision =
     status !== undefined && (addedStatuses.has(status) || (isPlanMerged && status === "done"));
 
-  return isAllowed
+  return !isAdded || isDecision
     ? []
     : [
         `the pull request that adds this file writes "Status: accepted.", or "Status: rejected." with the reason, because merging it is the decision`,
@@ -1194,13 +1190,13 @@ function findPlanLines(planPaths: string[]): string[] {
 
   const branchName = branchChanges === undefined ? undefined : readBranchName();
 
-  const checkedLines = changedPlanPaths.flatMap(planPath => {
-    const isMerged =
-      branchChanges !== undefined &&
-      readDefaultBranchFile(branchChanges.mergeBase, planPath) !== undefined;
-
-    return findPlanFileLines(planPath, isAcceptanceRequired, isMerged ? undefined : branchName);
-  });
+  const checkedLines = changedPlanPaths.flatMap(planPath =>
+    findPlanFileLines(
+      planPath,
+      isAcceptanceRequired,
+      isMergedFile(branchChanges, planPath) ? undefined : branchName,
+    ),
+  );
 
   return [...missingBranchLines, ...missingLines, ...checkedLines];
 }
@@ -1217,6 +1213,16 @@ function readDefaultBranchFile(mergeBase: string, filePath: string): string | un
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Tell whether the default branch already holds a file, which may then change or go on any branch.
+ * @param changes What the branch changed, or undefined when the default branch is missing.
+ * @param filePath Path of the file from the repository root.
+ * @returns True when the commit where this branch left the default branch holds the file.
+ */
+function isMergedFile(changes: BranchChanges | undefined, filePath: string): boolean {
+  return changes !== undefined && readDefaultBranchFile(changes.mergeBase, filePath) !== undefined;
 }
 
 /**
@@ -1341,7 +1347,7 @@ function findStatusLines(changeFolders: string[]): string[] {
 }
 
 /**
- * Report each build plan whose folder does not say done in its intent and spec.
+ * Report each build plan that the branch adds and whose folder does not say done in its intent and spec.
  * @param changeFolders The `intent/<change>` folders.
  * @returns One line per problem.
  */
@@ -1351,6 +1357,7 @@ function findDoneLines(changeFolders: string[]): string[] {
 
   return changeFolders
     .filter(folder => isBuildPlan(folder, branchChanges?.changedPaths ?? [], isCodeChanged))
+    .filter(folder => !isMergedFile(branchChanges, path.join(folder, planFileName)))
     .flatMap(folder =>
       findDoneProblems(
         [intentFileName, specFileName].map((fileName): [string, string | undefined] => {
