@@ -1,7 +1,7 @@
 schema_version: "1.1"
 name: build-checks-list-each-requirement
 expected_outcome: |
-  The spec intent/app-version/spec.md has two requirements, and its plan is accepted on the branch feat/app-version. Requirement 2 needs a container image, which the machine cannot build. The agent builds the change, and its reply lists each requirement by number under Checks, with the result of requirement 1 and "not run" with the reason for requirement 2. The reply starts with Not done:.
+  The spec intent/app-version/spec.md has two requirements. The person says that the session built the accepted plan and pushed it, that the test of requirement 1 passed, and that requirement 2 was not run because the machine cannot build a container image. The reply lists each requirement by number under Checks, with the result of requirement 1 and "not run" with the reason for requirement 2. The reply starts with Not done:.
 context:
   scaffold_script: scaffold.sh
 graders:
