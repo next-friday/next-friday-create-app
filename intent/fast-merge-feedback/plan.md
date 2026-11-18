@@ -4,12 +4,13 @@ Accepted by: @joetakara.
 
 ## Files that change
 
-Marked **person** below: a file the spec's area of concern 6 says a person commits, on this branch, before step 8 begins. Its new content is given in the step that changes it.
+Marked **person** below: a file the spec's area of concern 6 says a person commits, on this branch. The agent gives the engineer its new content as a patch.
 
 Workflows, five stacks (`nestjs`, `nextjs`, `nodejs`, `payload`, `turborepo`):
 
 - `templates/<stack>/.github/workflows/ci.yml` (changed): one job, `All Checks` (id `ci`), replaces `changes`, `agent-checks`, `checks`, `image`, `ci`, and `affected-apps` in `turborepo`. Its steps run in order: detect the changed paths and the verification mode; the agent checks; the static checks, the unit tests with coverage, and the build, when the mode is full; patch coverage with `--fail-under 80` on a pull request; the Playwright install and the end-to-end tests only when `github.event_name == 'push'`; the container image steps (hadolint, build, smoke test, Trivy) when the mode is full or the run is the weekly schedule and `vars.CONTAINER_IMAGE != 'false'`. In `turborepo` the image steps loop over the affected apps in place of the matrix. The job takes the union of the old jobs' `permissions` and `services`. `triage` needs only `ci`, and its condition also accepts `github.event_name == 'push'`; on a push it finds the merged pull request with `gh api repos/$REPOSITORY/commits/$SHA/pulls`, comments there, and ends the comment with `/sdlc-mode fix <name of the failed step>`. The product owner chose one job in the build session (requirement 11 against requirement 12).
 - `templates/base/.github/workflows/pr-triage.yml`, `templates/base/.github/labeler.yml` (deleted).
+- `plugins/sdlc/source/scripts/changed-documents.ts` (changed), rendered to `templates/base/scripts/changed-documents.ts`: its two messages name the `All Checks` job, where they named `Detect Changes`.
 
 Scripts and hooks:
 
@@ -38,14 +39,14 @@ Documents:
 
 Evals and release:
 
-- `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/fix-reproduces-finds-the-cause-and-waits-for-the-engineer/prompt.md`, `scaffold.sh` (changed): the defect fails a condition of `small.md` step 1 (its fix touches six files), so the case still tests `fix.md` and its gate. The graders do not change.
+- `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/fix-reproduces-finds-the-cause-and-waits-for-the-engineer/case.yaml`, `prompt.md`, `scaffold.sh` (changed): the defect fails a condition of `small.md` step 1 (its fix touches six files), so the case still tests `fix.md` and its gate. The graders do not change.
 - `.changeset/fast-merge-feedback.md` (new): `minor` for `@next-friday/create-app`.
 - `intent/fast-merge-feedback/plan.md` (new). `intent/fast-merge-feedback/intent.md`, `spec.md` (changed): `Status: done.`
 
 ## Order of work
 
 1. Create `feat/fast-merge-feedback` from `origin/main`. Commit this plan. Check: `git log -1`.
-2. The engineer commits the **person** files. Check: `git log` shows the commit, and `bash -n` passes on the two shell files.
+2. The engineer commits the **person** files from the agent's patch, and pushes them after the agent's first push of step 11: `pre-push` refuses a branch that changes code before it has `Status: done.` and a changeset. Check: `bash -n` passes on the two shell files, and `node scripts/check-agent-gates.ts` passes in a generated project with the patch.
 3. Change `check-plan.ts`. Check: `node plugins/sdlc/source/scripts/check-plan.ts` passes its self-tests, and `pnpm lint:check` passes (the file is near the `sonarjs/max-lines` limit).
 4. Change `SKILL.md` and the four playbooks. Run `pnpm plugin:sync`. Check: `pnpm plugin:check` and `pnpm rules:check` pass.
 5. Change the five `ci.yml` files and delete `pr-triage.yml` and `labeler.yml`. Check: `actionlint` and `zizmor` pass on each file, and `git grep -n -E "pr-triage|labeler" -- templates` finds nothing.

@@ -1,6 +1,6 @@
 # Spec: Fast feedback before merge, full verification after it
 
-From `intent/fast-merge-feedback/intent.md`. Status: accepted.
+From `intent/fast-merge-feedback/intent.md`. Status: done.
 
 Request: "Write the spec" (translated from Thai), the product owner's order after the merge of the intent's pull request. Skills at `79ddc45`.
 

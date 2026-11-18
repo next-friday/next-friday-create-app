@@ -1,6 +1,6 @@
 # Intent: Fast feedback before merge, full verification after it
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 "The book" below is the AI-native SDLC playbook the harness follows, cited by page.
 
