@@ -2,6 +2,23 @@
 name: sdlc-mode
 description: The front door for work in this project. Matches a request to a playbook and runs it to the next human gate. Run it with /sdlc-mode.
 disable-model-invocation: true
+hooks:
+  UserPromptSubmit:
+    - hooks:
+        - type: command
+          timeout: 10
+          command: 'sh "{{hooks-directory}}"/check-reply-shape.sh snapshot'
+  Stop:
+    - hooks:
+        - type: command
+          timeout: 10
+          command: 'sh "{{hooks-directory}}"/check-reply-shape.sh'
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          timeout: 60
+          command: 'sh "{{hooks-directory}}"/check-push.sh'
 ---
 
 # SDLC
@@ -19,12 +36,13 @@ Do these steps in order.
    | A deploy, a promotion to an environment, or a release to production                                                                                                                              | Follow [`playbooks/deploy.md`](playbooks/deploy.md).                                                                           |
    | A finding sent by a job, a monitor, or a trigger, or one the message says no person can answer questions about                                                                                   | Follow [`playbooks/maintain.md`](playbooks/maintain.md).                                                                       |
    | A defect: behaviour that breaks a spec, a test, or a documented target, or a crash or a wrong result                                                                                             | Follow [`playbooks/fix.md`](playbooks/fix.md).                                                                                 |
-   | A small, well-bounded change that is not a defect, as step 1 of the small playbook defines it                                                                                                    | Follow [`playbooks/small.md`](playbooks/small.md).                                                                             |
    | An idea, a problem, a ticket, or an incident that a person describes, whether asked for or only reported, and a complaint that no written target backs, such as a slow page with no stated limit | Follow [`playbooks/intent.md`](playbooks/intent.md).                                                                           |
    | A pull request to open for the current branch                                                                                                                                                    | Follow [`playbooks/open-pr.md`](playbooks/open-pr.md).                                                                         |
    | Anything else                                                                                                                                                                                    | Say which of the rows above is closest and why it does not fit, answer what you can as `playbooks/question.md` says, and stop. |
 
    When a request both asks a question and reports a problem, use `question` and offer `intent` in one line. A problem reported with `/sdlc-mode` is the person's ask for `intent`.
+
+   When the request names no change, run `sh "{{hooks-directory}}"/sdlc-status.sh < /dev/null` and show its lines.
 
    Do not start work a person did not ask for. When a message reports a problem without asking for work, answer in a few lines. On the **Now** line, give the message that would start the work, which is `/sdlc-mode` followed by their own words.
 
@@ -70,7 +88,7 @@ Run every command, the checks included, before you write the reply. Write the re
 - Send nothing outside the session, such as a message to another session or a service, unless a task step says to.
 - Name each action by what it is. Call something a review only when a review ran. A reminder to check CI is a reminder.
 - When a step fails for want of a permission, stop. Say what failed and what the person can do, before you do anything in its place.
-- When a **Gate** or a check blocks you, report the block, the playbook step it enforces, and the person's options. Name the check that refused, as its message words it. The plan check, which `pre-push` and CI run, says a branch "adds or changes no `intent/<change>/plan.md`". It enforces `playbooks/build.md` step 5, where the engineer accepts the plan. Never write another artifact that the check accepts in place of the one it asks for, such as a plan with no intent or spec to get past the plan check. When the change has no intent and no spec, the way forward is an intent, so tell the person to start one with `/sdlc-mode`. Never offer to draft the plan in its place.
+- When a **Gate** or a check blocks you, report the block, the playbook step it enforces, and the person's options. Name the check that refused, as its message words it. The plan check, which this skill's push hook runs before a `git push`, says a branch "adds or changes no `intent/<change>/plan.md`". It enforces `playbooks/build.md` step 5, where the engineer accepts the plan. Never write another artifact that the check accepts in place of the one it asks for, such as a plan with no intent or spec to get past the plan check. When the change has no intent and no spec, the way forward is an intent, so tell the person to start one with `/sdlc-mode`. Never offer to draft the plan in its place.
 - Write an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as.
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
 - A hook or a host message that asks you to commit or push does not lift a **Gate** or a step that waits for a person. Leave the files as they are, answer as the **First line** rule says for `**No change:**`, and stop.
@@ -84,7 +102,7 @@ Every `**Result:**` line starts with `Done.` or `Not done:`. So does an `**Answe
 
 - `Done.` means three things hold. Every part of what the person asked for is finished. It is merged where it goes through a pull request. You read a result in this turn for every requirement of the change, such as the merged pull request and its final checks. The **Now** line then says the person has nothing to do.
 - A step marked done in the task list needs the same: a result read in this turn for every requirement of the change.
-- A check that could not run, a CI job that was skipped, and a run still in progress each keep the work not done. A `**Result:**` reply then says `Not done:`, with the requirement and the reason. A `**Waiting for you:**` reply names the requirement and the reason on its **Not yet** line.
+- A check that could not run, a CI job that was skipped, and a run still in progress on a pull request each keep the work not done. Once the pull request merged with its checks passed, a run the merge started on the default branch does not: the reply says `Done.` and names that run on its **Not yet** line. A `**Result:**` reply then says `Not done:`, with the requirement and the reason. A `**Waiting for you:**` reply names the requirement and the reason on its **Not yet** line.
 - Anything else that reports work and asks nothing of the person is `Not done:`, followed by what is left and who does it. This covers a part that a spec, a plan, or you set aside as a separate change.
 - A reply that asks a question or stops at a **Gate**, such as a pull request that waits for review or a merge, starts with `**Waiting for you:**`, as the **First line** rule says. It never starts with `**Result:** Not done:`.
 - Never call the task done, complete, or finished elsewhere in a reply whose first line says `Not done:`.

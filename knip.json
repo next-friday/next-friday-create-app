@@ -1,5 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["templates/**", "plugins/sdlc/source/scripts/changed-documents.ts"],
+  "ignore": [
+    "templates/**",
+    ".claude/skills/**",
+    "plugins/sdlc/adapters/claude-code/skills/**",
+    "plugins/sdlc/source/skills/sdlc-mode/scripts/measure-loop.ts",
+    "scripts/changed-documents.ts"
+  ],
   "ignoreBinaries": ["next-friday-create-app"]
 }

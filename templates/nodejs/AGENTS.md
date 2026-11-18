@@ -10,7 +10,8 @@ TypeScript HTTP service on `node:http`, without a framework, on pnpm and Node.js
 | Run the build                                 | `pnpm start`, which builds first                    | `$ tsc -p tsconfig.build.json`, then nothing                                                         |
 | One test                                      | `pnpm vitest run src/port.test.ts -t "<test name>"` | `Tests  1 passed \| 9 skipped (10)`                                                                  |
 | Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                | `Tests  15 passed (15)`                                                                              |
-| What `pre-push` runs for a push of code       | `pnpm check`                                        | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
+| What `pre-commit` runs after gitleaks         | `pnpm exec lint-staged`                             | `✔ Done running tasks for staged files!`                                                             |
+| What `pre-push` runs for a push of code       | `pnpm check`                                        | exits 0; the last lines list every step as `passed`                                                  |
 | Every check                                   | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
 | Render rules after a change                   | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                                                             |
 | Compare the harness with a create-app version | `pnpm harness:check <version>`                      | ends with `none differs.`                                                                            |
@@ -21,7 +22,7 @@ TypeScript HTTP service on `node:http`, without a framework, on pnpm and Node.js
 - Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check`, `pnpm plan:check`, and `pnpm format:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
+While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check` instead. The plan check of the loop runs only in a session where a person typed `/sdlc-mode`: the skill's push hook, declared in `.claude/skills/sdlc-mode/SKILL.md`, runs `check-plan.ts` before a `git push`. After a session is resumed, type `/sdlc-mode` again, because a skill's hooks are not kept across a resume. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
 
 The `verifier` subagent starts the app with `pnpm start:dev`. It exercises the changed behavior and the two nearest neighboring flows.
 
@@ -34,7 +35,7 @@ The `verifier` subagent starts the app with `pnpm start:dev`. It exercises the c
 
 1. **Put tests next to the code as `src/**/*.test.ts`.** Vitest collects only that pattern.
 2. **Read configuration from environment variables and fail when one is missing**, as `parsePort` does. Document each variable in `.env.example`; `pnpm start` and `pnpm start:dev` load `.env`.
-3. **Work runs through `/sdlc-mode`;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
+3. **`/sdlc-mode` starts the SDLC loop, only when a person types it;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md` when a person asks for the loop. In the loop, its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
 4. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 5. **Name a branch `<type>/<short-description>`,** where `<type>` is a commit type that `.commitlintrc.json` allows, for example `fix/retry-on-timeout`.
 

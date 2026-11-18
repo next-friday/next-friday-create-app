@@ -11,9 +11,8 @@
   "author": "Next Friday",
   "type": "module",
   "scripts": {
-    "bands:check": "node scripts/check-bands.ts",
     "build": "next build",
-    "check": "node scripts/run-checks.ts verify:static test:changed build",
+    "check": "node scripts/run-checks.ts rules:check gates:check lint:check sort-package-json:check typecheck knip depcruise test:changed",
     "clean": "rm -rf .next coverage *.tsbuildinfo .eslintcache node_modules/.cache",
     "depcruise": "depcruise --config .dependency-cruiser.json src test eslint.config.ts next.config.ts playwright.config.ts vitest.config.ts",
     "dev": "next dev",
@@ -26,11 +25,9 @@
     "knip": "node --env-file-if-exists=.env node_modules/knip/bin/knip.js",
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
-    "loop:measure": "node scripts/measure-loop.ts",
     "migrate": "payload migrate",
     "migrate:create": "payload migrate:create",
     "payload": "payload",
-    "plan:check": "node scripts/check-plan.ts",
     "prepare": "husky && next typegen",
     "rules:check": "node scripts/sync-agent-rules.ts --check",
     "rules:sync": "node scripts/sync-agent-rules.ts",
@@ -44,7 +41,7 @@
     "test:watch": "vitest",
     "typecheck": "next typegen && tsc --noEmit -p tsconfig.json",
     "verify": "node scripts/run-checks.ts verify:static test:coverage build",
-    "verify:static": "node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check format:check sort-package-json:check typecheck knip depcruise"
+    "verify:static": "node scripts/run-checks.ts rules:check gates:check lint:check format:check sort-package-json:check typecheck knip depcruise"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.93.0",

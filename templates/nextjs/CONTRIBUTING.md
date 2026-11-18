@@ -28,20 +28,20 @@ pnpm install
 
 Run the narrowest check that covers the change while you work. Git hooks run these checks:
 
-| Hook               | Checks                                                                                                                                                                                                                                                                                            |
-| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pre-commit`       | blocks commits on `main` except the first commit of a new repository, gitleaks on staged changes, and lint-staged on staged files                                                                                                                                                                 |
-| `commit-msg`       | commitlint                                                                                                                                                                                                                                                                                        |
-| `pre-merge-commit` | blocks merge commits on `main`                                                                                                                                                                                                                                                                    |
-| `pre-push`         | blocks pushes to `main` except the push that creates it, then by what the push changes: only documents, `pnpm rules:check`, `pnpm plan:check`, and `pnpm format:check`; anything else, `pnpm check`, which is the static checks, the unit tests related to your changes, and the production build |
+| Hook               | Checks                                                                                                                                                                                                                                                      |
+| :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre-commit`       | blocks commits on `main` except the first commit of a new repository, gitleaks on staged changes, and lint-staged on staged files                                                                                                                           |
+| `commit-msg`       | commitlint                                                                                                                                                                                                                                                  |
+| `pre-merge-commit` | blocks merge commits on `main`                                                                                                                                                                                                                              |
+| `pre-push`         | blocks pushes to `main` except the push that creates it, then by what the push changes: only documents, `pnpm rules:check`; anything else, `pnpm check`, which is the static checks other than the format check, and the unit tests related to your changes |
 
 - **Scans.** CI also runs coverage, the build, the container image, and the secret, SAST, OSV, CodeQL, dependency-review, and OpenSSF Scorecard scans. CodeQL, dependency-review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Dependabot and OSV-Scanner report vulnerable dependencies.
 - **End-to-end tests.** Run `pnpm test:e2e` when you change pages. It starts the development server unless one is already running. Run `pnpm exec playwright install chromium` once before the first run. CI runs it against the production build on every pull request that is ready for review and changes code.
-- **Coverage.** CI requires 95% branch coverage on changed lines in `app/`, except `layout.tsx`.
+- **Coverage.** CI requires 80% branch coverage on changed lines in `app/`, except `layout.tsx`.
 
 Run `pnpm verify` for repository changes.
 
-Agent rules live in `.agents/rules/` with their scope in `.agents/rules.json`. After you change either, run `pnpm rules:sync` to regenerate `.claude/rules/` and `.cursor/rules/`.
+Agent rules live in `.agents/rules/` with their scope in `.agents/rules.json`. After you change either, run `pnpm rules:sync` to regenerate `.claude/rules/`.
 
 ## Pull requests
 

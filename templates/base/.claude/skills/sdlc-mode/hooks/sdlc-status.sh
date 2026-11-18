@@ -1,10 +1,10 @@
 #!/bin/sh
 command -v jq > /dev/null || exit 0
-input=$(cat)
-# An agent tool that also runs the other tool's hook entries names itself in `cursor_version`; its own entries pass an argument.
-[ -z "${1:-}" ] && printf '%s' "$input" | jq -e 'has("cursor_version")' > /dev/null 2>&1 && exit 0
-project=$(printf '%s' "$input" | jq -r '.cwd // .workspace_roots[0] // ""')
-[ -n "$project" ] && [ -d "$project/intent" ] || exit 0
+input=
+[ -t 0 ] || input=$(cat)
+project=$(printf '%s' "$input" | jq -r '.cwd // ""')
+[ -n "$project" ] || project=$PWD
+[ -d "$project/intent" ] || exit 0
 
 read_status() {
   [ -f "$1" ] || return 0
@@ -46,8 +46,4 @@ done
 summary="Changes in intent/ that are not done (send /sdlc-mode to work on one):
 $lines"
 
-if [ "$1" = json ]; then
-  jq -n --arg context "$summary" '{additional_context: $context}'
-else
-  printf '%s' "$summary"
-fi
+printf '%s' "$summary"

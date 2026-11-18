@@ -18,19 +18,21 @@ Follow [SETUP.md](SETUP.md) in order. It sets up the repository, the reviews, an
 
 ## Scripts
 
-| Script             | Purpose                                                                                                |
-| :----------------- | :----------------------------------------------------------------------------------------------------- |
-| `pnpm start`       | Start once, without watch mode; loads `.env` when present                                              |
-| `pnpm start:dev`   | Start in watch mode; loads `.env` when present                                                         |
-| `pnpm start:debug` | Start in watch mode with the Node.js inspector; loads `.env` when present                              |
-| `pnpm build`       | Compile to `dist/`                                                                                     |
-| `pnpm start:prod`  | Run `dist/main.js`; the environment sets `PORT`                                                        |
-| `pnpm test`        | Run unit tests (`src/**/*.test.ts`)                                                                    |
-| `pnpm test:e2e`    | Run end-to-end tests (`test/**/*.e2e.test.ts`)                                                         |
-| `pnpm check`       | Run the static checks, the unit tests for changed code, and the production build (the `pre-push` hook) |
-| `pnpm verify`      | Run the static checks, all unit tests with coverage, the end-to-end tests, and the production build    |
+| Script             | Purpose                                                                                                      |
+| :----------------- | :----------------------------------------------------------------------------------------------------------- |
+| `pnpm start`       | Start once, without watch mode; loads `.env` when present                                                    |
+| `pnpm start:dev`   | Start in watch mode; loads `.env` when present                                                               |
+| `pnpm start:debug` | Start in watch mode with the Node.js inspector; loads `.env` when present                                    |
+| `pnpm build`       | Compile to `dist/`                                                                                           |
+| `pnpm start:prod`  | Run `dist/main.js`; the environment sets `PORT`                                                              |
+| `pnpm test`        | Run unit tests (`src/**/*.test.ts`)                                                                          |
+| `pnpm test:e2e`    | Run end-to-end tests (`test/**/*.e2e.test.ts`)                                                               |
+| `pnpm check`       | Run the static checks other than the format check, and the unit tests for changed code (the `pre-push` hook) |
+| `pnpm verify`      | Run the static checks, all unit tests with coverage, the end-to-end tests, and the production build          |
 
 CI also runs the build, the end-to-end tests, the container image scan, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`.
+
+A commit runs gitleaks, lint-staged, and commitlint. A push runs `pnpm check`. A pull request runs the static checks, the unit tests with coverage, the end-to-end tests, the build, patch coverage, and the scans above.
 
 ## Container
 

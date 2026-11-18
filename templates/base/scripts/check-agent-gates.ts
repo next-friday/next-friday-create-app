@@ -6,7 +6,6 @@ import {tmpdir} from "node:os";
 type GateCase = {
   expectedApproval?: string;
   expectedExit: 0 | 2;
-  expectedPermission?: "allow";
   expectedSession?: string;
   gate: string;
   input: Record<string, unknown>;
@@ -29,11 +28,9 @@ for (const name of repositoryVariables) {
 }
 
 const shellGate = ".agents/hooks/agent-shell-gate.sh";
-const constitutionGate = ".cursor/hooks/agent-constitution-gate.sh";
 const mcpGate = ".agents/hooks/agent-mcp-gate.sh";
 const productionGate = ".agents/hooks/agent-production-gate.sh";
 const testEditGate = ".agents/hooks/agent-test-edit-gate.sh";
-const sourceFile = "src/example.ts";
 const statusCommand = "git status";
 
 const blockedCommands = [
@@ -299,7 +296,7 @@ const reviewWriteCases = [
     },
   },
   {
-    name: "APPROVE in a JSON string, as Cursor sends it",
+    name: "APPROVE in a JSON string",
     toolInput: '{"method":"create","event":"APPROVE"}',
     expectedExit: 2,
   },
@@ -331,27 +328,6 @@ const reviewWriteCases = [
     toolInput: "{}",
     expectedExit: 0,
   },
-];
-
-const protectedPaths = [
-  ".agents/rules/code-comments.md",
-  ".agents/rules.json",
-  ".agents/hooks/agent-shell-gate.sh",
-  ".claude/rules/code-comments.md",
-  ".claude/settings.json",
-  ".cursor/rules/code-comments.mdc",
-  ".cursor/hooks.json",
-  ".cursor/hooks/agent-constitution-gate.sh",
-  "scripts/sync-agent-rules.ts",
-  "eslint.config.ts",
-  ".husky/pre-commit",
-  ".lintstagedrc.json",
-  ".gitleaks.toml",
-  ".git/hooks/pre-commit",
-  ".git/config",
-  ".git/config.worktree",
-  ".claude/settings.local.json",
-  "src/../.husky/pre-commit",
 ];
 
 /**
@@ -407,55 +383,36 @@ const testFile = `src/${testFileName}`;
 const outsideRepository = mkdtempSync(path.join(tmpdir(), "agent-gates-outside-"));
 
 const cases: GateCase[] = [
-  ...blockedCommands.flatMap(command => [
-    {
-      gate: shellGate,
-      input: {
+  ...blockedCommands.map(command => ({
+    gate: shellGate,
+    input: {
+      tool_input: {
         command,
       },
-      expectedExit: 2 as const,
-      name: `Cursor shell: ${command}`,
     },
-    {
-      gate: shellGate,
-      input: {
-        tool_input: {
-          command,
-        },
-      },
-      expectedExit: 2 as const,
-      name: `Claude Bash: ${command}`,
-    },
-  ]),
+    expectedExit: 2 as const,
+    name: `Claude Bash: ${command}`,
+  })),
   ...allowedCommands.map(command => ({
     gate: shellGate,
     input: {
-      command,
-    },
-    expectedExit: 0 as const,
-    expectedPermission: "allow" as const,
-    name: `shell: ${command}`,
-  })),
-  ...productionCommands.flatMap(command => [
-    {
-      gate: productionGate,
-      input: {
+      tool_input: {
         command,
       },
-      expectedExit: 2 as const,
-      name: `Cursor production: ${command}`,
     },
-    {
-      gate: productionGate,
-      input: {
-        tool_input: {
-          command,
-        },
+    expectedExit: 0 as const,
+    name: `shell: ${command}`,
+  })),
+  ...productionCommands.map(command => ({
+    gate: productionGate,
+    input: {
+      tool_input: {
+        command,
       },
-      expectedExit: 2 as const,
-      name: `Claude production: ${command}`,
     },
-  ]),
+    expectedExit: 2 as const,
+    name: `Claude production: ${command}`,
+  })),
   ...approvalLiftsGate.map(releaseApproval => ({
     gate: productionGate,
     releaseApproval,
@@ -465,7 +422,6 @@ const cases: GateCase[] = [
         command: sampleProductionCommand,
       },
     },
-    expectedPermission: "allow" as const,
     name: `production with RELEASE_APPROVAL="${releaseApproval}": ${sampleProductionCommand}`,
     expectedExit: 0 as const,
   })),
@@ -483,10 +439,11 @@ const cases: GateCase[] = [
   ...nonProductionCommands.map(command => ({
     gate: productionGate,
     input: {
-      command,
+      tool_input: {
+        command,
+      },
     },
     expectedExit: 0 as const,
-    expectedPermission: "allow" as const,
     name: `production: ${command}`,
   })),
   ...mcpTools.blocked.map(tool => ({
@@ -505,18 +462,7 @@ const cases: GateCase[] = [
       tool_input: "{}",
     },
     expectedExit: 0 as const,
-    expectedPermission: "allow" as const,
     name: `MCP: ${tool}`,
-  })),
-  ...protectedPaths.map(file => ({
-    gate: constitutionGate,
-    input: {
-      tool_input: {
-        file_path: file,
-      },
-    },
-    expectedExit: 2 as const,
-    name: `constitution: ${file}`,
   })),
   ...reviewWriteCases.map(({expectedExit, name, toolInput}) => ({
     gate: mcpGate,
@@ -527,16 +473,6 @@ const cases: GateCase[] = [
     expectedExit: expectedExit as 0 | 2,
     name: `MCP: pull_request_review_write with ${name}`,
   })),
-  {
-    gate: constitutionGate,
-    name: "constitution: src file",
-    expectedExit: 0,
-    input: {
-      tool_input: {
-        file_path: sourceFile,
-      },
-    },
-  },
   ...[
     {
       projectDirectory: fixBranchWithTest,
@@ -571,23 +507,14 @@ const cases: GateCase[] = [
   })),
   {
     gate: shellGate,
-    expectedPermission: "allow",
     expectedSession: "claude-session",
     name: "record: the session of a Claude Code hook input",
     expectedExit: 0,
     input: {
-      command: statusCommand,
       session_id: "claude-session",
-    },
-  },
-  {
-    gate: productionGate,
-    expectedSession: "cursor-conversation",
-    name: "record: the conversation of a Cursor hook input",
-    expectedExit: 2,
-    input: {
-      command: sampleProductionCommand,
-      conversation_id: "cursor-conversation",
+      tool_input: {
+        command: statusCommand,
+      },
     },
   },
   {
@@ -595,15 +522,9 @@ const cases: GateCase[] = [
     name: "record: a blocked command that holds a secret",
     expectedExit: 2,
     input: {
-      command: "rm sk_live_SECRET123=.agents/hooks/agent-shell-gate.sh",
-    },
-  },
-  {
-    gate: constitutionGate,
-    name: "record: a blocked path that holds a secret",
-    expectedExit: 2,
-    input: {
-      file_path: ".agents/rules/sk_live_SECRET123.md",
+      tool_input: {
+        command: "rm sk_live_SECRET123=.agents/hooks/agent-shell-gate.sh",
+      },
     },
   },
   {
@@ -613,17 +534,20 @@ const cases: GateCase[] = [
     releaseApproval: "CHG-123",
     expectedExit: 2,
     input: {
-      command: sampleProductionCommand,
+      tool_input: {
+        command: sampleProductionCommand,
+      },
     },
   },
   {
     gate: shellGate,
-    expectedPermission: "allow",
     name: "record: an allow when the record cannot be written",
     expectedExit: 0,
     isRecordUnwritable: true,
     input: {
-      command: statusCommand,
+      tool_input: {
+        command: statusCommand,
+      },
     },
   },
   {
@@ -632,7 +556,9 @@ const cases: GateCase[] = [
     expectedExit: 2,
     isRecordUnwritable: true,
     input: {
-      command: sampleProductionCommand,
+      tool_input: {
+        command: sampleProductionCommand,
+      },
     },
   },
 ];
@@ -730,22 +656,15 @@ const failures = cases.filter((gateCase, index) => {
       ...childEnvironment,
       AGENT_GATE_LOG: recordPath,
       CLAUDE_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
-      CURSOR_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
       RELEASE_APPROVAL: gateCase.releaseApproval,
     },
     input: JSON.stringify(gateCase.input),
   });
 
-  const isPermissionWrong =
-    gateCase.expectedPermission !== undefined &&
-    (JSON.parse(result.stdout.toString()) as {permission?: string}).permission !==
-      gateCase.expectedPermission;
-
   const isRecordChecked = gateCase.isRecordUnwritable !== true;
 
   return (
     result.status !== gateCase.expectedExit ||
-    isPermissionWrong ||
     (isRecordChecked && isRecordWrong(gateCase, recordPath))
   );
 });
@@ -764,14 +683,9 @@ for (const directory of [
 }
 
 if (failures.length > 0) {
-  const failureLines = failures.map(gateCase => {
-    const permission =
-      gateCase.expectedPermission === undefined
-        ? ""
-        : ` and permission ${gateCase.expectedPermission}`;
-
-    return `- ${gateCase.name} (expected exit ${gateCase.expectedExit}${permission})`;
-  });
+  const failureLines = failures.map(
+    gateCase => `- ${gateCase.name} (expected exit ${gateCase.expectedExit})`,
+  );
 
   process.stderr.write(`Agent gate checks failed:\n${failureLines.join("\n")}\n`);
   process.exitCode = 1;

@@ -1,6 +1,6 @@
-# Intent: Fast feedback before merge, full verification after it
+# Intent: Fast feedback before merge
 
-Author: @joetakara (Developer Productivity). Status: accepted.
+Author: @joetakara (Developer Productivity). Status: done.
 
 "The book" below is the AI-native SDLC playbook the harness follows, cited by page.
 
@@ -25,29 +25,27 @@ A project generated from the starter reported that its CI gates slow development
 
 Everything in this section is a proposal, except where it names the book.
 
-An engineer of a generated project learns in minutes whether a change can merge. The full verification runs after the merge and decides the promotion, not the merge.
+An engineer of a generated project learns sooner whether a change can merge, and CI bills fewer jobs for it.
 
 ### The gates
 
-| Gate         | Runs                                                                   | Blocks        |
-| :----------- | :--------------------------------------------------------------------- | :------------ |
-| Commit       | gitleaks and lint-staged                                               | the commit    |
-| Push         | the static checks and the tests related to the change                  | the push      |
-| Pull request | the static checks, the tests with coverage, the build, the secret scan | the merge     |
-| After merge  | the end-to-end suites                                                  | the promotion |
-| Production   | the release manager's approval, as today                               | the deploy    |
+| Gate         | Runs                                                                                         | Blocks     |
+| :----------- | :------------------------------------------------------------------------------------------- | :--------- |
+| Commit       | gitleaks and lint-staged                                                                     | the commit |
+| Push         | the static checks and the tests related to the change                                        | the push   |
+| Pull request | the static checks, the tests with coverage, the end-to-end tests, the build, the secret scan | the merge  |
+| Production   | the release manager's approval, as today                                                     | the deploy |
 
-The book places "the full test suite" at the commit or the pull request (page 27) and names no end-to-end test. Moving the end-to-end suites after the merge is not in the book.
+The book places "the full test suite" at the commit or the pull request (page 27), so the end-to-end suites stay on the pull request. The product owner decided this in the build session: when a project runs them elsewhere is that project's own choice.
 
 ### Cut
 
-| What is cut                                                  | Why                                                                              |
-| :----------------------------------------------------------- | :------------------------------------------------------------------------------- |
-| End-to-end tests and the browser install on a pull request   | They run after the merge.                                                        |
-| The build and `format:check` in `pre-push`                   | CI builds the same commit; lint-staged and CI cover the format.                  |
-| `pr-triage.yml` and `.github/labeler.yml`                    | Nothing reads the labels.                                                        |
-| The small jobs of `ci.yml` as separate jobs                  | Each bills a whole minute for seconds of work. Their steps move into fewer jobs. |
-| The plan and its acceptance for a small, well-bounded defect | The book, page 52. The failing test committed before the fix stays (page 32).    |
+| What is cut                                                                                                                                     | Why                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| The build and `format:check` in `pre-push`                                                                                                      | CI builds the same commit; lint-staged and CI cover the format.                           |
+| `pr-triage.yml` and `.github/labeler.yml`                                                                                                       | Nothing reads the labels.                                                                 |
+| The small jobs of `ci.yml` as separate jobs                                                                                                     | Each bills a whole minute for seconds of work. Their steps move into fewer jobs.          |
+| `playbooks/small.md`, the plan that `plan:check` asked of every branch that changes code, and the push hook that compared commits with the plan | The product owner's decision: the SDLC loop starts only when a person types `/sdlc-mode`. |
 
 ### Kept, and explained
 
@@ -58,7 +56,6 @@ The book places "the full test suite" at the commit or the pull request (page 27
 ### Added
 
 - Patch coverage fails under 80, where it fails under 95 today. The product owner's decision; the book does not mention coverage.
-- The end-to-end suites run on a push to the default branch, and `playbooks/deploy.md` step 1 stops a promotion while they fail or run.
 - `playbooks/build.md`: before it pushes, the agent runs the end-to-end tests of the part it changed. The book asks a session to check its own work before a person sees it (pages 31 to 33).
 - A failing after-merge check starts `playbooks/fix.md` without a person asking.
 - `SETUP.md` tells the team to set `TURBO_TEAM`.
@@ -72,7 +69,7 @@ The book places "the full test suite" at the commit or the pull request (page 27
 
 ## Affected users and systems
 
-- People: the engineers of every generated project, and their release manager, whose promotion now waits on the after-merge checks.
+- People: the engineers of every generated project.
 - Systems: `templates/<stack>/.github/workflows/ci.yml` of five stacks; `templates/base/.husky/pre-push`; `templates/base/.github/workflows/pr-triage.yml` and `templates/base/.github/labeler.yml`; the `check` script of each stack's `package.json`; `templates/base/SETUP.md`; `plugins/sdlc/source/skills/sdlc-mode/playbooks/small.md`, `fix.md`, `build.md`, `deploy.md`; `plugins/sdlc/source/scripts/check-plan.ts`; each stack's `AGENTS.md`, `README.md`, `CONTRIBUTING.md`.
 
 ## Constraints
@@ -85,7 +82,6 @@ The book places "the full test suite" at the commit or the pull request (page 27
 
 ## Open questions
 
-- Whether the end-to-end suites leave the pull request, against page 27 of the book.
 - Whether `codeql`, `dependency-review`, `scorecard`, the `image` job, and the weekly run leave the starter. The book names none of them. A public repository runs the first three with no variable.
 - Whether `playbooks/deploy.md` lets the agent deploy to the development environment after a merge without a person asking (the book, page 45).
 - Not read for this intent: the lint-staged file and the jobs of `ci.yml` in the four stacks other than `turborepo`, and the times the generated project measured.

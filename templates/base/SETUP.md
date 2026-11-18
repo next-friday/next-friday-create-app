@@ -1,23 +1,23 @@
 # Setup
 
-This project runs an AI-native software development loop in Claude Code and Cursor: intent, spec, plan, build, review, deploy, and maintain. Do the steps below in order. Each step says who does it and how to check that it is done.
+This project runs an AI-native software development loop in Claude Code: intent, spec, plan, build, review, deploy, and maintain. Do the steps below in order. Each step says who does it and how to check that it is done.
 
 ## How a change flows
 
-Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 8 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, `/setup-sdlc` chooses the models and edits no file of the project, and `/setup-sdlc project` reports which steps below are done and does the ones an agent can do. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 7 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, `/setup-sdlc` chooses the models and edits no file of the project, and `/setup-sdlc project` reports which steps below are done and does the ones an agent can do. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
-| Stage    | Who acts                                                                         | What carries it out                                                                                                  |
-| :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| Plan     | The originator; the product owner accepts by merging                             | `/sdlc-mode` with the idea writes `intent/<change>/intent.md`                                                        |
-| Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc-mode` with the intent's path, writes `spec.md`                                     |
-| Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-mode build` writes `plan.md` and the code in one pull request; `pnpm plan:check` and the push hook check them |
-| Test     | The agent, before it reports done                                                | The `verifier` subagent runs the app; `pre-push` and CI run the checks                                               |
-| Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` reviews the pull request once; the production gate hook blocks a deploy without approval       |
-| Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                               |
+| Stage    | Who acts                                                                         | What carries it out                                                                                            |
+| :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| Plan     | The originator; the product owner accepts by merging                             | `/sdlc-mode` with the idea writes `intent/<change>/intent.md`                                                  |
+| Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc-mode` with the intent's path, writes `spec.md`                               |
+| Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-mode build` writes `plan.md` and the code in one pull request; the skill's push hook checks them        |
+| Test     | The agent, before it reports done                                                | The `verifier` subagent runs the app; `pre-push` and CI run the checks                                         |
+| Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` reviews the pull request once; the production gate hook blocks a deploy without approval |
+| Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                         |
 
-A session starts with a list of where each change stands. A small, well-bounded change that is not a defect skips intent and spec: it goes from a `small/` branch to one pull request, which a code owner reviews (`.claude/skills/sdlc-mode/playbooks/small.md`).
+`/sdlc-mode` with no change named lists where each change stands.
 
-The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads, and which Cursor loads too: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). The `verifier` subagent is in `.claude/agents/` for Claude Code and in `.cursor/agents/` for Cursor. The gate hooks are in `.agents/hooks/` and the session hooks are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them in Claude Code, and `.cursor/hooks.json` runs them in Cursor. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
+The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads. The `verifier` subagent is in `.claude/agents/`. The gate hooks are in `.agents/hooks/`: `.claude/settings.json` runs them. The hooks of the loop are in `.claude/skills/sdlc-mode/hooks/`, and `.claude/skills/sdlc-mode/SKILL.md` declares them in its frontmatter, so they run only in a session where a person typed `/sdlc-mode`. A skill's hooks are not kept across a resume, so after a resumed session the person types `/sdlc-mode` again. An organization that locks hooks to plugins or to managed settings (`strictPluginOnlyCustomization`, `allowManagedHooksOnly`) runs no hook of a project skill. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 
 `.claude/settings.json` sets `CLAUDE_CODE_FORK_SUBAGENT` to `0` under `env`, so that a Claude Code session can wait for a subagent's report instead of starting the subagent in the background. The documentation gives this as the way "to let Claude wait for a subagent" ([Claude Code: Create custom subagents](https://code.claude.com/docs/en/sub-agents.md)). While the session waits, nobody can type to it unless they move the wait to the background. To go back to background subagents, remove the `env` object from `.claude/settings.json` and commit that file.
 
@@ -25,9 +25,6 @@ Part of the harness does not load in these cases. The checks of `pre-push` and o
 
 - **A Claude Code cloud session with several repositories,** in an Anthropic-hosted environment, runs no hook: it "reads only the `enabledPlugins` and `extraKnownMarketplaces` keys from each repository's `.claude/settings.json`, not permission rules, hooks, `env`, or other keys" ([Claude Code: Settings](https://code.claude.com/docs/en/settings)).
 - **A cloud thread in a Claude project** loads neither the skills nor the hooks: "In a project's cloud thread, skills committed to a repository's `.claude/skills/` aren't available" ([Claude Code: Skills](https://code.claude.com/docs/en/skills)), and there "none of a repository's `.claude/settings.json` permission rules, hooks, or `env` apply, however many repositories the project has" ([Claude Code: Settings](https://code.claude.com/docs/en/settings)).
-- **A Cursor cloud agent on Cursor's own machines** runs no `sessionStart` hook, so the status list does not show when it starts: "Deferred while cloud agents can still start in a read-only environment" ([Cursor: Hooks](https://cursor.com/docs/hooks)).
-- **A Cursor cloud agent in its early read-only turns** runs no hook: "Hooks do not run during those turns. They start once the agent has a writable environment" (same page).
-- **Cursor with Include Third-Party Plugins, Skills, and Other Configs turned off.** "Claude Code hooks load when **Include Third-Party Plugins, Skills, and Other Configs** is enabled" ([Cursor: Third Party Hooks](https://cursor.com/docs/reference/third-party-hooks)), and its name covers skills. Leave it on, as it is by default.
 - **Another agent tool** gets the skills by their path, and no subagent and no hooks.
 
 ## 1. First commit and push
@@ -43,7 +40,7 @@ Part of the harness does not load in these cases. The checks of `pre-push` and o
    git push --set-upstream origin main
    ```
 
-   When the GitHub repository already has a commit, such as a README, push the import to a branch and open a pull request titled with the first commit's subject, since the squash merge takes the pull request title. When the CLI ran in such a clone, it already committed on `build/bootstrap-workspace`; skip the first command. `pnpm plan:check` lets this first import through without a plan while `main` has no `package.json`. `-X theirs` keeps the template's copy of a file, such as `README.md`, that both commits add.
+   When the GitHub repository already has a commit, such as a README, push the import to a branch and open a pull request titled with the first commit's subject, since the squash merge takes the pull request title. When the CLI ran in such a clone, it already committed on `build/bootstrap-workspace`; skip the first command. `-X theirs` keeps the template's copy of a file, such as `README.md`, that both commits add.
 
    ```sh
    git branch -m build/bootstrap-workspace
@@ -68,7 +65,6 @@ In `.github/CODEOWNERS`, add these lines in this order. GitHub uses the last mat
 /intent/ @the-product-owner
 /.claude/skills/ @the-lead-who-signs-off-the-intent-template
 /.claude/agents/ @the-lead-who-signs-off-the-intent-template
-/.cursor/agents/ @the-lead-who-signs-off-the-intent-template
 /.agents/skills/brand-policy/ @the-brand-policy-owner
 /.agents/skills/security-policy/ @the-security-policy-owner
 /.agents/skills/compliance-policy/ @the-compliance-policy-owner
@@ -114,15 +110,7 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 **Check.** The test pull request gets a **Claude Code Review** check run within a few minutes.
 
-## 5. Cursor
-
-**Who.** A Cursor team admin.
-
-- **Sandbox.** Set the team's sandbox policy ([Cursor sandbox](https://cursor.com/docs/reference/sandbox)), which repository and user settings cannot weaken.
-
-**Check.** The team's settings in Cursor show the sandbox policy.
-
-## 6. Team decisions
+## 5. Team decisions
 
 **Who.** The people named in each item.
 
@@ -134,13 +122,13 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 - **Who writes intents (product owner).** Decide who may send an idea with `/sdlc-mode` to write an intent, such as anyone in the team or only the product owner and the leads, and say so in `intent/README.md`. The `/intent/` line of `CODEOWNERS` in step 2 makes the product owner accept each one.
 - **The product owner in Claude (an Owner of the Claude organization).** Give the product owner a Claude seat with GitHub connected (claude.ai, Cowork, or Claude Code), so that they write intents with `/sdlc-mode` and review specs themselves. Do the same for anyone else without Git experience who writes intents: Claude commits `intent.md` for them.
 
-## 7. Later, as the guardrails mature
+## 6. Later, as the guardrails mature
 
-- Send the intent's path with `/sdlc-mode` by hand first. Then turn on `Spec on intent merge` (step 8).
+- Send the intent's path with `/sdlc-mode` by hand first. Then turn on `Spec on intent merge` (step 7).
 - Make auto mode the default for routine work: a tight `spec.md`, a small blast radius, and code the tests already cover.
-- Set the metric in `bands.yaml`, then turn on `Control band` (step 8).
+- Set the metric in `bands.yaml`, then turn on `Control band` (step 7).
 
-## 8. Claude in CI
+## 7. Claude in CI
 
 **Who.** A repository admin.
 
@@ -149,9 +137,9 @@ Each workflow below stays off until the repository variable `CLAUDE_CI_ENABLED` 
 - **`Spec on intent merge`.** When an `intent.md` reaches `main` with `Status: accepted.` and no `spec.md` beside it, which is how the product owner accepts it, runs `/sdlc-mode intent/<change>/intent.md`, so that `spec.md` arrives as a pull request for the product owner.
 - **`Claude fix loop`.** When a person with write access comments `@claude` on a line of a pull request from this repository, Claude addresses the comment and pushes to that branch. It cannot approve or merge.
 - **`triage` job of `Verify`.** When a pull request from this repository fails a check, reads the failed logs with the `Read` tool only and posts a three-line summary.
-- **`Control band`.** Every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `pnpm bands:check metric-values.json`. It writes the detection report to the run's job summary, which is where a `log` tier's finding is read. A tier whose action is `diagnose` runs `/sdlc-mode` with the finding and writes the diagnosis to the job summary; a tier whose action is `propose` opens an intent pull request through the `pull_request` route. It never acts on production and never runs a runbook.
+- **`Control band`.** Every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `node .claude/skills/sdlc-mode/scripts/check-bands.ts metric-values.json`. It writes the detection report to the run's job summary, which is where a `log` tier's finding is read. A tier whose action is `diagnose` runs `/sdlc-mode` with the finding and writes the diagnosis to the job summary; a tier whose action is `propose` opens an intent pull request through the `pull_request` route. It never acts on production and never runs a runbook.
 
-On a machine, `pnpm loop:measure` reports the loop's measures. It is not part of `pnpm verify`.
+On a machine, `node .claude/skills/sdlc-mode/scripts/measure-loop.ts` reports the loop's measures. It is not part of `pnpm verify`.
 
 **Check.** With `CLAUDE_CI_ENABLED` unset, **Actions** shows these jobs as skipped.
 

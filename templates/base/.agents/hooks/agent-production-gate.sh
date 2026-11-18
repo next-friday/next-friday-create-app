@@ -3,19 +3,17 @@ set -uo pipefail
 
 # shellcheck source=.agents/hooks/record-gate-decision.sh
 if ! source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-gate-decision.sh"; then
-  printf '%s\n' '{"permission":"deny","user_message":"agent-production-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate."}'
+  printf '%s\n' 'agent-production-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate.' >&2
   exit 2
 fi
 
 allow() {
   record_gate_decision agent-production-gate allow "" "${input:-}" "${lifted_approval:-}"
-  printf '%s\n' '{"permission":"allow"}'
   exit 0
 }
 
 block() {
   record_gate_decision agent-production-gate block "${2:-$1}" "${input:-}"
-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
   printf 'agent-production-gate: %s\n' "$1" >&2
   exit 2
 }
@@ -23,9 +21,9 @@ block() {
 trap 'block ".agents/hooks/agent-production-gate.sh failed. Stop and report this error to the user; agents may not edit the gate."' ERR
 command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
 input=$(cat)
-command=$(jq -r '.command // .tool_input.command // empty' <<< "$input")
+command=$(jq -r '.tool_input.command // empty' <<< "$input")
 [[ -n $command ]] || allow
-project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
+project=${CLAUDE_PROJECT_DIR:-$PWD}
 approval_form_file=.agents/release-approval-form
 approval=${RELEASE_APPROVAL:-}
 unmatched_approval=
