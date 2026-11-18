@@ -7,7 +7,7 @@ context:
 graders:
   - name: reply-gives-the-rule-with-the-defaults-at-the-medium-effort
     type: regex
-    pattern: 'rules/sdlc-models\.md[\s\S]*budget: medium \(high\)\s*\n\s*main: (?:claude-)?sonnet\S* high\s*\n\s*explore: (?:claude-)?haiku\S* high\s*\n\s*review: (?:claude-)?sonnet\S* high\s*\n\s*advise: (?:claude-)?opus\S* high'
+    pattern: 'rules/sdlc-models\.md[\s\S]*budget: medium \(high\)\s*\n\s*main: (?:claude-)?sonnet\S* high\s*\n\s*explore: (?:claude-)?haiku\S* high\s*\n\s*advise: (?:claude-)?opus\S* high'
   - name: no-models-file-in-the-project
     type: regex
     target: files

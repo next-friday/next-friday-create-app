@@ -1,6 +1,6 @@
 ---
 name: setup-sdlc
-description: Sets the model and reasoning effort for the main work, for exploring, for review, and for advice, from a budget. Run it with /setup-sdlc. With the word project, as in /setup-sdlc project, it reports which steps of SETUP.md are done and does the ones an agent can do.
+description: Sets the model and reasoning effort for the main work, for exploring, and for advice, from a budget. Run it with /setup-sdlc. With the word project, as in /setup-sdlc project, it reports which steps of SETUP.md are done and does the ones an agent can do.
 disable-model-invocation: true
 ---
 
@@ -21,7 +21,6 @@ The request decides which steps run:
    | :-------- | :------- | :------------- | :-------------------------------------------------------------------------------- |
    | `main`    | `sonnet` | `high`         | A subagent that writes the code and the tests, which the session directs.         |
    | `explore` | `haiku`  | `xhigh`        | A subagent that reads and searches files, and the `verifier`, which runs the app. |
-   | `review`  | `sonnet` | `high`         | A subagent that reviews a pull request's diff with a fresh context.               |
    | `advise`  | `opus`   | `medium`       | A subagent that advises as `../sdlc-mode/SKILL.md` step 4 says.                   |
 
 4. **Fix the budget,** which sets the reasoning effort of the roles. When the request names one of the five labels, that is the budget and you ask nothing about it. Otherwise ask one question, as `../sdlc-mode/SKILL.md` step 6 says for a choice between ways, with these choices, `balanced` as the recommended one, adding the roles of step 3 that have no model. Name the current budget when the rule records one; with no rule, say that `balanced` matches the defaults.
@@ -42,7 +41,6 @@ The request decides which steps run:
    budget: medium (high)
    main: sonnet high
    explore: haiku high
-   review: sonnet high
    advise: opus high
    ```
 
