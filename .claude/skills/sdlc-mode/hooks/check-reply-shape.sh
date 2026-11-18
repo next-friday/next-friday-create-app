@@ -2,14 +2,10 @@
 command -v jq > /dev/null || exit 0
 mode=${1:-}
 input=$(cat)
-# An agent tool that also runs the other tool's hook entries names itself in `cursor_version`; its own entries pass another argument.
-case $mode in
-  '' | snapshot) printf '%s' "$input" | jq -e 'has("cursor_version")' > /dev/null 2>&1 && exit 0 ;;
-esac
 state_directory=${TMPDIR:-/tmp}/sdlc-reply-shape
-conversation=$(printf '%s' "$input" | jq -r '.conversation_id // .session_id // ""')
+conversation=$(printf '%s' "$input" | jq -r '.session_id // ""')
 conversation=${conversation:+$(printf '%s' "$conversation" | cksum | tr ' ' '-')}
-project=$(printf '%s' "$input" | jq -r '.cwd // .workspace_roots[0] // ""')
+project=$(printf '%s' "$input" | jq -r '.cwd // ""')
 snapshot_file=$state_directory/$conversation.files
 
 # A copy of the index and a scratch object store keep the project's own Git data unwritten.
@@ -52,32 +48,14 @@ changed_since_snapshot() {
   [ "${previous%|*}" = "${current%|*}" ] && [ "$previous" != "$current" ]
 }
 
-case $mode in
-  snapshot | submit)
-    changed_since_snapshot
-    exit 0
-    ;;
-  save)
-    text=$(printf '%s' "$input" | jq -r '.text // ""')
-    [ -n "$text" ] && [ -n "$conversation" ] || exit 0
-    mkdir -p "$state_directory" && printf '%s' "$text" > "$state_directory/$conversation"
-    exit 0
-    ;;
-  followup)
-    changed=false
-    changed_since_snapshot && changed=true
-    [ -n "$conversation" ] && [ -f "$state_directory/$conversation" ] || exit 0
-    reply=$(cat "$state_directory/$conversation")
-    rm -f "$state_directory/$conversation"
-    [ "$(printf '%s' "$input" | jq -r '"\(.status // "") \(.loop_count // "")"')" = 'completed 0' ] || exit 0
-    ;;
-  *)
-    changed=false
-    changed_since_snapshot && agent_could_write && changed=true
-    [ "$(printf '%s' "$input" | jq -r '.stop_hook_active // false')" = true ] && exit 0
-    reply=$(printf '%s' "$input" | jq -r '.last_assistant_message // ""')
-    ;;
-esac
+if [ "$mode" = snapshot ]; then
+  changed_since_snapshot
+  exit 0
+fi
+changed=false
+changed_since_snapshot && agent_could_write && changed=true
+[ "$(printf '%s' "$input" | jq -r '.stop_hook_active // false')" = true ] && exit 0
+reply=$(printf '%s' "$input" | jq -r '.last_assistant_message // ""')
 first=$(printf '%s\n' "$reply" | awk 'NF{print; exit}')
 case $first in '**Answer:**'* | '**Result:**'* | '**Waiting for you:**'* | '**No change:**'*) ;; *) exit 0 ;; esac
 
@@ -137,5 +115,4 @@ if [ -z "$not_yet" ] && printf '%s\n' "$last" | tr 'A-Z' 'a-z' | grep -Eq '(^|[^
 fi
 
 [ -z "$problems" ] && exit 0
-jq -n --arg mode "$mode" --arg reason "${problems}Send the whole reply again." \
-  'if $mode == "followup" then {followup_message:$reason} else {decision:"block",reason:$reason} end'
+jq -n --arg reason "${problems}Send the whole reply again." '{decision:"block",reason:$reason}'

@@ -6,7 +6,6 @@ export default defineConfig(
   globalIgnores([
     ".agents/**",
     ".claude/**",
-    ".cursor/**",
     "**/.next/**",
     "**/out/**",
     "**/next-env.d.ts",

@@ -13,28 +13,5 @@
       "event": "SessionStart",
       "script": "sdlc-status.sh"
     }
-  ],
-  "cursor": [
-    {
-      "event": "beforeSubmitPrompt",
-      "script": "check-reply-shape.sh",
-      "argument": "submit"
-    },
-    {
-      "event": "afterAgentResponse",
-      "script": "check-reply-shape.sh",
-      "argument": "save"
-    },
-    {
-      "event": "stop",
-      "script": "check-reply-shape.sh",
-      "argument": "followup",
-      "loopLimit": 1
-    },
-    {
-      "event": "sessionStart",
-      "script": "sdlc-status.sh",
-      "argument": "json"
-    }
   ]
 }

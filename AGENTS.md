@@ -23,7 +23,7 @@ For a change to the prompts or the arguments, also run `node dist/main.mjs` with
 
 ## Conventions
 
-1. **Edit `src/`, `test/`, and `templates/`; never edit `dist/` or a rendered copy.** The sources are `.agents/` and `plugins/sdlc/source/`. `pnpm rules:sync` renders `.agents/` into `.claude/rules/`, `.cursor/rules/`, and `REVIEW.md`. `pnpm plugin:sync` renders `plugins/sdlc/source/` into `.claude/skills/`, `plugins/sdlc/adapters/claude-code/`, and `templates/base/`. Edit a source, never its rendered copy.
+1. **Edit `src/`, `test/`, and `templates/`; never edit `dist/` or a rendered copy.** The sources are `.agents/` and `plugins/sdlc/source/`. `pnpm rules:sync` renders `.agents/` into `.claude/rules/` and `REVIEW.md`. `pnpm plugin:sync` renders `plugins/sdlc/source/` into `.claude/skills/`, `plugins/sdlc/adapters/claude-code/`, and `templates/base/`. Edit a source, never its rendered copy.
 2. **Preserve CLI arguments, prompts, and stack names** unless a major changeset declares the break. `.changeset/README.md` says when a change needs a changeset.
 3. **When you change a `base` file that a stack replaces, make the same change in each replacement.** `CONTRIBUTING.md` lists them.
 4. **Store `.gitignore` as `_gitignore` and commit no `pnpm-lock.yaml` under `templates/`.**
@@ -35,7 +35,7 @@ For a change to the prompts or the arguments, also run `node dist/main.mjs` with
 
 When Claude makes a mistake twice, add the correction here.
 
-- **Template rule copies**: root `pnpm rules:sync` renders only the root. Render a template's copy in a generated project and copy it back with your file-editing tool; the shell gate blocks `cp` and `rsync` into `.agents`, `.claude/rules`, and `.cursor`.
+- **Template rule copies**: root `pnpm rules:sync` renders only the root. Render a template's copy in a generated project and copy it back with your file-editing tool; the shell gate blocks `cp` and `rsync` into `.agents` and `.claude/rules`.
 - **Failing tests**: when a test fails, fix the code, not the test.
 - **Commit messages**: commitlint accepts only `Co-Authored-By` trailers.
 - **Issues**: open an issue only to hand work to another person. A pull request closes an issue that already exists with `Closes #<issue>`.

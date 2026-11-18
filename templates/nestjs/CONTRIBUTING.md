@@ -41,7 +41,7 @@ Run the narrowest check that covers the change while you work. Git hooks run the
 
 Run `pnpm verify` for repository changes.
 
-Agent rules live in `.agents/rules/` with their scope in `.agents/rules.json`. After you change either, run `pnpm rules:sync` to regenerate `.claude/rules/` and `.cursor/rules/`.
+Agent rules live in `.agents/rules/` with their scope in `.agents/rules.json`. After you change either, run `pnpm rules:sync` to regenerate `.claude/rules/`.
 
 ## Pull requests
 

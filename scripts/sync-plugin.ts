@@ -23,14 +23,12 @@ import {
 type AgentConfig = {
   description: string;
   model?: string;
-  readonly?: boolean;
   tools?: string[];
 };
 
 type HookConfig = {
   argument?: string;
   event: string;
-  loopLimit?: number;
   matcher?: string;
   script: string;
   timeout?: number;
@@ -47,8 +45,6 @@ type HookCase = {
   merged?: boolean;
   name: string;
   projectFolder?: string;
-  savedReply?: string;
-  snapshotArgument?: string;
   transcript?: unknown[];
 };
 
@@ -96,7 +92,6 @@ const templateScriptsDirectory = path.join(templateRoot, "scripts");
 const projectSkillsDirectory = ".claude/skills";
 const toolWordsDirectory = "sdlc-mode/tool-words";
 const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-mode/hooks`;
-const pluginLoaderScript = path.join(templateRoot, ".cursor", "hooks", "load-project-plugins.sh");
 
 const repositoryVariables = execFileSync("git", ["rev-parse", "--local-env-vars"], {
   encoding: "utf8",
@@ -134,15 +129,6 @@ function findClaudeAgentFields(agent: AgentConfig): string[] {
 }
 
 /**
- * Find the subagent frontmatter fields Cursor reads.
- * @param agent Subagent configuration.
- * @returns The `readonly` field when the subagent sets it.
- */
-function findCursorAgentFields(agent: AgentConfig): string[] {
-  return agent.readonly === undefined ? [] : [`readonly: ${agent.readonly}`];
-}
-
-/**
  * Build the shell command that runs a hook script through `sh`.
  * @param scriptPath The script's path as the tool's shell resolves it, quoted where it holds a variable.
  * @param hook The hook that `hooks.json` names.
@@ -170,20 +156,6 @@ function renderClaudeHookEntry(hook: HookConfig, scriptPath: string): Record<str
         command: renderHookCommand(scriptPath, hook),
       },
     ],
-  };
-}
-
-/**
- * Render one hook as Cursor reads it under an event of a project's hook file.
- * @param hook A hook that `hooks.json` names for Cursor.
- * @returns The entry, which runs the script through `sh` from the project root and caps the follow-ups of a `stop` hook.
- */
-function renderCursorHookEntry(hook: HookConfig): Record<string, unknown> {
-  return {
-    command: renderHookCommand(`${projectHooksDirectory}/${hook.script}`, hook),
-    ...(hook.loopLimit !== undefined && {
-      loop_limit: hook.loopLimit,
-    }),
   };
 }
 
@@ -238,13 +210,6 @@ const agentTools: AgentTool[] = [
     hookFilePath: ".claude/settings.json",
     renderHookEntry: hook =>
       renderClaudeHookEntry(hook, `"$CLAUDE_PROJECT_DIR"/${projectHooksDirectory}/${hook.script}`),
-  },
-  {
-    agentFields: findCursorAgentFields,
-    renderHookEntry: renderCursorHookEntry,
-    key: "cursor",
-    agentsDirectory: ".cursor/agents",
-    hookFilePath: ".cursor/hooks.json",
   },
 ];
 
@@ -355,19 +320,17 @@ function findHookEntryProblems(
  * Find what a protected file still holds of loading the harness as a plugin.
  * @param filePath Path of the file from the repository root.
  * @param fileText Content of the file; a missing file holds none of them.
- * @returns One message for each of `extraKnownMarketplaces`, `enabledPlugins`, and a `workspaceOpen` hook that the file holds.
+ * @returns One message for each of `extraKnownMarketplaces` and `enabledPlugins` that the file holds.
  */
 function findPluginLoaderKeys(filePath: string, fileText = "{}"): string[] {
-  const {enabledPlugins, extraKnownMarketplaces, hooks} = JSON.parse(fileText) as {
+  const {enabledPlugins, extraKnownMarketplaces} = JSON.parse(fileText) as {
     enabledPlugins?: unknown;
     extraKnownMarketplaces?: unknown;
-    hooks?: {workspaceOpen?: unknown};
   };
 
   return [
     ...(extraKnownMarketplaces === undefined ? [] : ["extraKnownMarketplaces"]),
     ...(enabledPlugins === undefined ? [] : ["enabledPlugins"]),
-    ...(hooks?.workspaceOpen === undefined ? [] : ["a workspaceOpen hook"]),
   ].map(
     key =>
       `${filePath}: holds ${key}, which loaded the harness as a plugin; a person removes it and commits this file`,
@@ -487,25 +450,13 @@ function writeCaseTranscript(directory: string, transcript?: unknown[]): Record<
 /**
  * Run a hook script on one case in a private state directory.
  * @param script Path of the script from the repository root.
- * @param hookCase The case. A saved reply is stored first by the script's `save` argument. Changed files make the case run in a new Git repository: the script takes its snapshot, the files are written, and the case input gains the repository as `cwd` and `workspace_roots`. The snapshot is asked for with the argument the case names, or else with `submit` when the input holds `cursor_version`, or else with `snapshot`. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
+ * @param hookCase The case. Changed files make the case run in a new Git repository: the script takes its snapshot with the `snapshot` argument, the files are written, and the case input gains the repository as `cwd`. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
  * @returns The standard output of the script on the case input.
  */
 function runHookCase(script: string, hookCase: HookCase): string {
   const stateDirectory = mkdtempSync(path.join(tmpdir(), "sdlc-hook-case-"));
 
   try {
-    if (hookCase.savedReply !== undefined) {
-      runHookScript(
-        script,
-        "save",
-        {
-          text: hookCase.savedReply,
-          conversation_id: hookCase.input.conversation_id,
-        },
-        stateDirectory,
-      );
-    }
-
     if (hookCase.fileContents !== undefined) {
       const repository = createCaseRepository(stateDirectory);
 
@@ -542,20 +493,11 @@ function runHookCase(script: string, hookCase: HookCase): string {
     const caseInput = {
       ...input,
       cwd: project,
-      workspace_roots: [project],
       ...writeCaseTranscript(stateDirectory, hookCase.transcript),
     };
 
     writeCaseFiles(input.cwd, hookCase.filesBeforeTurn ?? [], "before\n");
-
-    runHookScript(
-      script,
-      hookCase.snapshotArgument ??
-        (hookCase.input.cursor_version === undefined ? "snapshot" : "submit"),
-      caseInput,
-      stateDirectory,
-    );
-
+    runHookScript(script, "snapshot", caseInput, stateDirectory);
     writeCaseFiles(input.cwd, hookCase.changedFiles, "changed\n");
 
     if (hookCase.committed === true) {
@@ -574,7 +516,7 @@ function runHookCase(script: string, hookCase: HookCase): string {
 /**
  * Tell what a hook did from its standard output.
  * @param output Standard output of the hook script.
- * @returns `pass` for no output, `block` for a block decision or a follow-up message, otherwise the output itself.
+ * @returns `pass` for no output, `block` for a block decision, otherwise the output itself.
  */
 function findHookOutcome(output: string): string {
   if (output.trim() === "") {
@@ -582,23 +524,12 @@ function findHookOutcome(output: string): string {
   }
 
   try {
-    const {
-      decision,
-      followup_message: followupMessage,
-      hookSpecificOutput,
-      permission,
-    } = JSON.parse(output) as {
+    const {decision, hookSpecificOutput} = JSON.parse(output) as {
       decision?: string;
-      followup_message?: string;
       hookSpecificOutput?: {permissionDecision?: string};
-      permission?: string;
     };
 
-    const isBlocked =
-      decision === "block" ||
-      followupMessage !== undefined ||
-      permission === "deny" ||
-      hookSpecificOutput?.permissionDecision === "deny";
+    const isBlocked = decision === "block" || hookSpecificOutput?.permissionDecision === "deny";
 
     return isBlocked ? "block" : output;
   } catch {
@@ -782,7 +713,7 @@ function renderEvalPlugin(source: HarnessSource, hooks: HookConfig[]): [string, 
 }
 
 /**
- * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills with the hook scripts beside the front-door skill, and each tool's subagents.
+ * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills with the hook scripts beside the front-door skill, and the subagents.
  * @param projectRoot The project's folder from the repository root, empty for the repository itself.
  * @param source The harness source.
  * @returns The expected content of each file, by path from the repository root.
@@ -890,7 +821,6 @@ const sampleSource: HarnessSource = {
         ...subagent,
         body: "body",
         model: "haiku",
-        readonly: true,
         tools: ["Read"],
       },
     ],
@@ -964,12 +894,12 @@ function runInvertedStub(hookCase: HookCase): string {
 }
 
 /**
- * Stand in for a hook script that blocks only when it gets the `followup` argument.
+ * Stand in for a hook script that blocks only when it gets the `snapshot` argument.
  * @param hookCase The hook case.
- * @returns A follow-up message when the case carries the `followup` argument, otherwise no output.
+ * @returns A block decision when the case carries the `snapshot` argument, otherwise no output.
  */
 function runArgumentStub(hookCase: HookCase): string {
-  return hookCase.argument === "followup" ? '{"followup_message":"m"}' : "";
+  return hookCase.argument === "snapshot" ? blockingOutput : "";
 }
 
 const selfTestCases: SelfTestCase[] = [
@@ -1059,14 +989,12 @@ const selfTestCases: SelfTestCase[] = [
     problems: findToolWords("a.md", "use {{model-switch}}"),
   },
   {
-    name: "a project holds the skills, the hook scripts, and each tool's subagents",
+    name: "a project holds the skills, the hook scripts, and the subagents",
     expected: [
       path.join("t", ".claude", "skills", "s", "SKILL.md"),
       path.join("t", ".claude", "skills", "sdlc-mode", "hooks", "h.sh"),
       path.join("t", ".claude", "agents", "a.md"),
-      path.join("t", ".cursor", "agents", "a.md"),
       "---\nname: a\ndescription: d\ntools: Read\nmodel: haiku\n---\n\nbody",
-      "---\nname: a\ndescription: d\nreadonly: true\n---\n\nbody",
     ],
     problems: (() => {
       const files = renderProject("t", sampleSource);
@@ -1125,11 +1053,10 @@ const selfTestCases: SelfTestCase[] = [
     expected: [
       "f.json: holds extraKnownMarketplaces, which loaded the harness as a plugin; a person removes it and commits this file",
       "f.json: holds enabledPlugins, which loaded the harness as a plugin; a person removes it and commits this file",
-      "f.json: holds a workspaceOpen hook, which loaded the harness as a plugin; a person removes it and commits this file",
     ],
     problems: findPluginLoaderKeys(
       "f.json",
-      '{"extraKnownMarketplaces": {}, "enabledPlugins": {}, "hooks": {"workspaceOpen": []}}',
+      '{"extraKnownMarketplaces": {}, "enabledPlugins": {}}',
     ),
   },
   {
@@ -1184,7 +1111,7 @@ const selfTestCases: SelfTestCase[] = [
         {
           name: "a",
           expected: "block",
-          argument: "followup",
+          argument: "snapshot",
           input: {},
         },
         {
@@ -1209,10 +1136,9 @@ const selfTestCases: SelfTestCase[] = [
     problems: [JSON.stringify(JSON.parse(renderEvalPluginHooks(twoStopHooks)))],
   },
   {
-    name: "a hook renders for each tool's protected file with its argument, matcher, timeout, and loop limit",
+    name: "a hook renders for the protected file with its argument, matcher, and timeout",
     expected: [
       '{"matcher":"Bash","hooks":[{"type":"command","timeout":900,"command":"sh \\"$CLAUDE_PROJECT_DIR\\"/.claude/skills/sdlc-mode/hooks/h.sh snapshot"}]}',
-      '{"command":"sh .claude/skills/sdlc-mode/hooks/h.sh followup","loop_limit":1}',
     ],
     problems: agentTools.map(({renderHookEntry}) =>
       JSON.stringify(
@@ -1220,17 +1146,16 @@ const selfTestCases: SelfTestCase[] = [
           event: "e",
           script: "h.sh",
           matcher: "Bash",
-          loopLimit: 1,
+          argument: "snapshot",
           timeout: 900,
-          argument: renderHookEntry === renderCursorHookEntry ? "followup" : "snapshot",
         }),
       ),
     ),
   },
   {
     name: "a subagent renders its tool's fields",
-    expected: ["---\nname: a\ndescription: d\nreadonly: true\n---\n\nbody"],
-    problems: [renderAgent("a", ["readonly: true"], subagent, "body")],
+    expected: ["---\nname: a\ndescription: d\nmodel: haiku\n---\n\nbody"],
+    problems: [renderAgent("a", ["model: haiku"], subagent, "body")],
   },
 ];
 
@@ -1300,9 +1225,6 @@ if (selfTestFailures.length > 0) {
           ];
         }),
       ),
-      ...(existsSync(pluginLoaderScript)
-        ? [`${pluginLoaderScript}: loaded the harness as a plugin; a person deletes this file`]
-        : []),
     ];
 
     if (problems.length > 0) {

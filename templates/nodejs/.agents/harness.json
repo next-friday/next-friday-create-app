@@ -3,7 +3,6 @@
   "paths": [
     ".agents",
     ".claude",
-    ".cursor",
     ".github",
     ".husky",
     "AGENTS.md",

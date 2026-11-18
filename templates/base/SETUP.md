@@ -1,10 +1,10 @@
 # Setup
 
-This project runs an AI-native software development loop in Claude Code and Cursor: intent, spec, plan, build, review, deploy, and maintain. Do the steps below in order. Each step says who does it and how to check that it is done.
+This project runs an AI-native software development loop in Claude Code: intent, spec, plan, build, review, deploy, and maintain. Do the steps below in order. Each step says who does it and how to check that it is done.
 
 ## How a change flows
 
-Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 8 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, `/setup-sdlc` chooses the models and edits no file of the project, and `/setup-sdlc project` reports which steps below are done and does the ones an agent can do. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
+Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of step 7 once a repository admin turns them on: `Spec on intent merge` writes a spec for a merged intent, and `Control band` writes an intent for a finding. `/sdlc-help` explains how the workflow runs and starts no work, `/setup-sdlc` chooses the models and edits no file of the project, and `/setup-sdlc project` reports which steps below are done and does the ones an agent can do. `intent/README.md` and the playbooks in `.claude/skills/sdlc-mode/playbooks/` say who acts and who decides at each stage.
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                  |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of 
 
 A session starts with a list of where each change stands.
 
-The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads, and which Cursor loads too: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). The `verifier` subagent is in `.claude/agents/` for Claude Code and in `.cursor/agents/` for Cursor. The gate hooks are in `.agents/hooks/` and the session hooks are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them in Claude Code, and `.cursor/hooks.json` runs them in Cursor. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
+The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads. The `verifier` subagent is in `.claude/agents/`. The gate hooks are in `.agents/hooks/` and the session hooks are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 
 `.claude/settings.json` sets `CLAUDE_CODE_FORK_SUBAGENT` to `0` under `env`, so that a Claude Code session can wait for a subagent's report instead of starting the subagent in the background. The documentation gives this as the way "to let Claude wait for a subagent" ([Claude Code: Create custom subagents](https://code.claude.com/docs/en/sub-agents.md)). While the session waits, nobody can type to it unless they move the wait to the background. To go back to background subagents, remove the `env` object from `.claude/settings.json` and commit that file.
 
@@ -25,9 +25,6 @@ Part of the harness does not load in these cases. The checks of `pre-push` and o
 
 - **A Claude Code cloud session with several repositories,** in an Anthropic-hosted environment, runs no hook: it "reads only the `enabledPlugins` and `extraKnownMarketplaces` keys from each repository's `.claude/settings.json`, not permission rules, hooks, `env`, or other keys" ([Claude Code: Settings](https://code.claude.com/docs/en/settings)).
 - **A cloud thread in a Claude project** loads neither the skills nor the hooks: "In a project's cloud thread, skills committed to a repository's `.claude/skills/` aren't available" ([Claude Code: Skills](https://code.claude.com/docs/en/skills)), and there "none of a repository's `.claude/settings.json` permission rules, hooks, or `env` apply, however many repositories the project has" ([Claude Code: Settings](https://code.claude.com/docs/en/settings)).
-- **A Cursor cloud agent on Cursor's own machines** runs no `sessionStart` hook, so the status list does not show when it starts: "Deferred while cloud agents can still start in a read-only environment" ([Cursor: Hooks](https://cursor.com/docs/hooks)).
-- **A Cursor cloud agent in its early read-only turns** runs no hook: "Hooks do not run during those turns. They start once the agent has a writable environment" (same page).
-- **Cursor with Include Third-Party Plugins, Skills, and Other Configs turned off.** "Claude Code hooks load when **Include Third-Party Plugins, Skills, and Other Configs** is enabled" ([Cursor: Third Party Hooks](https://cursor.com/docs/reference/third-party-hooks)), and its name covers skills. Leave it on, as it is by default.
 - **Another agent tool** gets the skills by their path, and no subagent and no hooks.
 
 ## 1. First commit and push
@@ -68,7 +65,6 @@ In `.github/CODEOWNERS`, add these lines in this order. GitHub uses the last mat
 /intent/ @the-product-owner
 /.claude/skills/ @the-lead-who-signs-off-the-intent-template
 /.claude/agents/ @the-lead-who-signs-off-the-intent-template
-/.cursor/agents/ @the-lead-who-signs-off-the-intent-template
 /.agents/skills/brand-policy/ @the-brand-policy-owner
 /.agents/skills/security-policy/ @the-security-policy-owner
 /.agents/skills/compliance-policy/ @the-compliance-policy-owner
@@ -114,15 +110,7 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 
 **Check.** The test pull request gets a **Claude Code Review** check run within a few minutes.
 
-## 5. Cursor
-
-**Who.** A Cursor team admin.
-
-- **Sandbox.** Set the team's sandbox policy ([Cursor sandbox](https://cursor.com/docs/reference/sandbox)), which repository and user settings cannot weaken.
-
-**Check.** The team's settings in Cursor show the sandbox policy.
-
-## 6. Team decisions
+## 5. Team decisions
 
 **Who.** The people named in each item.
 
@@ -134,13 +122,13 @@ Replace `security@example.com` in `SECURITY.md` with the contact the security po
 - **Who writes intents (product owner).** Decide who may send an idea with `/sdlc-mode` to write an intent, such as anyone in the team or only the product owner and the leads, and say so in `intent/README.md`. The `/intent/` line of `CODEOWNERS` in step 2 makes the product owner accept each one.
 - **The product owner in Claude (an Owner of the Claude organization).** Give the product owner a Claude seat with GitHub connected (claude.ai, Cowork, or Claude Code), so that they write intents with `/sdlc-mode` and review specs themselves. Do the same for anyone else without Git experience who writes intents: Claude commits `intent.md` for them.
 
-## 7. Later, as the guardrails mature
+## 6. Later, as the guardrails mature
 
-- Send the intent's path with `/sdlc-mode` by hand first. Then turn on `Spec on intent merge` (step 8).
+- Send the intent's path with `/sdlc-mode` by hand first. Then turn on `Spec on intent merge` (step 7).
 - Make auto mode the default for routine work: a tight `spec.md`, a small blast radius, and code the tests already cover.
-- Set the metric in `bands.yaml`, then turn on `Control band` (step 8).
+- Set the metric in `bands.yaml`, then turn on `Control band` (step 7).
 
-## 8. Claude in CI
+## 7. Claude in CI
 
 **Who.** A repository admin.
 

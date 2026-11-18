@@ -40,15 +40,6 @@
     "expected": "block"
   },
   {
-    "name": "a: #42 in prose, the first tool's entry run by the second tool: no output",
-    "input": {
-      "stop_hook_active": false,
-      "last_assistant_message": "**Result:** Who approves #42?\n\n**Now:** Waiting. ",
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass"
-  },
-  {
     "name": "a: PR 7",
     "input": {
       "stop_hook_active": false,
@@ -225,75 +216,6 @@
     "expected": "pass"
   },
   {
-    "name": "save mode: prints nothing",
-    "argument": "save",
-    "input": {
-      "conversation_id": "c1",
-      "text": "**Result:** Who approves #42?\n\n**Now:** Waiting. ",
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass"
-  },
-  {
-    "name": "followup mode: faulty saved reply",
-    "argument": "followup",
-    "input": {
-      "conversation_id": "c1",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "block",
-    "savedReply": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
-  },
-  {
-    "name": "followup mode: good saved reply",
-    "argument": "followup",
-    "input": {
-      "conversation_id": "c1",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass",
-    "savedReply": "**Result:** Explain the gate.\n\nText.\n\n**Now:** Done, waits for nobody."
-  },
-  {
-    "name": "followup mode: second loop",
-    "argument": "followup",
-    "input": {
-      "conversation_id": "c1",
-      "status": "completed",
-      "loop_count": 1,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass",
-    "savedReply": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
-  },
-  {
-    "name": "followup mode: aborted",
-    "argument": "followup",
-    "input": {
-      "conversation_id": "c1",
-      "status": "aborted",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass",
-    "savedReply": "**Result:** Who approves #42?\n\n**Now:** Waiting. "
-  },
-  {
-    "name": "followup mode: nothing saved",
-    "argument": "followup",
-    "input": {
-      "conversation_id": "c1",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass"
-  },
-  {
     "name": "checks: a file outside intent/ changed and no Checks section",
     "input": {
       "session_id": "s-35",
@@ -422,59 +344,6 @@
       "stop_hook_active": false,
       "last_assistant_message": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits.",
       "cwd": "/nonexistent/project"
-    },
-    "expected": "pass"
-  },
-  {
-    "name": "checks: the other tool, a file outside intent/ changed and no Checks section",
-    "argument": "followup",
-    "savedReply": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits.",
-    "changedFiles": ["src/version.ts"],
-    "input": {
-      "conversation_id": "c-one",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "block"
-  },
-  {
-    "name": "checks: the other tool, a snapshot asked for with the first tool's argument is not taken",
-    "argument": "followup",
-    "savedReply": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits.",
-    "changedFiles": ["src/version.ts"],
-    "input": {
-      "conversation_id": "c-four",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass",
-    "snapshotArgument": "snapshot"
-  },
-  {
-    "name": "checks: the other tool, a file outside intent/ changed and a Checks section",
-    "argument": "followup",
-    "savedReply": "**Result:** Add the version endpoint.\n\n**Checks:**\n\n- `pnpm test`: `Tests 3 passed (3)`\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits.",
-    "changedFiles": ["src/version.ts"],
-    "input": {
-      "conversation_id": "c-two",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
-    },
-    "expected": "pass"
-  },
-  {
-    "name": "checks: the other tool, only a file under intent/ changed",
-    "argument": "followup",
-    "savedReply": "**Result:** Add the version endpoint.\n\nThe endpoint is written.\n\n**Now:** The endpoint is written; nothing waits.",
-    "changedFiles": ["intent/app-version/plan.md"],
-    "input": {
-      "conversation_id": "c-three",
-      "status": "completed",
-      "loop_count": 0,
-      "cursor_version": "1.7.2"
     },
     "expected": "pass"
   },
