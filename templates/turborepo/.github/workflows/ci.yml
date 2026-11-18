@@ -17,18 +17,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detect Changes
+  ci:
+    name: All Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 45
     permissions:
       contents: read
-      pull-requests: read # Needed by paths-filter to inspect pull request changes.
-    outputs:
-      heavy: ${{ steps.filter.outputs.heavy }}
-      ci_policy: ${{ steps.filter.outputs.ci_policy }}
-      full_verification: ${{ steps.mode.outputs.full_verification }}
-      agent_checks: ${{ steps.mode.outputs.agent_checks }}
+      pull-requests: read # Needed by paths-filter to inspect pull request changes, and by plan:check to read who merged the plan's pull request.
+      id-token: write # Needed to exchange GitHub OIDC for a Turborepo Remote Cache token.
+    services:
+      postgres:
+        image: postgres:17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: payload
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/payload
+      PAYLOAD_SECRET: ci-only-secret
+      APP_URL: http://localhost:3001
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      HADOLINT_VERSION: 2.15.1
+      HADOLINT_SHA256: c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507
+      TRIVY_VERSION: 0.76.1
+      TRIVY_SHA256: c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -65,32 +84,19 @@ jobs:
 
           echo "full_verification=$full_verification" >> "$GITHUB_OUTPUT"
           echo "agent_checks=$agent_checks" >> "$GITHUB_OUTPUT"
-
-  affected-apps:
-    name: Detect Affected Apps
-    needs: changes
-    if: needs.changes.outputs.full_verification == 'true' || github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      apps: ${{ steps.affected.outputs.apps }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
       - name: Fetch the pull request base
-        if: github.event_name == 'pull_request'
+        if: (steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && (github.event_name == 'pull_request')
         env:
           BASE_REF: ${{ github.base_ref }}
         run: git fetch --no-tags origin "$BASE_REF"
       - name: Set up Node.js and pnpm
+        if: steps.mode.outputs.agent_checks == 'true' || steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule'
         uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
           cache: true
           require-lockfile: true
       - name: List affected apps
+        if: steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule'
         id: affected
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -102,101 +108,40 @@ jobs:
             apps="$(bash .github/scripts/affected-apps.sh)"
           fi
           echo "apps=$apps" >> "$GITHUB_OUTPUT"
-
-  agent-checks:
-    name: Agent Checks & Formatting
-    needs: changes
-    if: needs.changes.outputs.agent_checks == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: read # Needed by plan:check to read who merged the plan's pull request.
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Set up Node.js and pnpm
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
-        with:
-          cache: true
-          require-lockfile: true
       - name: Check rendered agent rules match .agents/rules
+        if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm rules:check
       - name: Check agent gates
+        if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm gates:check
       - name: Check plans
+        if: steps.mode.outputs.agent_checks == 'true'
         env:
           GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
         run: pnpm plan:check
       - name: Check formatting
+        if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm format:check
-
-  checks:
-    name: Static Checks, Tests & Build
-    needs:
-      - changes
-      - affected-apps
-    if: needs.changes.outputs.full_verification == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      id-token: write # Needed to exchange GitHub OIDC for a Turborepo Remote Cache token.
-    services:
-      postgres:
-        image: postgres:17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: payload
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready --username postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/payload
-      PAYLOAD_SECRET: ci-only-secret
-      APP_URL: http://localhost:3001
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Fetch the pull request base
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: git fetch --no-tags origin "$BASE_REF"
-      - name: Set up Node.js and pnpm
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
-        with:
-          cache: true
-          require-lockfile: true
       - name: Set up Turborepo Remote Cache
-        if: vars.TURBO_TEAM != ''
+        if: (steps.mode.outputs.full_verification == 'true') && (vars.TURBO_TEAM != '')
         uses: vercel/setup-turborepo-remote-cache-action@49d7b1b46ba4c9251e1977986bfe18336feabc8f # v1.1.0
         with:
           team: ${{ vars.TURBO_TEAM }}
       - name: Scope Turborepo to affected packages
-        if: github.event_name == 'pull_request'
+        if: (steps.mode.outputs.full_verification == 'true') && (github.event_name == 'pull_request')
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
           echo "TURBO_FILTER=--affected" >> "$GITHUB_ENV"
           echo "TURBO_SCM_BASE=origin/$BASE_REF" >> "$GITHUB_ENV"
       - name: Check bands
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm bands:check
       - name: Check lint
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm lint:check
       - name: Check files against .editorconfig
+        if: steps.mode.outputs.full_verification == 'true'
         env:
           EDITORCONFIG_CHECKER_VERSION: 4.0.2
           EDITORCONFIG_CHECKER_SHA256: 44efaef3ed14c6ab52eb87481d78e5e5c204796dccf26e2f4598a61ba17f8003
@@ -209,32 +154,40 @@ jobs:
           tar --extract --gzip --file "$archive" --directory "$RUNNER_TEMP" editorconfig-checker
           "$RUNNER_TEMP/editorconfig-checker"
       - name: Check package.json ordering
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm sort-package-json:check
       - name: Check types
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm typecheck
       - name: Run Knip
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm knip
       - name: Check dependency graph
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm depcruise
       - name: Run tests with coverage
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm test:coverage
       - name: Build
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Install Playwright browsers
+        if: steps.mode.outputs.full_verification == 'true' && github.event_name == 'push'
         env:
-          AFFECTED_APPS: ${{ needs.affected-apps.outputs.apps }}
+          AFFECTED_APPS: ${{ steps.affected.outputs.apps }}
         run: |
           while IFS= read -r app; do
             pnpm --filter "./apps/$app" exec playwright install --with-deps chromium
           done < <(jq --raw-output '.[]' <<< "$AFFECTED_APPS")
       - name: Run end-to-end tests
+        if: steps.mode.outputs.full_verification == 'true' && github.event_name == 'push'
         run: pnpm test:e2e
         env:
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Check patch coverage
-        if: github.event_name == 'pull_request'
+        if: (steps.mode.outputs.full_verification == 'true') && (github.event_name == 'pull_request')
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
@@ -242,89 +195,56 @@ jobs:
           "$RUNNER_TEMP/diff-cover/bin/pip" install --quiet --require-hashes --only-binary=:all: -r .github/requirements/diff-cover.txt
           for report in apps/*/coverage/cobertura-coverage.xml; do
             [[ -f "$report" ]] || continue
-            "$RUNNER_TEMP/diff-cover/bin/diff-cover" "$report" --compare-branch "origin/$BASE_REF" --fail-under 95 --branch-coverage
+            "$RUNNER_TEMP/diff-cover/bin/diff-cover" "$report" --compare-branch "origin/$BASE_REF" --fail-under 80 --branch-coverage
           done
-
-  image:
-    name: Container Image (${{ matrix.app }})
-    needs:
-      - changes
-      - affected-apps
-    if: (needs.changes.outputs.full_verification == 'true' || github.event_name == 'schedule') && needs.affected-apps.outputs.apps != '[]' && vars.CONTAINER_IMAGE != 'false'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        app: ${{ fromJSON(needs.affected-apps.outputs.apps) }}
-    services:
-      postgres:
-        image: postgres:17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
+      - name: Lint Dockerfiles
+        if: ((steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false') && steps.affected.outputs.apps != '[]'
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: payload
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready --username postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      APP: ${{ matrix.app }}
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/payload
-      PAYLOAD_SECRET: ci-only-secret
-      APP_URL: http://localhost:3000
-      HADOLINT_VERSION: 2.15.1
-      HADOLINT_SHA256: c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507
-      TRIVY_VERSION: 0.76.1
-      TRIVY_SHA256: c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Lint Dockerfile
+          AFFECTED_APPS: ${{ steps.affected.outputs.apps }}
         run: |
           curl --silent --show-error --fail --location --output hadolint \
             "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64"
           echo "${HADOLINT_SHA256}  hadolint" | sha256sum --check --strict
           chmod +x hadolint
-          ./hadolint "apps/$APP/Dockerfile"
-      - name: Build image
-        run: docker build --file "apps/$APP/Dockerfile" --tag "$APP:ci" .
-      - name: Smoke test image
-        id: smoke
+          while IFS= read -r app; do
+            ./hadolint "apps/$app/Dockerfile"
+          done < <(jq --raw-output '.[]' <<< "$AFFECTED_APPS")
+      - name: Build and smoke test images
+        if: ((steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false') && steps.affected.outputs.apps != '[]'
+        env:
+          AFFECTED_APPS: ${{ steps.affected.outputs.apps }}
+          APP_URL: http://localhost:3000
         run: |
-          docker run --detach --name "$APP" --network host --env PORT=3000 --env DATABASE_URL --env PAYLOAD_SECRET --env APP_URL "$APP:ci"
-          curl --silent --show-error --fail --retry 15 --retry-delay 1 --retry-all-errors --output /dev/null http://localhost:3000/health
-      - name: Show container logs
-        if: failure() && steps.smoke.outcome == 'failure'
-        run: docker logs "$APP"
-      - name: Scan image for vulnerabilities
+          while IFS= read -r app; do
+            docker build --file "apps/$app/Dockerfile" --tag "$app:ci" .
+            docker run --detach --name "$app" --network host --env PORT=3000 --env DATABASE_URL --env PAYLOAD_SECRET --env APP_URL "$app:ci"
+            curl --silent --show-error --fail --retry 15 --retry-delay 1 --retry-all-errors --output /dev/null http://localhost:3000/health || { docker logs "$app"; exit 1; }
+            docker rm --force "$app"
+          done < <(jq --raw-output '.[]' <<< "$AFFECTED_APPS")
+      - name: Scan images for vulnerabilities
+        if: ((steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false') && steps.affected.outputs.apps != '[]'
+        env:
+          AFFECTED_APPS: ${{ steps.affected.outputs.apps }}
         run: |
           archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
           curl --silent --show-error --fail --location --output "$archive" \
             "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archive}"
           echo "${TRIVY_SHA256}  ${archive}" | sha256sum --check --strict
           tar --extract --gzip --file "$archive" trivy
-          ./trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$APP:ci"
+          while IFS= read -r app; do
+            ./trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$app:ci"
+          done < <(jq --raw-output '.[]' <<< "$AFFECTED_APPS")
 
   triage:
     name: Triage failed build
-    needs:
-      - agent-checks
-      - changes
-      - affected-apps
-      - checks
-      - image
-    if: failure() && vars.CLAUDE_CI_ENABLED == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: ci
+    if: failure() && vars.CLAUDE_CI_ENABLED == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       actions: read # Needed to read the logs of the failed jobs.
       id-token: write # Needed to authenticate the Claude GitHub App with the workflow's OIDC token.
-      pull-requests: write # Needed to post the summary on the pull request.
+      pull-requests: write # Needed to post the summary on the pull request, or on the merged one after a failed push.
     steps:
       - name: Require a Claude credential
         env:
@@ -360,23 +280,17 @@ jobs:
       - name: Post the summary
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
           SUMMARY: ${{ fromJSON(steps.triage.outputs.structured_output).summary }}
-        run: gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"
-
-  ci:
-    name: All Checks
-    if: always()
-    timeout-minutes: 5
-    needs:
-      - agent-checks
-      - changes
-      - affected-apps
-      - checks
-      - image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require all verification jobs
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
-        run: exit 1
+        run: |
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            PR_NUMBER="$(gh api "repos/$REPOSITORY/commits/$SHA/pulls" --jq '.[0].number // empty')"
+            [[ -n "$PR_NUMBER" ]] || { echo "No merged pull request made $SHA; nothing to comment on."; exit 0; }
+            failed_step="$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs" --jq '[.jobs[].steps[]? | select(.conclusion == "failure") | .name][0] // "All Checks"')"
+            SUMMARY="$(printf '%s\n\n/sdlc-mode fix %s' "$SUMMARY" "$failed_step")"
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"

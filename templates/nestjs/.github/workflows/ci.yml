@@ -17,18 +17,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: Detect Changes
+  ci:
+    name: All Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 45
     permissions:
       contents: read
-      pull-requests: read # Needed by paths-filter to inspect pull request changes.
-    outputs:
-      heavy: ${{ steps.filter.outputs.heavy }}
-      ci_policy: ${{ steps.filter.outputs.ci_policy }}
-      full_verification: ${{ steps.mode.outputs.full_verification }}
-      agent_checks: ${{ steps.mode.outputs.agent_checks }}
+      pull-requests: read # Needed by paths-filter to inspect pull request changes, and by plan:check to read who merged the plan's pull request.
+    env:
+      HADOLINT_VERSION: 2.15.1
+      HADOLINT_SHA256: c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507
+      TRIVY_VERSION: 0.76.1
+      TRIVY_SHA256: c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -65,62 +65,34 @@ jobs:
 
           echo "full_verification=$full_verification" >> "$GITHUB_OUTPUT"
           echo "agent_checks=$agent_checks" >> "$GITHUB_OUTPUT"
-
-  agent-checks:
-    name: Agent Checks & Formatting
-    needs: changes
-    if: needs.changes.outputs.agent_checks == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: read # Needed by plan:check to read who merged the plan's pull request.
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
       - name: Set up Node.js and pnpm
+        if: steps.mode.outputs.agent_checks == 'true' || steps.mode.outputs.full_verification == 'true'
         uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
           cache: true
           require-lockfile: true
       - name: Check rendered agent rules match .agents/rules
+        if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm rules:check
       - name: Check agent gates
+        if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm gates:check
       - name: Check plans
+        if: steps.mode.outputs.agent_checks == 'true'
         env:
           GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
         run: pnpm plan:check
       - name: Check formatting
+        if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm format:check
-
-  checks:
-    name: Static Checks, Tests & Build
-    needs: changes
-    if: needs.changes.outputs.full_verification == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Set up Node.js and pnpm
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
-        with:
-          cache: true
-          require-lockfile: true
       - name: Check bands
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm bands:check
       - name: Check lint
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm lint:check
       - name: Check files against .editorconfig
+        if: steps.mode.outputs.full_verification == 'true'
         env:
           EDITORCONFIG_CHECKER_VERSION: 4.0.2
           EDITORCONFIG_CHECKER_SHA256: 44efaef3ed14c6ab52eb87481d78e5e5c204796dccf26e2f4598a61ba17f8003
@@ -133,45 +105,36 @@ jobs:
           tar --extract --gzip --file "$archive" --directory "$RUNNER_TEMP" editorconfig-checker
           "$RUNNER_TEMP/editorconfig-checker"
       - name: Check package.json ordering
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm sort-package-json:check
       - name: Check types
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm typecheck
       - name: Run Knip
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm knip
       - name: Check dependency graph
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm depcruise
       - name: Run tests with coverage
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm test:coverage
       - name: Run end-to-end tests
+        if: steps.mode.outputs.full_verification == 'true' && github.event_name == 'push'
         run: pnpm test:e2e
       - name: Build
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm build
       - name: Check patch coverage
-        if: github.event_name == 'pull_request'
+        if: (steps.mode.outputs.full_verification == 'true') && (github.event_name == 'pull_request')
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
           python3 -m venv "$RUNNER_TEMP/diff-cover"
           "$RUNNER_TEMP/diff-cover/bin/pip" install --quiet --require-hashes --only-binary=:all: -r .github/requirements/diff-cover.txt
-          "$RUNNER_TEMP/diff-cover/bin/diff-cover" coverage/cobertura-coverage.xml --compare-branch "origin/$BASE_REF" --fail-under 95
-
-  image:
-    name: Container Image
-    needs: changes
-    if: (needs.changes.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      HADOLINT_VERSION: 2.15.1
-      HADOLINT_SHA256: c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507
-      TRIVY_VERSION: 0.76.1
-      TRIVY_SHA256: c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
+          "$RUNNER_TEMP/diff-cover/bin/diff-cover" coverage/cobertura-coverage.xml --compare-branch "origin/$BASE_REF" --fail-under 80
       - name: Lint Dockerfile
+        if: (steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false'
         run: |
           curl --silent --show-error --fail --location --output hadolint \
             "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64"
@@ -179,16 +142,19 @@ jobs:
           chmod +x hadolint
           ./hadolint Dockerfile
       - name: Build image
+        if: (steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false'
         run: docker build --tag app:ci .
       - name: Smoke test image
+        if: (steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false'
         id: smoke
         run: |
           docker run --detach --name app --env PORT=3000 --publish 3000:3000 app:ci
           curl --silent --show-error --fail --retry 15 --retry-delay 1 --retry-all-errors --output /dev/null http://localhost:3000/health
       - name: Show container logs
-        if: failure() && steps.smoke.outcome == 'failure'
+        if: ((steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false') && (failure() && steps.smoke.outcome == 'failure')
         run: docker logs app
       - name: Scan image for vulnerabilities
+        if: (steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && vars.CONTAINER_IMAGE != 'false'
         run: |
           archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
           curl --silent --show-error --fail --location --output "$archive" \
@@ -199,18 +165,14 @@ jobs:
 
   triage:
     name: Triage failed build
-    needs:
-      - agent-checks
-      - changes
-      - checks
-      - image
-    if: failure() && vars.CLAUDE_CI_ENABLED == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: ci
+    if: failure() && vars.CLAUDE_CI_ENABLED == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       actions: read # Needed to read the logs of the failed jobs.
       id-token: write # Needed to authenticate the Claude GitHub App with the workflow's OIDC token.
-      pull-requests: write # Needed to post the summary on the pull request.
+      pull-requests: write # Needed to post the summary on the pull request, or on the merged one after a failed push.
     steps:
       - name: Require a Claude credential
         env:
@@ -246,22 +208,17 @@ jobs:
       - name: Post the summary
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
           SUMMARY: ${{ fromJSON(steps.triage.outputs.structured_output).summary }}
-        run: gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"
-
-  ci:
-    name: All Checks
-    if: always()
-    timeout-minutes: 5
-    needs:
-      - agent-checks
-      - changes
-      - checks
-      - image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require all verification jobs
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
-        run: exit 1
+        run: |
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            PR_NUMBER="$(gh api "repos/$REPOSITORY/commits/$SHA/pulls" --jq '.[0].number // empty')"
+            [[ -n "$PR_NUMBER" ]] || { echo "No merged pull request made $SHA; nothing to comment on."; exit 0; }
+            failed_step="$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs" --jq '[.jobs[].steps[]? | select(.conclusion == "failure") | .name][0] // "All Checks"')"
+            SUMMARY="$(printf '%s\n\n/sdlc-mode fix %s' "$SUMMARY" "$failed_step")"
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"

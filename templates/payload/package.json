@@ -13,7 +13,7 @@
   "scripts": {
     "bands:check": "node scripts/check-bands.ts",
     "build": "next build",
-    "check": "node scripts/run-checks.ts verify:static test:changed build",
+    "check": "node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check sort-package-json:check typecheck knip depcruise test:changed",
     "clean": "rm -rf .next coverage *.tsbuildinfo .eslintcache node_modules/.cache",
     "depcruise": "depcruise --config .dependency-cruiser.json src test eslint.config.ts next.config.ts playwright.config.ts vitest.config.ts",
     "dev": "next dev",

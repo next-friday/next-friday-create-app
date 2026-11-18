@@ -154,7 +154,7 @@ function isFullVerificationPath(changedPath: string, filters: Map<string, PathFi
 
     if (filter === undefined) {
       throw new Error(
-        `${filterFilePath}: has no "${name}" key, which the "Detect Changes" job reads; restore the key`,
+        `${filterFilePath}: has no "${name}" key, which the "All Checks" job reads; restore the key`,
       );
     }
 
@@ -300,7 +300,7 @@ if (selfTestFailures.length > 0) {
   }
 } else {
   process.stderr.write(
-    `${filterFilePath} is missing; run this from the repository root, where CI's "Detect Changes" job finds it.\n`,
+    `${filterFilePath} is missing; run this from the repository root, where CI's "All Checks" job finds it.\n`,
   );
 
   process.exitCode = 2;

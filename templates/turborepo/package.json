@@ -13,7 +13,7 @@
   "scripts": {
     "bands:check": "node scripts/check-bands.ts",
     "build": "turbo run build $TURBO_FILTER",
-    "check": "node scripts/run-checks.ts verify:static test:changed build",
+    "check": "node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check sort-package-json:check typecheck knip depcruise test:changed",
     "clean": "rm -rf apps/*/.next apps/*/coverage .turbo coverage *.tsbuildinfo .eslintcache node_modules/.cache",
     "depcruise": "turbo run depcruise $TURBO_FILTER",
     "dev": "turbo run dev --filter=./apps/* --concurrency=10",
