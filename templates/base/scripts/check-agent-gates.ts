@@ -511,10 +511,10 @@ const cases: GateCase[] = [
     name: "record: the session of a Claude Code hook input",
     expectedExit: 0,
     input: {
+      session_id: "claude-session",
       tool_input: {
         command: statusCommand,
       },
-      session_id: "claude-session",
     },
   },
   {
