@@ -44,6 +44,10 @@ export function parseVersion(input: string): string {
   return `${major}.${minor}.${patch}`;
 }
 EOF
+mkdir -p src/formats
+for format in npm pip cargo gem maven; do
+  sed "s/parseVersion/parse${format^}Version/" src/version.ts > "src/formats/$format.ts"
+done
 mkdir -p "$(dirname 'test/version.test.ts')"
 cat > 'test/version.test.ts' << 'EOF'
 import {expect, it} from "vitest";
