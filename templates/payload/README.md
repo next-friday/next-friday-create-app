@@ -39,12 +39,14 @@ Follow [SETUP.md](SETUP.md) in order. It sets up the repository, the reviews, an
 | `pnpm generate:importmap` | Regenerate the admin import map after adding a custom component                                                   |
 | `pnpm migrate:create`     | Create a migration from collection changes, for example `pnpm migrate:create add-posts`                           |
 | `pnpm migrate`            | Apply pending migrations to the database in `DATABASE_URL`                                                        |
-| `pnpm check`              | Run the static checks, the unit tests for changed code, and the production build (the `pre-push` hook)            |
+| `pnpm check`              | Run the static checks other than the format check, and the unit tests for changed code (the `pre-push` hook)            |
 | `pnpm verify`             | Run the static checks, all unit tests with coverage, and the production build                                     |
 
 `pnpm build` copies `.env` into `.next/standalone`, where every secret sits in plain text. Keep that folder out of images and archives.
 
-CI also runs the build, the end-to-end tests, the container image scan, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`.
+CI also runs the build, the container image scan, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`.
+
+A commit runs gitleaks, lint-staged, and commitlint. A push runs `pnpm check`. A pull request runs the static checks, the unit tests with coverage, the build, patch coverage, and the scans above. A push to `main`, after the merge, also runs the end-to-end tests.
 
 ## Container
 

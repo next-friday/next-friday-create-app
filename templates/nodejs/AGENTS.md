@@ -10,8 +10,9 @@ TypeScript HTTP service on `node:http`, without a framework, on pnpm and Node.js
 | Run the build                                 | `pnpm start`, which builds first                    | `$ tsc -p tsconfig.build.json`, then nothing                                                         |
 | One test                                      | `pnpm vitest run src/port.test.ts -t "<test name>"` | `Tests  1 passed \| 9 skipped (10)`                                                                  |
 | Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                | `Tests  15 passed (15)`                                                                              |
+| What `pre-commit` runs after gitleaks | `pnpm exec lint-staged` | `✔ Done running tasks for staged files!` |
 | What `pre-push` runs for a push of code       | `pnpm check`                                        | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
-| Every check                                   | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
+| Every check, which a pull request runs in CI | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json`                                             |
 | Render rules after a change                   | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                                                             |
 | Compare the harness with a create-app version | `pnpm harness:check <version>`                      | ends with `none differs.`                                                                            |
 

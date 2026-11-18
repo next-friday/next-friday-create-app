@@ -33,11 +33,11 @@ Run the narrowest check that covers the change while you work. Git hooks run the
 | `pre-commit`       | blocks commits on `main` except the first commit of a new repository, gitleaks on staged changes, and lint-staged on staged files                                                                                                                                                                 |
 | `commit-msg`       | commitlint                                                                                                                                                                                                                                                                                        |
 | `pre-merge-commit` | blocks merge commits on `main`                                                                                                                                                                                                                                                                    |
-| `pre-push`         | blocks pushes to `main` except the push that creates it, then by what the push changes: only documents, `pnpm rules:check`, `pnpm plan:check`, and `pnpm format:check`; anything else, `pnpm check`, which is the static checks, the unit tests related to your changes, and the production build |
+| `pre-push`         | blocks pushes to `main` except the push that creates it, then by what the push changes: only documents, `pnpm rules:check` and `pnpm plan:check`; anything else, `pnpm check`, which is the static checks other than the format check, and the unit tests related to your changes |
 
 - **Scans.** CI also runs coverage, the build, the container image, and the secret, SAST, OSV, CodeQL, dependency-review, and OpenSSF Scorecard scans. CodeQL, dependency-review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Dependabot and OSV-Scanner report vulnerable dependencies.
-- **End-to-end tests.** Run `pnpm test:e2e` when you change endpoints. CI runs it on every pull request that is ready for review and changes code.
-- **Coverage.** CI requires 95% line coverage on changed lines in `src/`, except `main.ts` and `*.module.ts`, which hold only wiring. Keep logic out of them, as `src/port.ts` does for `main.ts`. CI does not gate branch coverage, because NestJS decorators emit metadata branches that never run.
+- **End-to-end tests.** Run `pnpm test:e2e` when you change endpoints. CI runs it on a push to `main`, after the merge, and not on a pull request.
+- **Coverage.** CI requires 80% line coverage on changed lines in `src/`, except `main.ts` and `*.module.ts`, which hold only wiring. Keep logic out of them, as `src/port.ts` does for `main.ts`. CI does not gate branch coverage, because NestJS decorators emit metadata branches that never run.
 
 Run `pnpm verify` for repository changes.
 

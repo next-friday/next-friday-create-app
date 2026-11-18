@@ -39,10 +39,12 @@ Follow [SETUP.md](SETUP.md) in order. It sets up the repository, the reviews, an
 | `pnpm generate:importmap` | Regenerate the admin import map after adding a custom component                                        |
 | `pnpm migrate:create`     | Create a migration from collection changes, for example `pnpm migrate:create add-posts`                |
 | `pnpm migrate`            | Apply pending migrations to the database in `DATABASE_URL`                                             |
-| `pnpm check`              | Run the static checks, the unit tests for changed code, and the production build (the `pre-push` hook) |
+| `pnpm check`              | Run the static checks other than the format check, and the unit tests for changed code (the `pre-push` hook) |
 | `pnpm verify`             | Run the static checks, all unit tests with coverage, and the production build                          |
 
-CI also runs the build, the end-to-end tests, the container image scans, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Pull requests run Turborepo with `--affected` against the base branch, so only packages that changed are typed, tested, built, and scanned. Pushes to `main` run every app. The weekly schedule rebuilds and scans every container image and runs nothing else. Patch coverage runs only for apps that produced a coverage file.
+CI also runs the build, the container image scans, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Pull requests run Turborepo with `--affected` against the base branch, so only packages that changed are typed, tested, built, and scanned. Pushes to `main` run every app. The weekly schedule rebuilds and scans every container image and runs nothing else. Patch coverage runs only for apps that produced a coverage file.
+
+A commit runs gitleaks, lint-staged, and commitlint. A push runs `pnpm check`. A pull request runs the static checks, the unit tests with coverage, the build, patch coverage, and the scans above. A push to `main`, after the merge, also runs the end-to-end tests.
 
 To reuse task output across CI runs, create a Vercel team, add the repository variable `TURBO_TEAM`, and follow [Turborepo on GitHub Actions](https://turborepo.dev/docs/guides/ci-vendors/github-actions) to allow OIDC. The workflow exchanges GitHub OIDC for a short-lived Remote Cache token. If OIDC is unavailable, set the `TURBO_TOKEN` secret instead. Leave both unset to run without a Remote Cache.
 
