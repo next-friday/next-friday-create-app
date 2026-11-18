@@ -28,7 +28,7 @@ project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
 path=$(jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // .file_path // empty' <<< "$input")
 [[ -n $path && $path =~ $test_path_pattern ]] || allow
 branch=$(git -C "$project" symbolic-ref --quiet --short HEAD 2> /dev/null) || branch=
-[[ $branch == fix/* ]] || allow
+[[ $branch == fix/* || $branch == small/fix-* ]] || allow
 default_branch=$(git -C "$project" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2> /dev/null) || default_branch=origin/main
 git -C "$project" rev-parse --verify --quiet "$default_branch" > /dev/null 2>&1 || default_branch=main
 merge_base=$(git -C "$project" merge-base HEAD "$default_branch" 2> /dev/null) || allow

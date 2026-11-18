@@ -8,7 +8,7 @@ alwaysApply: false
 
 Write a workflow under `.github/` as the Next.js guide does ([`vercel/next.js` `.github/AGENTS.md`](https://github.com/vercel/next.js/blob/canary/.github/AGENTS.md)):
 
-- Trigger on `pull_request`, not `pull_request_target`. The one exception is a workflow that checks out no code, such as `pr-triage.yml`, which labels fork pull requests.
+- Trigger on `pull_request`, not `pull_request_target`. The one exception is a workflow that checks out no code.
 - Set `permissions: {}` at the workflow level, and grant each job only what it needs, with a comment that says why.
 - Pin each third-party action to a full commit SHA, with its tag as a trailing comment.
 - Pass `persist-credentials: false` to `actions/checkout` unless the job pushes.
