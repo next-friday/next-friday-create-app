@@ -17,9 +17,11 @@ ci_policy:
   - "!.claude/**/*.md"
 
 agent_docs:
-  - "intent/**"
   - ".agents/**/*.md"
   - ".claude/**/*.md"
   - "AGENTS.md"
   - "REVIEW.md"
   - "apps/*/AGENTS.md"
+
+intent_docs:
+  - "intent/**"
