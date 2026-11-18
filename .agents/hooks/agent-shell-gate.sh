@@ -2,12 +2,10 @@
 set -uo pipefail
 
 allow() {
-  printf '%s\n' '{"permission":"allow"}'
   exit 0
 }
 
 block() {
-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
   printf 'agent-shell-gate: %s\n' "$1" >&2
   exit 2
 }
@@ -15,12 +13,12 @@ block() {
 trap 'block ".agents/hooks/agent-shell-gate.sh failed. Stop and report this error to the user; agents may not edit the gate."' ERR
 command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
 input=$(cat)
-command=$(jq -r '.command // .tool_input.command // empty' <<< "$input")
+command=$(jq -r '.tool_input.command // empty' <<< "$input")
 [[ -n $command ]] || allow
 
 separator=$'\x1f'
 redirect=$'\x1e'
-protected_names='(\.husky|\.agents|\.cursor|\.claude/rules|\.claude/settings(\.local)?\.json|\.git/hooks|\.git/config(\.worktree)?|\.lintstagedrc\.json|\.gitleaks\.toml|\.commitlintrc\.json|\.prettierrc\.json|prettier\.config\.ts|eslint\.config\.ts|scripts/(sync-agent-rules|check-agent-gates)\.ts)'
+protected_names='(\.husky|\.agents|\.claude/rules|\.claude/settings(\.local)?\.json|\.git/hooks|\.git/config(\.worktree)?|\.lintstagedrc\.json|\.gitleaks\.toml|\.commitlintrc\.json|\.prettierrc\.json|prettier\.config\.ts|eslint\.config\.ts|scripts/(sync-agent-rules|check-agent-gates)\.ts)'
 protected="(^|[/=])$protected_names(/|$)"
 policy="Hooks and agent policy files are company policy; stop and ask the user."
 human_gate="A code owner approves a pull request and a person merges it. Do not approve or merge; report that the pull request waits on that review."

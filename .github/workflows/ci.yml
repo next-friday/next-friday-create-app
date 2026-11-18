@@ -100,7 +100,7 @@ jobs:
           persist-credentials: false
       - name: Set up pnpm
         uses: ./.github/actions/setup-pnpm
-      - name: Check Cursor rules match .agents/rules
+      - name: Check Claude Code rules match .agents/rules
         run: pnpm rules:check
       - name: Check agent gates
         run: pnpm gates:check

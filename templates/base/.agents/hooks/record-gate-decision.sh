@@ -6,9 +6,9 @@
 # name, which the release record needs.
 record_gate_decision() {
   local hook=$1 decision=$2 reason=$3 input=$4 approval=${5:-} project log session
-  project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
+  project=${CLAUDE_PROJECT_DIR:-$PWD}
   log=${AGENT_GATE_LOG:-$project/.agents/logs/gate-decisions.jsonl}
-  session=$(jq -r '.session_id // .conversation_id // empty' <<< "$input" 2> /dev/null) || session=
+  session=$(jq -r '.session_id // empty' <<< "$input" 2> /dev/null) || session=
   {
     mkdir -p "${log%/*}" \
       && jq -cn \

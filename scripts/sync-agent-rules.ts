@@ -38,21 +38,6 @@ function renderClaudeRule(name: string, rule: RuleConfig, body: string): string 
   return `---\npaths:\n${paths}\n---\n\n${body}`;
 }
 
-/**
- * Render the Cursor rule with the full body, because Cursor does not inline referenced files.
- * @param rule Rule configuration.
- * @param body Shared rule body.
- * @returns The `.cursor/rules` file content.
- */
-function renderCursorRule(rule: RuleConfig, body: string): string {
-  const scope =
-    rule.globs === undefined
-      ? "alwaysApply: true"
-      : `globs: "${rule.globs.join(",")}"\nalwaysApply: false`;
-
-  return `---\ndescription: "${rule.description}"\n${scope}\n---\n\n${body}`;
-}
-
 const config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, RuleConfig>;
 const configNames = Object.keys(config);
 const sourceNames = listNames(sourceDirectory, ".md");
@@ -66,7 +51,6 @@ if (missingConfig.length > 0 || missingSource.length > 0) {
 }
 
 const claudeDirectory = ".claude/rules";
-const cursorDirectory = ".cursor/rules";
 const expected = new Map<string, string>();
 
 for (const name of configNames) {
@@ -79,11 +63,10 @@ for (const name of configNames) {
   const body = readFileSync(path.join(sourceDirectory, `${name}.md`), "utf8");
 
   expected.set(path.join(claudeDirectory, `${name}.md`), renderClaudeRule(name, rule, body));
-  expected.set(path.join(cursorDirectory, `${name}.mdc`), renderCursorRule(rule, body));
 }
 
 const sharedFiles: Record<string, string[]> = {
-  ".agents/mcp.json": [".mcp.json", ".cursor/mcp.json"],
+  ".agents/mcp.json": [".mcp.json"],
   ".agents/review.md": ["REVIEW.md"],
 };
 
@@ -99,7 +82,6 @@ for (const [source, targets] of sharedSources) {
 
 const orphans = [
   ...listNames(claudeDirectory, ".md").map(name => path.join(claudeDirectory, `${name}.md`)),
-  ...listNames(cursorDirectory, ".mdc").map(name => path.join(cursorDirectory, `${name}.mdc`)),
   ...Object.values(sharedFiles)
     .flat()
     .filter(file => existsSync(file)),

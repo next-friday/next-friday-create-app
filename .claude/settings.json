@@ -15,7 +15,6 @@
     "deny": [
       "Edit(./.agents/rules/**)",
       "Edit(./.claude/rules/**)",
-      "Edit(./.cursor/rules/**)",
       "Edit(./.commitlintrc.json)",
       "Edit(./.prettierrc.json)",
       "Edit(./prettier.config.ts)",
@@ -24,8 +23,6 @@
       "Edit(./.agents/hooks/**)",
       "Edit(./.claude/settings.json)",
       "Edit(./.claude/settings.local.json)",
-      "Edit(./.cursor/hooks.json)",
-      "Edit(./.cursor/hooks/**)",
       "Edit(./scripts/sync-agent-rules.ts)",
       "Edit(./scripts/check-agent-gates.ts)",
       "Edit(./.husky/**)",

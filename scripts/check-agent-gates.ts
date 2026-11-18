@@ -5,7 +5,6 @@ import {tmpdir} from "node:os";
 
 type GateCase = {
   expectedExit: 0 | 2;
-  expectedPermission?: "allow";
   gate: string;
   input: Record<string, unknown>;
   name: string;
@@ -25,11 +24,9 @@ for (const name of repositoryVariables) {
 }
 
 const shellGate = ".agents/hooks/agent-shell-gate.sh";
-const constitutionGate = ".cursor/hooks/agent-constitution-gate.sh";
 const mcpGate = ".agents/hooks/agent-mcp-gate.sh";
 const productionGate = ".agents/hooks/agent-production-gate.sh";
 const testEditGate = ".agents/hooks/agent-test-edit-gate.sh";
-const sourceFile = "src/example.ts";
 
 const blockedCommands = [
   "printf 'exit 0' > .husky/pre-commit",
@@ -206,7 +203,7 @@ const reviewWriteCases = [
     },
   },
   {
-    name: "APPROVE in a JSON string, as Cursor sends it",
+    name: "APPROVE in a JSON string",
     toolInput: '{"method":"create","event":"APPROVE"}',
     expectedExit: 2,
   },
@@ -238,27 +235,6 @@ const reviewWriteCases = [
     toolInput: "{}",
     expectedExit: 0,
   },
-];
-
-const protectedPaths = [
-  ".agents/rules/code-comments.md",
-  ".agents/rules.json",
-  ".agents/hooks/agent-shell-gate.sh",
-  ".claude/rules/code-comments.md",
-  ".claude/settings.json",
-  ".cursor/rules/code-comments.mdc",
-  ".cursor/hooks.json",
-  ".cursor/hooks/agent-constitution-gate.sh",
-  "scripts/sync-agent-rules.ts",
-  "eslint.config.ts",
-  ".husky/pre-commit",
-  ".lintstagedrc.json",
-  ".gitleaks.toml",
-  ".git/hooks/pre-commit",
-  ".git/config",
-  ".git/config.worktree",
-  ".claude/settings.local.json",
-  "src/../.husky/pre-commit",
 ];
 
 /**
@@ -314,62 +290,44 @@ const testFile = `src/${testFileName}`;
 const outsideRepository = mkdtempSync(path.join(tmpdir(), "agent-gates-outside-"));
 
 const cases: GateCase[] = [
-  ...blockedCommands.flatMap(command => [
-    {
-      gate: shellGate,
-      input: {
+  ...blockedCommands.map(command => ({
+    gate: shellGate,
+    input: {
+      tool_input: {
         command,
       },
-      expectedExit: 2 as const,
-      name: `Cursor shell: ${command}`,
     },
-    {
-      gate: shellGate,
-      input: {
-        tool_input: {
-          command,
-        },
-      },
-      expectedExit: 2 as const,
-      name: `Claude Bash: ${command}`,
-    },
-  ]),
+    expectedExit: 2 as const,
+    name: `Claude Bash: ${command}`,
+  })),
   ...allowedCommands.map(command => ({
     gate: shellGate,
     input: {
-      command,
-    },
-    expectedExit: 0 as const,
-    expectedPermission: "allow" as const,
-    name: `shell: ${command}`,
-  })),
-  ...publishCommands.flatMap(command => [
-    {
-      gate: productionGate,
-      input: {
+      tool_input: {
         command,
       },
-      expectedExit: 2 as const,
-      name: `Cursor publish: ${command}`,
     },
-    {
-      gate: productionGate,
-      input: {
-        tool_input: {
-          command,
-        },
+    expectedExit: 0 as const,
+    name: `shell: ${command}`,
+  })),
+  ...publishCommands.map(command => ({
+    gate: productionGate,
+    input: {
+      tool_input: {
+        command,
       },
-      expectedExit: 2 as const,
-      name: `Claude publish: ${command}`,
     },
-  ]),
+    expectedExit: 2 as const,
+    name: `Claude publish: ${command}`,
+  })),
   ...nonPublishCommands.map(command => ({
     gate: productionGate,
     input: {
-      command,
+      tool_input: {
+        command,
+      },
     },
     expectedExit: 0 as const,
-    expectedPermission: "allow" as const,
     name: `publish gate: ${command}`,
   })),
   ...mcpTools.blocked.map(tool => ({
@@ -388,18 +346,7 @@ const cases: GateCase[] = [
       tool_input: "{}",
     },
     expectedExit: 0 as const,
-    expectedPermission: "allow" as const,
     name: `MCP: ${tool}`,
-  })),
-  ...protectedPaths.map(file => ({
-    gate: constitutionGate,
-    input: {
-      tool_input: {
-        file_path: file,
-      },
-    },
-    expectedExit: 2 as const,
-    name: `constitution: ${file}`,
   })),
   ...reviewWriteCases.map(({expectedExit, name, toolInput}) => ({
     gate: mcpGate,
@@ -410,16 +357,6 @@ const cases: GateCase[] = [
     expectedExit: expectedExit as 0 | 2,
     name: `MCP: pull_request_review_write with ${name}`,
   })),
-  {
-    gate: constitutionGate,
-    name: "constitution: src file",
-    expectedExit: 0,
-    input: {
-      tool_input: {
-        file_path: sourceFile,
-      },
-    },
-  },
   ...[
     {
       projectDirectory: fixBranchWithTest,
@@ -459,17 +396,11 @@ const failures = cases.filter(gateCase => {
     env: {
       ...childEnvironment,
       CLAUDE_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
-      CURSOR_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
     },
     input: JSON.stringify(gateCase.input),
   });
 
-  const isPermissionWrong =
-    gateCase.expectedPermission !== undefined &&
-    (JSON.parse(result.stdout.toString()) as {permission?: string}).permission !==
-      gateCase.expectedPermission;
-
-  return result.status !== gateCase.expectedExit || isPermissionWrong;
+  return result.status !== gateCase.expectedExit;
 });
 
 for (const directory of [
@@ -485,14 +416,9 @@ for (const directory of [
 }
 
 if (failures.length > 0) {
-  const failureLines = failures.map(gateCase => {
-    const permission =
-      gateCase.expectedPermission === undefined
-        ? ""
-        : ` and permission ${gateCase.expectedPermission}`;
-
-    return `- ${gateCase.name} (expected exit ${gateCase.expectedExit}${permission})`;
-  });
+  const failureLines = failures.map(
+    gateCase => `- ${gateCase.name} (expected exit ${gateCase.expectedExit})`,
+  );
 
   process.stderr.write(`Agent gate checks failed:\n${failureLines.join("\n")}\n`);
   process.exitCode = 1;

@@ -2,12 +2,10 @@
 set -uo pipefail
 
 allow() {
-  printf '%s\n' '{"permission":"allow"}'
   exit 0
 }
 
 block() {
-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
   printf 'agent-mcp-gate: %s\n' "$1" >&2
   exit 2
 }
