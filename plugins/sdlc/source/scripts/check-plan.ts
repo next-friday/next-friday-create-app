@@ -408,6 +408,30 @@ function findPlanOnlyProblems(planText: string, branchName: string): string[] {
 }
 
 const planPathPattern = /^intent\/[^/]+\/plan\.md$/;
+const recordPathPattern = /^intent\/[^/]+\/(?:intent|spec)\.md$/;
+const loopSpecPath = "intent/a/spec.md";
+
+/**
+ * Find a branch in the SDLC loop that changes code with no plan: work that changes an intent or a spec of a change is in the loop, and its code goes with the plan the engineer accepted.
+ * @param changedPaths The paths the branch changed since it left the default branch.
+ * @returns At most one message.
+ */
+function findLoopPlanProblems(changedPaths: string[]): string[] {
+  const isInLoop = changedPaths.some(changedPath => recordPathPattern.test(changedPath));
+
+  const isChangesCode = changedPaths.some(
+    changedPath => !changedPath.startsWith(`${intentDirectory}/`),
+  );
+
+  const hasPlan = changedPaths.some(changedPath => planPathPattern.test(changedPath));
+
+  return isInLoop && isChangesCode && !hasPlan
+    ? [
+        `this branch changes an ${intentFileName} or a ${specFileName} and files outside ${intentDirectory}/, and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request`,
+      ]
+    : [];
+}
+
 const testDirectoryPattern = /(?:^|\/)(?:tests?|e2e|__tests__)\//;
 const testFilePattern = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const testChangeAcceptedPattern = /^Test change accepted by: @[\dA-Za-z][\w-]*\.$/m;
@@ -965,6 +989,18 @@ const selfTestCases: SelfTestCase[] = [
         ? []
         : ["expected one line for each file"],
   },
+  ...(
+    [
+      [true, ["src/a.ts"]],
+      [true, [loopSpecPath]],
+      [true, [loopSpecPath, "intent/a/plan.md", "src/a.ts"]],
+      [false, [loopSpecPath, "src/a.ts"]],
+    ] as [boolean, string[]][]
+  ).map(([needsNoPlan, changedPaths]) => ({
+    expectedMessagePart: needsNoPlan ? undefined : "adds or changes no",
+    name: `a branch changing ${changedPaths.join(", ")} ${needsNoPlan ? "needs no" : "needs a"} plan`,
+    problems: findLoopPlanProblems(changedPaths),
+  })),
   {
     expectedMessagePart: "fix the code, not the test",
     name: "a fix that edits a test the default branch holds",
@@ -1171,7 +1207,7 @@ function isMergedFile(changes: BranchChanges | undefined, filePath: string): boo
 }
 
 /**
- * Report a fix that edits a test the default branch holds.
+ * Report a branch in the SDLC loop that changes code with no plan, and a fix that edits a test the default branch holds.
  * @returns One line per problem.
  */
 function findBranchRuleLines(): string[] {
@@ -1191,7 +1227,7 @@ function findBranchRuleLines(): string[] {
     .split("\n")
     .filter(modifiedPath => modifiedPath !== "");
 
-  return branchChanges.changedPaths
+  const fixPlanLines = branchChanges.changedPaths
     .filter(changedPath => planPathPattern.test(changedPath) && existsSync(changedPath))
     .filter(planPath => isFixPlanFolder(path.dirname(planPath)))
     .flatMap(planPath =>
@@ -1199,6 +1235,8 @@ function findBranchRuleLines(): string[] {
         message => `${planPath}: ${message}`,
       ),
     );
+
+  return [...findLoopPlanProblems(branchChanges.changedPaths), ...fixPlanLines];
 }
 
 /**

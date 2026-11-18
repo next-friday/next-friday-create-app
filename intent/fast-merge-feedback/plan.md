@@ -18,7 +18,7 @@ Scripts and hooks:
 - `templates/base/.husky/pre-push` (changed, **person**): the document-only path runs `pnpm rules:check && pnpm plan:check`, and its error message loses `pnpm format:check`.
 - `templates/base/.agents/hooks/agent-test-edit-gate.sh`, `templates/base/scripts/check-agent-gates.ts` (**person**): the build first gave a `small/fix-` branch the rule of a `fix/` branch, and the engineer committed it in `9b519cc`; with `small.md` gone, the engineer's second commit takes it out again.
 - `plugins/sdlc/source/hooks/check-push.sh`, `check-push.cases.json`, their rendered copies, their entries in `plugins/sdlc/adapters/hooks.json`, and the paragraph of `plugins/sdlc/README.md` (deleted, **person**): with the hook's entries in `.claude/settings.json` and `.cursor/hooks.json` of the root and of `templates/base`, in one commit, because `pnpm plugin:check` refuses a settings file that names a hook the harness lacks, and a hook the settings lack.
-- `plugins/sdlc/source/scripts/check-plan.ts` (changed), rendered to `templates/base/scripts/check-plan.ts`: `findUnplannedChangeProblems` and its self-tests are deleted, so a branch that changes code needs no plan. The rule on a fix that edits a test the default branch holds stays.
+- `plugins/sdlc/source/scripts/check-plan.ts` (changed), rendered to `templates/base/scripts/check-plan.ts`: `findUnplannedChangeProblems`, which asked a plan of every branch that changes code, gives way to `findLoopPlanProblems`, which asks it only of a branch that also changes an `intent.md` or a `spec.md`. Its four self-tests cover both. The rule on a fix that edits a test the default branch holds stays.
 
 Rules:
 
@@ -88,7 +88,7 @@ Evals and release:
 16, 23: the diff of `SETUP.md`.
 17: the diff of `build.md` step 9 and `fix.md` step 10.
 18, 19, 22: `git ls-files` lists no `small.md`; the diff of `SKILL.md`, `sdlc-help`, `fix.md` step 1, and the `AGENTS.md` files.
-20: `git grep findUnplannedChangeProblems` finds nothing; `node plugins/sdlc/source/scripts/check-plan.ts` passes its self-tests.
+20: the four self-tests of `findLoopPlanProblems`; `node plugins/sdlc/source/scripts/check-plan.ts`.
 21: `git grep check-push` outside `intent/` and `CHANGELOG.md` finds nothing after the engineer's commit; `pnpm plugin:check` passes.
 24: the search of step 7, and review of the five stacks' documents.
 25: `pnpm plugin:sync`, then `pnpm plugin:check` and `pnpm rules:check`.
