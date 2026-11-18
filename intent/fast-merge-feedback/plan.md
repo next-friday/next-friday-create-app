@@ -31,6 +31,7 @@ Playbooks, under `plugins/sdlc/source/skills/sdlc-mode/`, rendered to `plugins/s
 - `playbooks/fix.md` (changed): step 10 runs the end-to-end tests of the part it changed before the push.
 - `playbooks/build.md` (changed): step 9 runs the end-to-end tests of the part it changed before the push, and says so under **Not yet** when the project has none or the session cannot run them.
 - `playbooks/deploy.md` (changed): step 1 names the end-to-end tests among the checks of the commit.
+- `playbooks/review.md` step 5 and `SKILL.md` (changed), and the eval case `merged-with-a-run-in-progress-is-not-done` (renamed to `merged-with-a-run-on-main-in-progress-is-done`): a merged pull request whose checks passed is done, and a run still in progress on the default branch goes on the **Not yet** line.
 
 Documents:
 
@@ -95,3 +96,4 @@ Evals and release:
 26: `pnpm verify` in the root and in a generated project of each stack.
 27: the diff of the eval case. The suites did not run, by the product owner's decision.
 28: `.changeset/fast-merge-feedback.md` holds `minor`; `pnpm verify` runs the changeset check.
+29: the diff of `review.md` step 5 and `SKILL.md`, and the eval case's graders. The case did not run.

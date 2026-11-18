@@ -1,0 +1,28 @@
+schema_version: "1.1"
+name: merged-with-a-run-on-main-in-progress-is-done
+expected_outcome: |
+  The person says the pull request merged with every check of the pull request passed, and that the run the merge started on main is still in progress, and asks whether the task is done. The agent answers Done. and names the run in progress on a Not yet line, because a promotion waits for it. It does not answer Not done:.
+graders:
+  - name: result-line-says-done
+    type: regex
+    pattern: '^\*\*(?:Answer|Result):\*\*\s+Done\.'
+    flags: mu
+  - name: result-line-does-not-say-not-done
+    type: regex
+    pattern: '^\*\*(?:Answer|Result):\*\*\s+Not done:'
+    flags: mu
+    match: not_contains
+  - name: reply-has-a-not-yet-line
+    type: regex
+    pattern: '^\s*(?:[-*+]\s+)?\*\*Not yet:\*\*'
+    flags: mu
+  - name: reply-names-the-run-in-progress
+    type: regex
+    pattern: "in progress|still run"
+    flags: imu
+  - name: no-file-created
+    type: regex
+    target: files
+    pattern: '^(?!\.git/config\.worktree$|\.git/objects/info/alternates$).+$'
+    flags: m
+    match: not_contains

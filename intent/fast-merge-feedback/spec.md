@@ -62,6 +62,7 @@ Delivery:
 26. `pnpm verify` passes in the root and in a generated project of each stack of `src/stacks.ts`.
 27. `pnpm evals:run` and `pnpm evals:run:write` are run and their scores reported, as `AGENTS.md` says for a change to a skill. The cost is told to the product owner before they run.
 28. The change has one changeset for `@next-friday/create-app`. **Proposal:** `minor`, because a generated project's gates change and no CLI argument, prompt, or stack name does. The package is at `10.3.0`; merging the release pull request that follows publishes `10.4.0` to npm.
+29. After a pull request merged with its checks passed, a session reports the change as done. A run the merge started on the default branch, such as the end-to-end tests of requirement 1, does not make the reply `Not done:`: the reply names it on its **Not yet** line, because a promotion waits for it (requirement 14). `review.md` step 5 and the reply rules of `SKILL.md` say so, and the eval case `merged-with-a-run-on-main-in-progress-is-done` states it. The product owner decided this in the build session.
 
 ## Design
 
