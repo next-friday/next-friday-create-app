@@ -18,13 +18,11 @@ TypeScript HTTP service on `node:http`, without a framework, on pnpm and Node.js
 
 ## Verifying your work
 
-The hooks run these checks: `pre-commit` runs gitleaks and lint-staged on the staged files, and `pre-push` runs `pnpm check`. Run none of them yourself.
-
 - Build: `pnpm build` (prints nothing after `$ tsc -p tsconfig.build.json`)
 - Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-The `pre-push` hook runs `pnpm check` once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check` and `pnpm plan:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
+While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check` and `pnpm plan:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
 
 The `verifier` subagent starts the app with `pnpm start:dev`. It exercises the changed behavior and the two nearest neighboring flows.
 

@@ -127,7 +127,7 @@ if printf '%s\n' "$outside_fences" | grep -q '^\*\*Steps'; then
 fi
 
 if [ "$changed" = true ] && ! printf '%s\n' "$outside_fences" | grep -q '^\*\*Checks:\*\*'; then
-  problems="${problems}A file outside intent/ changed in this turn and the reply has no **Checks:** section. Add **Checks:** with the lines of the pre-commit or pre-push hook output that show the result, or with each check that has no result yet and why; do not run the hooks' checks yourself. "
+  problems="${problems}A file outside intent/ changed in this turn and the reply has no **Checks:** section. Run the checks the project names and add **Checks:** with each command and the lines of its output that show the result, or with each check that could not run and why. "
 fi
 
 if [ -z "$not_yet" ] && printf '%s\n' "$last" | tr 'A-Z' 'a-z' | grep -Eq '(^|[^[:alpha:]])merge([^[:alpha:]]|$)' \

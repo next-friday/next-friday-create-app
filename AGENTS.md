@@ -17,7 +17,7 @@
 
 ## Verifying your work
 
-Run none of the checks the hooks run: `pre-commit` runs gitleaks and lint-staged on the staged files, and `pre-push` runs `pnpm verify`, which holds `pnpm build` (its last line starts with `✔ Build complete`), `pnpm test:coverage` (all green; never skip or delete a failing test), and `pnpm lint:check` (prints nothing after the `eslint` line). `pre-push` runs it once, for a push that changes code, and the reply's **Checks** quotes the hook's output from the push. `.husky/pre-push` says what the hook runs for a push that changes only documents.
+Run `pnpm build` (its last line starts with `✔ Build complete`), `pnpm test:coverage` (all green; never skip or delete a failing test), and `pnpm lint:check` (prints nothing after the `eslint` line) to check a change to code. `pnpm verify` runs all three. While you work, run the checks of the files you changed. The `pre-push` hook runs `pnpm verify` once, for a push that changes code, and the reply's **Checks** quotes the hook's output from the push. `.husky/pre-push` says what the hook runs for a push that changes only documents.
 
 For a change to the prompts or the arguments, also run `node dist/main.mjs` with those arguments in a new temporary directory after `pnpm build`. Exercise the changed behavior and the two nearest neighboring flows. Report what you ran, what you saw, and any behavior that does not match `plan.md`.
 
