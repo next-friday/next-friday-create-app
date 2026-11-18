@@ -35,6 +35,7 @@ type HookCase = {
   expected: string;
   fileContents?: Record<string, string>;
   filesBeforeTurn?: string[];
+  headMove?: "checkout" | "merge";
   input: Record<string, unknown>;
   merged?: boolean;
   name: string;
@@ -316,6 +317,54 @@ function commitCaseFiles(repository: string, isMerged = false): void {
   }
 }
 
+const movedBranch = "moved";
+
+/**
+ * Run one Git command in a hook case's repository.
+ * @param repository The repository's path.
+ * @param gitArguments The command's arguments.
+ */
+function runCaseGit(repository: string, gitArguments: string[]): void {
+  execFileSync("git", gitArguments, {
+    cwd: repository,
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+}
+
+/**
+ * Commit a file on a second branch of a hook case's repository, and return to the first branch.
+ * @param repository The repository's path.
+ * @param headMove How the case moves `HEAD` during the turn; no move commits nothing.
+ */
+function commitMovedBranch(repository: string, headMove: HookCase["headMove"]): void {
+  if (headMove === undefined) {
+    return;
+  }
+
+  runCaseGit(repository, ["checkout", "--quiet", "-b", movedBranch]);
+  writeCaseFiles(repository, ["src/moved.ts"], "moved\n");
+  commitCaseFiles(repository);
+  runCaseGit(repository, ["checkout", "--quiet", "-"]);
+}
+
+/**
+ * Move `HEAD` of a hook case's repository to the second branch's commit, with no commit of its own.
+ * @param repository The repository's path.
+ * @param headMove Whether to check the second branch out or to merge it; no move does nothing.
+ */
+function moveCaseHead(repository: string, headMove: HookCase["headMove"]): void {
+  if (headMove === undefined) {
+    return;
+  }
+
+  runCaseGit(
+    repository,
+    headMove === "checkout"
+      ? ["checkout", "--quiet", movedBranch]
+      : ["merge", "--quiet", "--ff-only", movedBranch],
+  );
+}
+
 /**
  * Create an empty Git repository for a hook case.
  * @param parentDirectory The directory to create the repository in.
@@ -395,7 +444,7 @@ function writeCaseTranscript(directory: string, transcript?: unknown[]): Record<
 /**
  * Run a hook script on one case in a private state directory.
  * @param script Path of the script from the repository root.
- * @param hookCase The case. Branch files make the case run in a new Git repository, with the files committed on a branch that leaves `origin/main`, and the case input gains the repository as `cwd`. Changed files make the case run in a new Git repository: the script takes its snapshot with the `snapshot` argument, the files are written, and the case input gains the repository as `cwd`. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
+ * @param hookCase The case. Branch files make the case run in a new Git repository, with the files committed on a branch that leaves `origin/main`, and the case input gains the repository as `cwd`. Changed files make the case run in a new Git repository: the script takes its snapshot with the `snapshot` argument, the files are written, and the case input gains the repository as `cwd`. A head move commits a file on a second branch before the snapshot, and after it checks that branch out or merges it, so the files change with no commit made in the turn. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
  * @returns The standard output of the script on the case input.
  */
 function runHookCase(script: string, hookCase: HookCase): string {
@@ -453,9 +502,11 @@ function runHookCase(script: string, hookCase: HookCase): string {
       ...writeCaseTranscript(stateDirectory, hookCase.transcript),
     };
 
+    commitMovedBranch(input.cwd, hookCase.headMove);
     writeCaseFiles(input.cwd, hookCase.filesBeforeTurn ?? [], "before\n");
     runHookScript(script, "snapshot", caseInput, stateDirectory);
     writeCaseFiles(input.cwd, hookCase.changedFiles, "changed\n");
+    moveCaseHead(input.cwd, hookCase.headMove);
 
     if (hookCase.committed === true) {
       commitCaseFiles(input.cwd, hookCase.merged);

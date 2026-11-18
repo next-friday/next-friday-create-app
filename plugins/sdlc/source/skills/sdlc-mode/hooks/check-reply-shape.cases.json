@@ -392,6 +392,39 @@
     "expected": "pass"
   },
   {
+    "name": "checks: another branch checked out and no file written",
+    "input": {
+      "session_id": "s-52",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** The pull request is merged.\n\nThe default branch is checked out.\n\n**Now:** Nothing waits."
+    },
+    "changedFiles": [],
+    "headMove": "checkout",
+    "expected": "pass"
+  },
+  {
+    "name": "checks: commits pulled and no file written",
+    "input": {
+      "session_id": "s-53",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** The pull request is merged.\n\nThe default branch is checked out.\n\n**Now:** Nothing waits."
+    },
+    "changedFiles": [],
+    "headMove": "merge",
+    "expected": "pass"
+  },
+  {
+    "name": "checks: another branch checked out and a file written",
+    "input": {
+      "session_id": "s-54",
+      "stop_hook_active": false,
+      "last_assistant_message": "**Result:** The pull request is merged.\n\nThe default branch is checked out.\n\n**Now:** Nothing waits."
+    },
+    "changedFiles": ["src/version.ts"],
+    "headMove": "checkout",
+    "expected": "block"
+  },
+  {
     "name": "anchor: an Answer reply with no Now line",
     "input": {
       "session_id": "shape",

@@ -23,10 +23,29 @@ snapshot() {
   content=$(
     export GIT_INDEX_FILE="$scratch/index" GIT_OBJECT_DIRECTORY="$scratch/objects" GIT_ALTERNATE_OBJECT_DIRECTORIES="$objects"
     git -C "$project" add -A -- . ':(exclude)intent' 2> /dev/null
-    git -C "$project" ls-files -s -- . ':(exclude)intent' | cksum
+    files=$(git -C "$project" ls-files -s -- . ':(exclude)intent' | cksum)
+    uncommitted=$(git -C "$project" diff-index --cached HEAD -- . ':(exclude)intent' 2> /dev/null | cksum)
+    printf '%s|%s' "$files" "$uncommitted"
   )
   rm -rf "$scratch"
-  printf '%s|%s' "$repository" "$content"
+  printf '%s|%s|%s' "$repository" "$content" "$(git -C "$repository" reflog show HEAD 2> /dev/null | grep -c .)"
+}
+
+field() {
+  printf '%s' "$2" | cut -d '|' -f "$1"
+}
+
+# A checkout, a pull, a rebase, and a reset move HEAD and change files without writing any. Only a commit made since the snapshot counts, and only when it holds a file outside intent/.
+committed_since_snapshot() {
+  entries_before=$(field 4 "$previous")
+  entries_now=$(field 4 "$current")
+  case $entries_before in '' | *[!0-9]*) return 0 ;; esac
+  case $entries_now in '' | *[!0-9]*) return 0 ;; esac
+  [ "$entries_now" -ge "$entries_before" ] || return 0
+  for commit in $(git -C "$repository" log -g -n "$((entries_now - entries_before))" --format='%H %gs' HEAD 2> /dev/null | sed -n -E 's/^([0-9a-f]+) (commit|cherry-pick|revert).*/\1/p'); do
+    [ -z "$(git -C "$project" diff-tree --no-commit-id --name-only -r -m --root "$commit" -- . ':(exclude)intent' 2> /dev/null)" ] || return 0
+  done
+  return 1
 }
 
 # The transcript shows whether the agent ran a tool that can write, since the last message a person typed: one whose input holds a command, new text for a file, or a prompt for another agent, or a tool of an outside server. With no transcript, the answer is yes.
@@ -45,7 +64,11 @@ changed_since_snapshot() {
   current=$(snapshot) || return 1
   previous=$(cat "$snapshot_file" 2> /dev/null)
   printf '%s' "$current" > "$snapshot_file"
-  [ "${previous%|*}" = "${current%|*}" ] && [ "$previous" != "$current" ]
+  repository=$(field 1 "$current")
+  [ "$(field 1 "$previous")" = "$repository" ] || return 1
+  [ "$(field 2 "$previous")" != "$(field 2 "$current")" ] || return 1
+  [ "$(field 3 "$previous")" = "$(field 3 "$current")" ] || return 0
+  committed_since_snapshot
 }
 
 if [ "$mode" = snapshot ]; then
