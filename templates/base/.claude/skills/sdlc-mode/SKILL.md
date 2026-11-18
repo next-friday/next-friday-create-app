@@ -100,7 +100,7 @@ Run every command, the checks included, before you write the reply. Write the re
 
 Every `**Result:**` line starts with `Done.` or `Not done:`. So does an `**Answer:**` to whether the work is done.
 
-- `Done.` means three things hold. Every part of what the person asked for is finished. It is merged where it goes through a pull request. You read a result in this turn for every requirement of the change, such as the merged pull request and its final checks. The **Now** line then says the person has nothing to do.
+- `Done.` means three things hold. Every part of what the person asked for is finished. It is merged where it goes through a pull request. You read a result in this turn for every requirement of the change, such as the merged pull request and its final checks. The **Now** line then says the person has nothing to do, unless a later stage of the change starts on a message from them. The merge of an intent or a spec ends the task and not the change, so the **Now** line then gives the message that starts the next stage.
 - A step marked done in the task list needs the same: a result read in this turn for every requirement of the change.
 - A check that could not run, a CI job that was skipped, and a run still in progress on a pull request each keep the work not done. Once the pull request merged with its checks passed, a run the merge started on the default branch does not: the reply says `Done.` and names that run on its **Not yet** line. A `**Result:**` reply then says `Not done:`, with the requirement and the reason. A `**Waiting for you:**` reply names the requirement and the reason on its **Not yet** line.
 - Anything else that reports work and asks nothing of the person is `Not done:`, followed by what is left and who does it. This covers a part that a spec, a plan, or you set aside as a separate change.
@@ -153,7 +153,7 @@ The person reads the top of a reply and its last line first, so the answer and t
   - It holds at most one URL. That URL is never a list page, such as a repository's pull requests or issues, and never a page the **Not yet** line names, because the person taps the link at the end of a reply.
   - When the reply asks a question, the line tells the person to answer it, in the person's language, and says nothing else. It names no **Gate**, because no **Gate** is reached yet.
   - An action done in the chat, such as sending a message, has no URL. Write the action, and the message to send when there is one.
-  - When the person has nothing to do, say so and write no URL.
+  - When the person has nothing to do, say so and write no URL. Never say so in a reply that names a message the person sends or a thing the person does next: the line is then that message or that thing.
   - When the person's pending action has not changed since your previous reply and the person asked a question, say that nothing new is needed and write no URL.
 
 A reply that ends before a **Gate** step says which step stopped it and why.
