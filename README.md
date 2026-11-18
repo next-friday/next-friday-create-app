@@ -33,7 +33,7 @@ Every stack is built from [`templates/base`](templates/base), which holds the sh
 - **CI:** GitHub Actions run the static checks, tests with patch coverage, the build, end-to-end tests for Next.js and Payload, a container build and vulnerability scan, Semgrep, OSV-Scanner, CodeQL, dependency review, OpenSSF Scorecard, gitleaks, TruffleHog, zizmor, and pull request title validation. Dependabot keeps dependencies current.
 - **Deployment:** a `Dockerfile` that runs as the `node` user. The project ships no deploy workflow: add your own, as the generated `SETUP.md` says.
 - **Agent rules:** `CLAUDE.md` imports `AGENTS.md`. Shared rules live in `.agents/rules`, with hooks that enforce them in Claude Code.
-- **SDLC loop:** the `/sdlc-mode` skill in `.claude/skills/` runs the loop. Its hooks and checks, such as the plan check before a `git push`, run only in a session where a person typed `/sdlc-mode`; after a resumed session, type it again.
+- **SDLC loop:** the `/sdlc-intent`, `/sdlc-spec`, `/sdlc-plan`, `/sdlc-fix`, and `/sdlc-review` skills in `.claude/skills/` run the loop. Its hooks and checks, such as the plan check before a `git push`, run only in a session where a person typed one of its commands; after a resumed session, type it again.
 
 ## Requirements
 

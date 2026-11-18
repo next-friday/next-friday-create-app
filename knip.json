@@ -4,7 +4,7 @@
     "templates/**",
     ".claude/skills/**",
     "plugins/sdlc/adapters/claude-code/skills/**",
-    "plugins/sdlc/source/skills/sdlc-mode/scripts/measure-loop.ts",
+    "plugins/sdlc/source/skills/sdlc-loop/scripts/measure-loop.ts",
     "scripts/changed-documents.ts"
   ],
   "ignoreBinaries": ["next-friday-create-app"]

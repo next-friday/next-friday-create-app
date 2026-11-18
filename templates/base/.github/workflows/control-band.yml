@@ -46,7 +46,7 @@ jobs:
       - name: Detect the tier
         id: tier
         run: |
-          report="$(node .claude/skills/sdlc-mode/scripts/check-bands.ts metric-values.json)"
+          report="$(node .claude/skills/sdlc-loop/scripts/check-bands.ts metric-values.json)"
           echo "$report"
           {
             echo "## Control band report"
@@ -97,7 +97,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            /sdlc-mode A scheduled job found a control band deviation in production. No one can answer questions.
+            /sdlc-intent A scheduled job found a control band deviation in production. No one can answer questions.
             Detection report: ${{ needs.detect.outputs.report }}
             Metric values, oldest first: ${{ needs.detect.outputs.values }}
             The values come from the command in the CONTROL_BAND_METRIC_COMMAND repository variable. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -123,7 +123,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            /sdlc-mode A scheduled job found a control band deviation in production. No one can answer questions.
+            /sdlc-intent A scheduled job found a control band deviation in production. No one can answer questions.
             Detection report: ${{ needs.detect.outputs.report }}
             Metric values, oldest first: ${{ needs.detect.outputs.values }}
             The values come from the command in the CONTROL_BAND_METRIC_COMMAND repository variable. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

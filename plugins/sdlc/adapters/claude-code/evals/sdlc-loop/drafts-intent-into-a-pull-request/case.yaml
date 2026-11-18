@@ -1,0 +1,57 @@
+schema_version: "1.1"
+name: drafts-intent-into-a-pull-request
+expected_outcome: |
+  The agent writes `intent/<change>/intent.md` from the template and commits it on a new branch for a pull request. The reply does not repeat the draft's text, and the agent does not merge.
+context:
+  scaffold_script: scaffold.sh
+graders:
+  - name: intent-file-exists
+    type: file_exists
+    path: intent/*/intent.md
+  - name: commit-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bcommit\b'
+    min: 1
+  - name: branch-is-checked-out
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\s+(?:checkout|switch)\s+(?:-\S+\s+)*(?!main$).+'
+    min: 1
+  - name: intent-has-the-five-headings
+    type: tool_used
+    tool: Write
+    input_match: 'intent/[^/\"]+/intent\.md[\s\S]*## Problem[\s\S]*## Proposed outcome[\s\S]*## Affected users and systems[\s\S]*## Constraints[\s\S]*## Open questions'
+    min: 1
+  - name: reply-does-not-repeat-the-draft
+    type: regex
+    pattern: "^## (?:Problem|Open questions)$"
+    flags: mu
+    match: not_contains
+  - name: no-merge-or-approve-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\s+merge\b|\bpr\s+merge\b|\bpr\s+review\b'
+    min: 0
+    max: 0
+  - name: reply-holds-no-steps-section
+    type: regex
+    pattern: '^\*\*Steps'
+    flags: mu
+    match: not_contains
+  - name: author-is-the-originators-handle
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md[\s\S]*Author: [^\\]*@joe-acct'
+    min: 1
+  - name: author-is-not-the-git-name
+    type: tool_used
+    tool: Write
+    input_match: 'Author: [^\\]*Eval Author'
+    min: 0
+    max: 0
+  - name: open-questions-names-the-other-repository
+    type: tool_used
+    tool: Write
+    input_match: 'intent\.md[\s\S]*## Open questions(?:\\n)+[\s\S]*(?:web-app|Finance Tools)'
+    min: 1

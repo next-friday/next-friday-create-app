@@ -5,7 +5,7 @@ expected_outcome: |
 graders:
   - name: reply-names-the-command
     type: regex
-    pattern: "/sdlc-mode"
+    pattern: "/sdlc-intent"
     flags: mu
   - name: no-file-created
     type: regex
@@ -31,7 +31,7 @@ graders:
     max: 0
   - name: reply-gives-an-example-message
     type: regex
-    pattern: '(?:^|`)\s*/(?:sdlc:)?sdlc-mode [^`\n]{8,}'
+    pattern: '(?:^|`)\s*/(?:sdlc:)?sdlc-(?:intent|spec|plan|fix|review) [^`\n]{8,}'
     flags: mu
   - name: reply-lists-a-project-file
     type: regex

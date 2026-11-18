@@ -10,10 +10,25 @@
 /.claude/skills/ @joetakara @next-friday-engineer
 /.claude/agents/ @joetakara @next-friday-engineer
 
-# Policy owner: policy skills and the loop's own skill
+# Policy owner: policy skills and the loop's own skills
 /plugins/sdlc/source/skills/*-policy/ @joetakara
-/plugins/sdlc/source/skills/sdlc-mode/ @joetakara
+/plugins/sdlc/source/skills/sdlc-loop/ @joetakara
+/plugins/sdlc/source/skills/sdlc-intent/ @joetakara
+/plugins/sdlc/source/skills/sdlc-spec/ @joetakara
+/plugins/sdlc/source/skills/sdlc-plan/ @joetakara
+/plugins/sdlc/source/skills/sdlc-fix/ @joetakara
+/plugins/sdlc/source/skills/sdlc-review/ @joetakara
 /plugins/sdlc/adapters/claude-code/skills/*-policy/ @joetakara
-/plugins/sdlc/adapters/claude-code/skills/sdlc-mode/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-loop/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-intent/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-spec/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-plan/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-fix/ @joetakara
+/plugins/sdlc/adapters/claude-code/skills/sdlc-review/ @joetakara
 /.claude/skills/*-policy/ @joetakara
-/.claude/skills/sdlc-mode/ @joetakara
+/.claude/skills/sdlc-loop/ @joetakara
+/.claude/skills/sdlc-intent/ @joetakara
+/.claude/skills/sdlc-spec/ @joetakara
+/.claude/skills/sdlc-plan/ @joetakara
+/.claude/skills/sdlc-fix/ @joetakara
+/.claude/skills/sdlc-review/ @joetakara
