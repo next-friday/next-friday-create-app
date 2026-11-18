@@ -8,12 +8,12 @@ Send a request with `/sdlc-intent`, `/sdlc-spec`, `/sdlc-plan`, `/sdlc-fix`, or 
 
 | Stage    | Who acts                                                                         | What carries it out                                                                                                              |
 | :------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
-| Plan     | The originator; the product owner accepts by merging                             | `/sdlc-intent` with the idea writes `intent/<change>/intent.md`                                                                    |
+| Plan     | The originator; the product owner accepts by merging                             | `/sdlc-intent` with the idea writes `intent/<change>/intent.md`                                                                  |
 | Design   | The agent; the product owner reviews and merges                                  | `Spec on intent merge`, or `/sdlc-spec` with the intent's path, writes `spec.md`                                                 |
-| Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-plan` writes `plan.md` and the code in one pull request; the skill's push hook checks them                          |
+| Build    | The engineer accepts the plan in the session; the agent builds                   | `/sdlc-plan` writes `plan.md` and the code in one pull request; the skill's push hook checks them                                |
 | Test     | The agent, before it reports done                                                | The `verifier` subagent runs the app; `pre-push` and CI run the checks                                                           |
 | Deploy   | A code owner approves and a person merges; a release manager approves production | `Claude review` or Claude Code Review reviews each pull request in CI; the production gate hook blocks a deploy without approval |
-| Maintain | A service owner triages                                                          | `Control band` and `/sdlc-intent` with a finding write a new `intent.md`                                                           |
+| Maintain | A service owner triages                                                          | `Control band` and `/sdlc-intent` with a finding write a new `intent.md`                                                         |
 
 `/sdlc-spec` or `/sdlc-plan` with no change named lists where each change stands.
 
