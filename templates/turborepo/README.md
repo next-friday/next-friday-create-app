@@ -28,19 +28,19 @@ Follow [SETUP.md](SETUP.md) in order. It sets up the repository, the reviews, an
 
 ## Scripts
 
-| Script                    | Purpose                                                                                                |
-| :------------------------ | :----------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                | Start the Next.js app on port 3000 and the Payload backoffice on port 3001                             |
-| `pnpm build`              | Build both apps for production                                                                         |
-| `pnpm start`              | Serve both standalone production builds after `pnpm build`                                             |
-| `pnpm test`               | Run unit tests in both apps                                                                            |
-| `pnpm test:e2e`           | Run Playwright end-to-end tests in both apps. The backoffice uses the database in `DATABASE_URL`       |
-| `pnpm generate:types`     | Regenerate `apps/backoffice/src/payload-types.ts` after a collection change                            |
-| `pnpm generate:importmap` | Regenerate the admin import map after adding a custom component                                        |
-| `pnpm migrate:create`     | Create a migration from collection changes, for example `pnpm migrate:create add-posts`                |
-| `pnpm migrate`            | Apply pending migrations to the database in `DATABASE_URL`                                             |
+| Script                    | Purpose                                                                                                      |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                | Start the Next.js app on port 3000 and the Payload backoffice on port 3001                                   |
+| `pnpm build`              | Build both apps for production                                                                               |
+| `pnpm start`              | Serve both standalone production builds after `pnpm build`                                                   |
+| `pnpm test`               | Run unit tests in both apps                                                                                  |
+| `pnpm test:e2e`           | Run Playwright end-to-end tests in both apps. The backoffice uses the database in `DATABASE_URL`             |
+| `pnpm generate:types`     | Regenerate `apps/backoffice/src/payload-types.ts` after a collection change                                  |
+| `pnpm generate:importmap` | Regenerate the admin import map after adding a custom component                                              |
+| `pnpm migrate:create`     | Create a migration from collection changes, for example `pnpm migrate:create add-posts`                      |
+| `pnpm migrate`            | Apply pending migrations to the database in `DATABASE_URL`                                                   |
 | `pnpm check`              | Run the static checks other than the format check, and the unit tests for changed code (the `pre-push` hook) |
-| `pnpm verify`             | Run the static checks, all unit tests with coverage, and the production build                          |
+| `pnpm verify`             | Run the static checks, all unit tests with coverage, and the production build                                |
 
 CI also runs the build, the container image scans, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Pull requests run Turborepo with `--affected` against the base branch, so only packages that changed are typed, tested, built, and scanned. Pushes to `main` run every app. The weekly schedule rebuilds and scans every container image and runs nothing else. Patch coverage runs only for apps that produced a coverage file.
 

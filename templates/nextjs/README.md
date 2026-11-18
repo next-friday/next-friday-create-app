@@ -23,7 +23,7 @@ Follow [SETUP.md](SETUP.md) in order. It sets up the repository, the reviews, an
 | `pnpm start`    | Serve the standalone production build after `pnpm build`. The build copies `.env`, so rebuild after you change it |
 | `pnpm test`     | Run unit tests                                                                                                    |
 | `pnpm test:e2e` | Run Playwright end-to-end tests (`test/**/*.e2e.test.ts`)                                                         |
-| `pnpm check`    | Run the static checks other than the format check, and the unit tests for changed code (the `pre-push` hook)            |
+| `pnpm check`    | Run the static checks other than the format check, and the unit tests for changed code (the `pre-push` hook)      |
 | `pnpm verify`   | Run the static checks, all unit tests with coverage, and the production build                                     |
 
 `pnpm build` copies `.env` into `.next/standalone`, where every secret sits in plain text. Keep that folder out of images and archives.

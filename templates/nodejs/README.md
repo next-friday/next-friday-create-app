@@ -18,15 +18,15 @@ Follow [SETUP.md](SETUP.md) in order. It sets up the repository, the reviews, an
 
 ## Scripts
 
-| Script            | Purpose                                                                                           |
-| :---------------- | :------------------------------------------------------------------------------------------------ |
-| `pnpm start:dev`  | Start in watch mode from `src/main.ts`; loads `.env` when present                                 |
-| `pnpm build`      | Compile to `dist/`                                                                                |
-| `pnpm start`      | Build, then run `dist/main.js` once; loads `.env` when present                                    |
-| `pnpm start:prod` | Run `dist/main.js`; the environment sets `PORT`                                                   |
-| `pnpm test`       | Run tests (`src/**/*.test.ts`)                                                                    |
+| Script            | Purpose                                                                                                 |
+| :---------------- | :------------------------------------------------------------------------------------------------------ |
+| `pnpm start:dev`  | Start in watch mode from `src/main.ts`; loads `.env` when present                                       |
+| `pnpm build`      | Compile to `dist/`                                                                                      |
+| `pnpm start`      | Build, then run `dist/main.js` once; loads `.env` when present                                          |
+| `pnpm start:prod` | Run `dist/main.js`; the environment sets `PORT`                                                         |
+| `pnpm test`       | Run tests (`src/**/*.test.ts`)                                                                          |
 | `pnpm check`      | Run the static checks other than the format check, and the tests for changed code (the `pre-push` hook) |
-| `pnpm verify`     | Run the static checks, all tests with coverage, and the production build                          |
+| `pnpm verify`     | Run the static checks, all tests with coverage, and the production build                                |
 
 CI also runs the build, the container image scan, and the security scans, including CodeQL, dependency review, and OpenSSF Scorecard. CodeQL, dependency review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`.
 
