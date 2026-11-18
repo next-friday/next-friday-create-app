@@ -382,7 +382,6 @@ const headReferenceVariable = "GITHUB_HEAD_REF";
 const fixBranchPrefix = "fix/";
 const smallBranchPrefix = "small/";
 const smallChangeFileLimit = 5;
-const smallBranchPattern = /^small\/(?!fix-)/u;
 const fixTitleSuffix = "(fix)";
 
 /**
@@ -437,14 +436,14 @@ function findUnplannedChangeProblems(
   const isBotBranch = unplannedBranchPrefixes.some(prefix => branchName.startsWith(prefix));
 
   const isSmallChange =
-    smallBranchPattern.test(branchName) && changedPaths.length <= smallChangeFileLimit;
+    branchName.startsWith(smallBranchPrefix) && changedPaths.length <= smallChangeFileLimit;
 
   const isExempt = hasPlan || isBotBranch || isFirstImport || isSmallChange;
 
   return !isChangesCode || isExempt
     ? []
     : [
-        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request, or, for a change of at most ${smallChangeFileLimit} files that is not a defect, use a "${smallBranchPrefix}" branch; a defect goes on a "${fixBranchPrefix}" branch with a plan and a failing test`,
+        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request, or, for a change of at most ${smallChangeFileLimit} files, use a "${smallBranchPrefix}" branch; a larger defect goes on a "${fixBranchPrefix}" branch with a plan and a failing test`,
       ];
 }
 
@@ -1008,7 +1007,7 @@ const selfTestCases: SelfTestCase[] = [
       [true, "dependabot/npm_and_yarn/a", [manifestFileName]],
       [true, "docs/a", ["intent/a/intent.md"]],
       [true, "small/feat-a", ["src/a.ts"]],
-      [false, "small/fix-a", ["src/a.ts", "src/a.test.ts"]],
+      [true, "small/fix-a", ["src/a.ts", "src/a.test.ts"]],
       [false, "small/feat-a", Array.from("abcdef", letter => `src/${letter}.ts`)],
       [true, "feat/import", [manifestFileName, "src/index.ts"], true],
     ] as [boolean, string, string[], boolean?][]
@@ -1017,17 +1016,14 @@ const selfTestCases: SelfTestCase[] = [
     name: `${branchName} changing ${changedPaths.join(", ")}${isFirstImport === true ? " as a first import" : ""} ${needsNoPlan ? "needs no" : "needs a"} plan`,
     problems: findUnplannedChangeProblems(changedPaths, branchName, isFirstImport),
   })),
-  {
-    name: "a fix that edits a test the default branch holds",
+  ...["# Plan: a (fix)\n", ""].map(planText => ({
     expectedMessagePart: "fix the code, not the test",
-    problems: findFixTestEditProblems(["src/a.test.ts", "src/a.ts"], "# Plan: a (fix)\n"),
-  },
+    name: `a ${planText === "" ? "small " : ""}fix that edits a test the default branch holds`,
+    problems: findFixTestEditProblems(["src/a.test.ts", "src/a.ts"], planText),
+  })),
   {
     name: "a fix whose test change a code owner accepted",
-    problems: findFixTestEditProblems(
-      ["test/a.ts"],
-      "# Plan: a (fix)\n\nTest change accepted by: @owner.\n",
-    ),
+    problems: findFixTestEditProblems(["test/a.ts"], "Test change accepted by: @owner.\n"),
   },
   {
     name: "a fix that edits only code",
@@ -1263,6 +1259,9 @@ function findBranchRuleLines(): string[] {
   return [
     ...findUnplannedChangeProblems(branchChanges.changedPaths, branchName, isFirstImport),
     ...fixPlanLines,
+    ...(branchName.startsWith(`${smallBranchPrefix}fix-`)
+      ? findFixTestEditProblems(modifiedPaths, "")
+      : []),
   ];
 }
 
