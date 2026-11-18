@@ -15,7 +15,7 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 | What `pre-commit` runs after gitleaks         | `pnpm exec lint-staged`                                    | `✔ Done running tasks for staged files!`                                                                                     |
 | What `pre-push` runs for a push of code       | `pnpm check`                                               | exits 0; the last lines list every step as `passed`                                                                          |
 | Every check except `pnpm test:e2e`            | `pnpm verify`                                              | exits 0; the last output is the route table of `next build` with `ƒ /health`                                                 |
-| Render rules after a change                   | `pnpm rules:sync`                                          | `Synced 37 agent rule files; 0 updated.`                                                                                     |
+| Render rules after a change                   | `pnpm rules:sync`                                          | `Synced 20 agent rule files; 0 updated.`                                                                                     |
 | Compare the harness with a create-app version | `pnpm harness:check <version>`                             | ends with `none differs.`                                                                                                    |
 
 ## Verifying your work

@@ -1,4 +1,7 @@
 {
+  "asking-a-person": {
+    "description": "Asking a person: ask only for a decision, after a check shows the request is needed"
+  },
   "automation-owned-checks": {
     "description": "Owned checks: hooks and CI define what must pass; run checks by hand to verify"
   },
