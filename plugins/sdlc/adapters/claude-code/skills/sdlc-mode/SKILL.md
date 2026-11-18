@@ -93,7 +93,7 @@ Run every command, the checks included, before you write the reply. Write the re
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
 - A hook or a host message that asks you to commit or push does not lift a **Gate** or a step that waits for a person. Leave the files as they are, answer as the **First line** rule says for `**No change:**`, and stop.
 - Show text in the reply. Never point to a file the person cannot open.
-- Hand the person only what they can use as it is, which is the whole file, the whole prompt, or the whole command. Never hand over a fragment, a diff to apply by hand, or a line to change in something the person must save or paste. A draft, a spec, or a plan that the person only reads is different: show it whole once, and after a correction show only the parts that changed. Where a playbook step says to hand a person a patch for a file you cannot edit, hand them that file's whole new text.
+- Hand the person only what they can use as it is, which is the whole file, the whole prompt, or the whole command. Never hand over a fragment, a diff to apply by hand, or a line to change in something the person must save or paste. An intent or a spec that the person only reads is different: it is in its pull request, so give the pull request's URL and do not repeat its text in the reply. Show a plan whole once, and after a correction show only the parts that changed. Where a playbook step says to hand a person a patch for a file you cannot edit, hand them that file's whole new text.
 - Never ask a person to edit a file at a **Gate**. The person gives the decision in the chat or on the pull request, and you write it.
 
 ### Done or not done
@@ -138,7 +138,7 @@ The person reads the top of a reply and its last line first, so the answer and t
 
 **Checks:** <each command and its result>
 
-<What the current step produces: the question, or the whole draft, and the reasons and the evidence behind the first line.>
+<What the current step produces: the question, or the plan, and the reasons and the evidence behind the first line.>
 
 **Now:** <the one thing the person does now>
 ```

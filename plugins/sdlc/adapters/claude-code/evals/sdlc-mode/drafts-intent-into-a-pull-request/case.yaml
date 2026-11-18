@@ -1,38 +1,37 @@
 schema_version: "1.1"
-name: drafts-intent-and-waits-for-yes
+name: drafts-intent-into-a-pull-request
 expected_outcome: |
-  The agent writes `intent/<change>/intent.md` from the template, shows the whole draft, and asks whether it matches. It does not commit, push, or open a pull request before the originator says yes.
+  The agent writes `intent/<change>/intent.md` from the template and commits it on a new branch for a pull request. The reply does not repeat the draft's text, and the agent does not merge.
 context:
   scaffold_script: scaffold.sh
 graders:
   - name: intent-file-exists
     type: file_exists
     path: intent/*/intent.md
-  - name: no-commit-command
+  - name: commit-command
     type: tool_used
     tool: Bash
     input_match: '\bgit\b[^"]*\bcommit\b'
-    min: 0
-    max: 0
-  - name: no-branch-command
+    min: 1
+  - name: branch-is-checked-out
     type: tool_used
     tool: Bash
-    input_match: '\bgit\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch\s+(?!-{1,2}(?:a|r|v|vv|l|list|show-current|contains|merged|no-merged|all|remotes|format|sort|points-at)\b)[\w-]|worktree\s+add)'
-    min: 0
-    max: 0
+    input_match: '\bgit\s+(?:checkout|switch)\s+(?:-\S+\s+)*(?!main$).+'
+    min: 1
   - name: intent-has-the-five-headings
     type: tool_used
     tool: Write
     input_match: 'intent/[^/\"]+/intent\.md[\s\S]*## Problem[\s\S]*## Proposed outcome[\s\S]*## Affected users and systems[\s\S]*## Constraints[\s\S]*## Open questions'
     min: 1
-  - name: reply-shows-the-draft-and-asks
+  - name: reply-does-not-repeat-the-draft
     type: regex
-    pattern: '(?=[\s\S]*## Problem)(?=[\s\S]*## Open questions)(?=[\s\S]*(?:\?|\byes\b|\bmatch(?:es)?\b))'
+    pattern: "^## (?:Problem|Open questions)$"
     flags: mu
-  - name: no-push-or-pull-request-command
+    match: not_contains
+  - name: no-merge-or-approve-command
     type: tool_used
     tool: Bash
-    input_match: '\bgit\b[^"]*\bpush\b|\bpr\s+create\b'
+    input_match: '\bgit\s+merge\b|\bpr\s+merge\b|\bpr\s+review\b'
     min: 0
     max: 0
   - name: reply-holds-no-steps-section
