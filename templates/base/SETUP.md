@@ -15,7 +15,7 @@ Send a request with `/sdlc-mode`. A person starts it, and so do the two jobs of 
 | Deploy   | A code owner approves and a person merges; a release manager approves production | `playbooks/review.md` reviews the pull request once; the production gate hook blocks a deploy without approval       |
 | Maintain | A service owner triages                                                          | `Control band` and `/sdlc-mode` with a finding write a new `intent.md`                                               |
 
-A session starts with a list of where each change stands. A small, well-bounded change that is not a defect skips intent and spec: it goes from a `small/` branch to one pull request, which a code owner reviews (`.claude/skills/sdlc-mode/playbooks/small.md`).
+A session starts with a list of where each change stands.
 
 The project holds the `sdlc` harness itself, so there is nothing to install. The skills are in `.claude/skills/`, which Claude Code loads, and which Cursor loads too: "For compatibility, Cursor also loads skills from Claude and Codex directories" ([Cursor: Agent Skills](https://cursor.com/docs/skills)). The `verifier` subagent is in `.claude/agents/` for Claude Code and in `.cursor/agents/` for Cursor. The gate hooks are in `.agents/hooks/` and the session hooks are in `.claude/skills/sdlc-mode/hooks/`: `.claude/settings.json` runs them in Claude Code, and `.cursor/hooks.json` runs them in Cursor. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 

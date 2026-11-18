@@ -43,13 +43,13 @@ The session's own check:
 
 17. `build.md` step 9 and `fix.md` say: before it pushes, the agent runs the end-to-end tests that cover the part it changed and keeps the output. When the project has no end-to-end test, or the session cannot run them, the reply says so under **Not yet**.
 
-A small defect:
+The loop:
 
-18. `small.md` step 1 accepts a defect that meets every other condition of that step, and step 2 names its branch `small/fix-<short-description>`. The change has no plan and no acceptance of a plan.
-19. On a `small/fix-` branch, the first commit holds only the test that fails for the defect, and the fix follows in a later commit that edits no test. `small.md` says so, and `fix.md` step 1 sends such a defect to `small.md`.
-20. `plugins/sdlc/source/scripts/check-plan.ts` lets a `small/fix-` branch through with no plan while it changes at most five files, and refuses one that edits a test the default branch holds, as it refuses that on a `fix/` branch. Its self-tests gain a case that passes and a case that fails.
-21. `templates/base/.agents/hooks/agent-test-edit-gate.sh` blocks a test edit on a `small/fix-` branch once a test is committed, as on a `fix/` branch, and `scripts/check-agent-gates.ts` gains a case for it. Area of concern 6.
-22. A defect that fails a condition of `small.md` step 1 takes `fix.md` with its plan, as today.
+18. `playbooks/small.md` and its rendered copies are deleted. `SKILL.md` loses its row and `sdlc-help` loses its topic. The product owner decided this in the build session.
+19. Every defect takes `fix.md` with its plan, as today.
+20. `plugins/sdlc/source/scripts/check-plan.ts` no longer refuses a branch that changes code and adds no plan, so work outside `/sdlc-mode` pushes as usual. Its rule on a fix that edits a test the default branch holds stays.
+21. The push hook `plugins/sdlc/source/hooks/check-push.sh`, which refused a commit that changes a file the plan does not name, is deleted with its entries in the agent settings. Area of concern 6.
+22. The root and each stack's `AGENTS.md` say that `/sdlc-mode` starts the SDLC loop only when a person types it.
 
 Documents:
 
@@ -60,7 +60,7 @@ Delivery:
 
 25. `pnpm plugin:sync` renders each changed playbook and script into `plugins/sdlc/adapters/` and `templates/base/`, and `pnpm plugin:check` and `pnpm rules:check` pass.
 26. `pnpm verify` passes in the root and in a generated project of each stack of `src/stacks.ts`.
-27. The eval cases that state the old rule of `small.md` or `fix.md` on a small defect change to requirements 18 to 22. `pnpm evals:run` and `pnpm evals:run:write` are run and their scores reported, as `AGENTS.md` says for a change to a skill. The cost is told to the product owner before they run.
+27. `pnpm evals:run` and `pnpm evals:run:write` are run and their scores reported, as `AGENTS.md` says for a change to a skill. The cost is told to the product owner before they run.
 28. The change has one changeset for `@next-friday/create-app`. **Proposal:** `minor`, because a generated project's gates change and no CLI argument, prompt, or stack name does. The package is at `10.3.0`; merging the release pull request that follows publishes `10.4.0` to npm.
 
 ## Design
@@ -72,8 +72,8 @@ Delivery:
 - `templates/base/.husky/pre-push`: the document-only path runs `pnpm rules:check && pnpm plan:check`.
 - `templates/base/.github/workflows/pr-triage.yml`, `templates/base/.github/labeler.yml`: deleted.
 - `templates/<stack>/.github/workflows/ci.yml`: `diff-cover` runs with `--fail-under 80`, where it has `--fail-under 95`.
-- `small.md`, `fix.md`, `build.md`, `deploy.md`: requirements 14 and 17 to 19. `review.md` does not change.
-- `plugins/sdlc/source/scripts/check-plan.ts`: requirement 20. Today line 1019 holds the self-test that refuses `small/fix-a`.
+- `fix.md`, `build.md`, `deploy.md`: requirements 14 and 17. `small.md`: deleted. `review.md` does not change.
+- `plugins/sdlc/source/scripts/check-plan.ts`: requirement 20.
 - `templates/base/.agents/hooks/agent-test-edit-gate.sh` line 31 and `scripts/check-agent-gates.ts`: requirement 21.
 - `templates/base/SETUP.md`, each stack's `README.md` and `CONTRIBUTING.md`: requirements 16, 23, and 24. `templates/turborepo/README.md:47` already tells the team to set `TURBO_TEAM`, so the intent's item on that is met and nothing is added.
 - `.changeset/<name>.md`: requirement 28.
@@ -111,7 +111,7 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
    Decision: TruffleHog stays. The product owner's decision.
 
-6. No policy. Requirements 5 and 21 change files that a person commits, by the project's own rule: `.husky/**`, `.agents/hooks/**`, and `scripts/check-agent-gates.ts`. An agent session's token also cannot push a file under `.github/workflows/`.
+6. No policy. Requirements 5 and 21 change files that a person commits, by the project's own rule: `.husky/**`, `.agents/hooks/**`, `scripts/check-agent-gates.ts`, `.claude/settings.json`, and `.cursor/hooks.json`. An agent session's token also cannot push a file under `.github/workflows/`.
 
    Decision: the build's plan lists those files with their new content, and a person commits them on the pull request's branch.
 

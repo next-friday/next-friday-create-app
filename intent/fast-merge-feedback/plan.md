@@ -16,9 +16,9 @@ Scripts and hooks:
 
 - `templates/<stack>/package.json` (changed, five stacks): `check` runs `node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check sort-package-json:check typecheck knip depcruise test:changed`. No build, no `format:check`. `verify` and `verify:static` do not change. The commitlint packages and script stay.
 - `templates/base/.husky/pre-push` (changed, **person**): the document-only path runs `pnpm rules:check && pnpm plan:check`, and its error message loses `pnpm format:check`.
-- `templates/base/.agents/hooks/agent-test-edit-gate.sh` (changed, **person**): line 31 reads `[[ $branch == fix/* || $branch == small/fix-* ]] || allow`.
-- `templates/base/scripts/check-agent-gates.ts` (changed, **person**): one case, an edit of a committed test on `small/fix-a`, expects a block.
-- `plugins/sdlc/source/scripts/check-plan.ts` (changed), rendered to `templates/base/scripts/check-plan.ts`: a `small/fix-` branch of at most five files needs no plan; it is refused when it edits a test the default branch holds, with the message of a `fix/` branch. The self-test row `[false, "small/fix-a", …]` becomes two rows: one that passes, one that edits a held test and fails.
+- `templates/base/.agents/hooks/agent-test-edit-gate.sh`, `templates/base/scripts/check-agent-gates.ts` (**person**): the build first gave a `small/fix-` branch the rule of a `fix/` branch, and the engineer committed it in `9b519cc`; with `small.md` gone, the engineer's second commit takes it out again.
+- `plugins/sdlc/source/hooks/check-push.sh`, `check-push.cases.json`, their rendered copies, their entries in `plugins/sdlc/adapters/hooks.json`, and the paragraph of `plugins/sdlc/README.md` (deleted, **person**): with the hook's entries in `.claude/settings.json` and `.cursor/hooks.json` of the root and of `templates/base`, in one commit, because `pnpm plugin:check` refuses a settings file that names a hook the harness lacks, and a hook the settings lack.
+- `plugins/sdlc/source/scripts/check-plan.ts` (changed), rendered to `templates/base/scripts/check-plan.ts`: `findUnplannedChangeProblems` and its self-tests are deleted, so a branch that changes code needs no plan. The rule on a fix that edits a test the default branch holds stays.
 
 Rules:
 
@@ -26,9 +26,9 @@ Rules:
 
 Playbooks, under `plugins/sdlc/source/skills/sdlc-mode/`, rendered to `plugins/sdlc/adapters/claude-code/`, `.claude/skills/`, and `templates/base/.claude/skills/`:
 
-- `SKILL.md` (changed): the row of `small.md` covers a small defect, as step 1 of the small playbook defines it; the row of `fix.md` covers any other defect.
-- `playbooks/small.md` (changed): step 1 drops "It is not a defect" and sends a defect that fails a condition to `fix.md`; step 2 names `small/fix-<short-description>` for a defect; a new step for a defect: reproduce it, commit only the failing test first, then fix it in a later commit that edits no test.
-- `playbooks/fix.md` (changed): step 1 sends a defect that meets every condition of `small.md` step 1 to `small.md`; step 10 runs the end-to-end tests of the part it changed before the push.
+- `SKILL.md` (changed): the row of `small.md` goes. `skills/sdlc-help/SKILL.md` (changed): the topic of a small change goes.
+- `playbooks/small.md` (deleted).
+- `playbooks/fix.md` (changed): step 10 runs the end-to-end tests of the part it changed before the push.
 - `playbooks/build.md` (changed): step 9 runs the end-to-end tests of the part it changed before the push, and says so under **Not yet** when the project has none or the session cannot run them.
 - `playbooks/deploy.md` (changed): step 1 names the end-to-end tests among the checks of the commit.
 
@@ -39,7 +39,8 @@ Documents:
 
 Evals and release:
 
-- `plugins/sdlc/adapters/claude-code/evals/sdlc-mode/fix-reproduces-finds-the-cause-and-waits-for-the-engineer/case.yaml`, `prompt.md`, `scaffold.sh` (changed): the defect fails a condition of `small.md` step 1 (its fix touches six files), so the case still tests `fix.md` and its gate. The graders do not change.
+- `AGENTS.md` and each stack's `AGENTS.md` (changed): `/sdlc-mode` starts the SDLC loop only when a person types it. `templates/base/SETUP.md` (changed): the sentence on a `small/` branch goes.
+- The eval case `fix-reproduces-finds-the-cause-and-waits-for-the-engineer` does not change: the build first moved its defect into six files, and took that out again with `small.md`.
 - `.changeset/fast-merge-feedback.md` (new): `minor` for `@next-friday/create-app`.
 - `intent/fast-merge-feedback/plan.md` (new). `intent/fast-merge-feedback/intent.md`, `spec.md` (changed): `Status: done.`
 
@@ -67,7 +68,7 @@ Evals and release:
 - The evals did not run: each case runs three times, with a second arm that has no plugin, about $0.40 a case, and the two suites hold 30 cases, about $12. The product owner decided not to run them. No score shows how the changed playbooks behave.
 - Options not taken:
   - Keeping `image` as its own job beside `All Checks`: the product owner chose one job.
-  - Adding a new eval case for a small defect: requirement 27 changes the cases that state the old rule and adds none.
+  - Keeping `small.md` for a small defect: the product owner removed it in the build session, with the rule that every code branch needs a plan.
   - Folding `triage` into `All Checks`: it must run after the job fails and needs its own permissions.
 
 ## Proof
@@ -86,9 +87,9 @@ Evals and release:
 15: review of the `triage` job: its condition, the `commits/<sha>/pulls` call, and the last line of the comment.
 16, 23: the diff of `SETUP.md`.
 17: the diff of `build.md` step 9 and `fix.md` step 10.
-18, 19, 22: the diff of `small.md`, `fix.md` step 1, and `SKILL.md`.
-20: the two new self-test rows of `check-plan.ts`; `node plugins/sdlc/source/scripts/check-plan.ts`.
-21: the new case of `check-agent-gates.ts`; `pnpm gates:check` in a generated project.
+18, 19, 22: `git ls-files` lists no `small.md`; the diff of `SKILL.md`, `sdlc-help`, `fix.md` step 1, and the `AGENTS.md` files.
+20: `git grep findUnplannedChangeProblems` finds nothing; `node plugins/sdlc/source/scripts/check-plan.ts` passes its self-tests.
+21: `git grep check-push` outside `intent/` and `CHANGELOG.md` finds nothing after the engineer's commit; `pnpm plugin:check` passes.
 24: the search of step 7, and review of the five stacks' documents.
 25: `pnpm plugin:sync`, then `pnpm plugin:check` and `pnpm rules:check`.
 26: `pnpm verify` in the root and in a generated project of each stack.

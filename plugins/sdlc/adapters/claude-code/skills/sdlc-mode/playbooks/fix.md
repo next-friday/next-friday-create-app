@@ -4,8 +4,7 @@ This playbook takes a defect in behaviour that already exists to a pull request.
 
 1. Decide that the request qualifies. It qualifies when the request is a defect in behaviour that already exists.
    - A defect breaks what a spec, a test, or a documented target says, or it crashes or returns a wrong result.
-   - A defect that meets every condition of `playbooks/small.md` step 1 follows `small.md` instead, with no plan.
-   - Every other defect takes this playbook, even when the fix needs a new dependency, a schema change, or a public-interface change. The plan then names that under **Risks**.
+   - Every such defect takes this playbook, even when the fix needs a new dependency, a schema change, or a public-interface change. The plan then names that under **Risks**.
    - A request that adds new behaviour is not a defect. Neither is a complaint that no written target backs, such as a slow page with no stated limit. Say so in two lines and follow `playbooks/intent.md` instead.
    - When `intent/<short-description>/plan.md` for this defect is on a branch with an `Accepted by:` line naming a handle, the engineer accepted it. Check out that branch and go to step 8.
 2. Reproduce the defect yourself by running the code, and keep the output. Ask the person only when you can name the specific reason you cannot reach it, such as a credential or a service this session cannot use. Ask as `../SKILL.md` step 6 says.

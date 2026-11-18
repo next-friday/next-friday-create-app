@@ -377,11 +377,8 @@ function isFixPlanFolder(folder: string): boolean {
   );
 }
 
-const unplannedBranchPrefixes = ["dependabot/", "changeset-release/"];
 const headReferenceVariable = "GITHUB_HEAD_REF";
 const fixBranchPrefix = "fix/";
-const smallBranchPrefix = "small/";
-const smallChangeFileLimit = 5;
 const fixTitleSuffix = "(fix)";
 
 /**
@@ -411,41 +408,9 @@ function findPlanOnlyProblems(planText: string, branchName: string): string[] {
 }
 
 const planPathPattern = /^intent\/[^/]+\/plan\.md$/;
-const manifestFileName = "package.json";
 const testDirectoryPattern = /(?:^|\/)(?:tests?|e2e|__tests__)\//;
 const testFilePattern = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const testChangeAcceptedPattern = /^Test change accepted by: @[\dA-Za-z][\w-]*\.$/m;
-
-/**
- * Find a branch that changes code with no plan for its change.
- * @param changedPaths The paths the branch changed since it left the default branch.
- * @param branchName The branch's name; branches that a bot opens for dependencies and releases need no plan.
- * @param isFirstImport Whether the default branch has no `package.json` yet, as before a generated project's first import.
- * @returns At most one message.
- */
-function findUnplannedChangeProblems(
-  changedPaths: string[],
-  branchName: string,
-  isFirstImport = false,
-): string[] {
-  const isChangesCode = changedPaths.some(
-    changedPath => !changedPath.startsWith(`${intentDirectory}/`),
-  );
-
-  const hasPlan = changedPaths.some(changedPath => planPathPattern.test(changedPath));
-  const isBotBranch = unplannedBranchPrefixes.some(prefix => branchName.startsWith(prefix));
-
-  const isSmallChange =
-    branchName.startsWith(smallBranchPrefix) && changedPaths.length <= smallChangeFileLimit;
-
-  const isExempt = hasPlan || isBotBranch || isFirstImport || isSmallChange;
-
-  return !isChangesCode || isExempt
-    ? []
-    : [
-        `this branch changes files outside ${intentDirectory}/ and adds or changes no ${intentDirectory}/<change>/${planFileName}; commit the plan the engineer accepted in the same pull request, or, for a change of at most ${smallChangeFileLimit} files, use a "${smallBranchPrefix}" branch; a larger defect goes on a "${fixBranchPrefix}" branch with a plan and a failing test`,
-      ];
-}
 
 /**
  * Find a fix that edits a test the default branch already holds.
@@ -1000,27 +965,11 @@ const selfTestCases: SelfTestCase[] = [
         ? []
         : ["expected one line for each file"],
   },
-  ...(
-    [
-      [true, "feat/a", ["src/a.ts", "intent/a/plan.md"]],
-      [false, "feat/a", ["src/a.ts"]],
-      [true, "dependabot/npm_and_yarn/a", [manifestFileName]],
-      [true, "docs/a", ["intent/a/intent.md"]],
-      [true, "small/feat-a", ["src/a.ts"]],
-      [true, "small/fix-a", ["src/a.ts", "src/a.test.ts"]],
-      [false, "small/feat-a", Array.from("abcdef", letter => `src/${letter}.ts`)],
-      [true, "feat/import", [manifestFileName, "src/index.ts"], true],
-    ] as [boolean, string, string[], boolean?][]
-  ).map(([needsNoPlan, branchName, changedPaths, isFirstImport]) => ({
-    expectedMessagePart: needsNoPlan ? undefined : "adds or changes no",
-    name: `${branchName} changing ${changedPaths.join(", ")}${isFirstImport === true ? " as a first import" : ""} ${needsNoPlan ? "needs no" : "needs a"} plan`,
-    problems: findUnplannedChangeProblems(changedPaths, branchName, isFirstImport),
-  })),
-  ...["# Plan: a (fix)\n", ""].map(planText => ({
+  {
     expectedMessagePart: "fix the code, not the test",
-    name: `a ${planText === "" ? "small " : ""}fix that edits a test the default branch holds`,
-    problems: findFixTestEditProblems(["src/a.test.ts", "src/a.ts"], planText),
-  })),
+    name: "a fix that edits a test the default branch holds",
+    problems: findFixTestEditProblems(["src/a.test.ts", "src/a.ts"], "# Plan: a (fix)\n"),
+  },
   {
     name: "a fix whose test change a code owner accepted",
     problems: findFixTestEditProblems(["test/a.ts"], "Test change accepted by: @owner.\n"),
@@ -1222,7 +1171,7 @@ function isMergedFile(changes: BranchChanges | undefined, filePath: string): boo
 }
 
 /**
- * Report a branch that changes code with no plan, and a fix that edits a test the default branch holds.
+ * Report a fix that edits a test the default branch holds.
  * @returns One line per problem.
  */
 function findBranchRuleLines(): string[] {
@@ -1231,8 +1180,6 @@ function findBranchRuleLines(): string[] {
   if (branchChanges === undefined || branchChanges.mergeBase === branchChanges.headCommit) {
     return [];
   }
-
-  const branchName = readBranchName();
 
   const modifiedPaths = runGit([
     "diff",
@@ -1244,7 +1191,7 @@ function findBranchRuleLines(): string[] {
     .split("\n")
     .filter(modifiedPath => modifiedPath !== "");
 
-  const fixPlanLines = branchChanges.changedPaths
+  return branchChanges.changedPaths
     .filter(changedPath => planPathPattern.test(changedPath) && existsSync(changedPath))
     .filter(planPath => isFixPlanFolder(path.dirname(planPath)))
     .flatMap(planPath =>
@@ -1252,17 +1199,6 @@ function findBranchRuleLines(): string[] {
         message => `${planPath}: ${message}`,
       ),
     );
-
-  const isFirstImport =
-    readDefaultBranchFile(branchChanges.mergeBase, manifestFileName) === undefined;
-
-  return [
-    ...findUnplannedChangeProblems(branchChanges.changedPaths, branchName, isFirstImport),
-    ...fixPlanLines,
-    ...(branchName.startsWith(`${smallBranchPrefix}fix-`)
-      ? findFixTestEditProblems(modifiedPaths, "")
-      : []),
-  ];
 }
 
 /**

@@ -28,7 +28,7 @@ For a change to the prompts or the arguments, also run `node dist/main.mjs` with
 3. **When you change a `base` file that a stack replaces, make the same change in each replacement.** `CONTRIBUTING.md` lists them.
 4. **Store `.gitignore` as `_gitignore` and commit no `pnpm-lock.yaml` under `templates/`.**
 5. **After a change under `templates/`, run `pnpm verify` in a project generated from each stack in `src/stacks.ts`,** because CI runs all of them.
-6. **Work runs through `/sdlc-mode`.** In an agent tool with no command for it, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how branches, commits, and pull requests are made, over a skill from another checkout.
+6. **`/sdlc-mode` starts the SDLC loop, only when a person types it.** In an agent tool with no command for it, read and follow `.claude/skills/sdlc-mode/SKILL.md` when a person asks for the loop. In the loop, its playbooks decide how branches, commits, and pull requests are made, over a skill from another checkout.
 7. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions.
 
 ## Things Claude gets wrong

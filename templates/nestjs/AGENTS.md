@@ -36,7 +36,7 @@ The `verifier` subagent starts the app with `pnpm start:dev`. It exercises the c
 1. **Put unit tests next to the code as `src/**/*.test.ts` and end-to-end tests in `test/` as `*.e2e.test.ts`.** `vitest.config.ts` and `vitest.e2e.config.ts` collect only those patterns.
 2. **Read configuration from environment variables and fail when one is missing**, as `parsePort` does. Document each variable in `.env.example`.
 3. **Log through Nest's `Logger`.** It goes to the `ConsoleLogger` set in `src/main.ts`.
-4. **Work runs through `/sdlc-mode`;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
+4. **`/sdlc-mode` starts the SDLC loop, only when a person types it;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md` when a person asks for the loop. In the loop, its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
 5. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 6. **Name a branch `<type>/<short-description>`,** where `<type>` is a commit type that `.commitlintrc.json` allows, for example `feat/add-health-endpoint`.
 

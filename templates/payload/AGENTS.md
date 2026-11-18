@@ -40,7 +40,7 @@ For a change to a page, the visual check uses the `playwright` MCP server from `
 2. **Put unit tests next to the code as `src/**/*.test.{ts,tsx}`, which Vitest collects, and Playwright end-to-end tests in `test/` as `*.e2e.test.ts`.**
 3. **Component tests need a DOM test environment, and Vitest runs in Node.js.** Add that environment with the first component test.
 4. **Read configuration through `requireEnvironment` in `src/environment.ts`,** and document each variable in `.env.example`.
-5. **Work runs through `/sdlc-mode`;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md`. Its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
+5. **`/sdlc-mode` starts the SDLC loop, only when a person types it;** in an agent tool with no such command, read and follow `.claude/skills/sdlc-mode/SKILL.md` when a person asks for the loop. In the loop, its playbooks decide how plans, fixes, branches, commits, and pull requests are made.
 6. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 7. **Name a branch `<type>/<short-description>`,** where `<type>` is a commit type that `.commitlintrc.json` allows, for example `feat/add-posts-collection`.
 

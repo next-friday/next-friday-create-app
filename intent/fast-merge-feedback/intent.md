@@ -41,13 +41,13 @@ The book places "the full test suite" at the commit or the pull request (page 27
 
 ### Cut
 
-| What is cut                                                  | Why                                                                              |
-| :----------------------------------------------------------- | :------------------------------------------------------------------------------- |
-| End-to-end tests and the browser install on a pull request   | They run after the merge.                                                        |
-| The build and `format:check` in `pre-push`                   | CI builds the same commit; lint-staged and CI cover the format.                  |
-| `pr-triage.yml` and `.github/labeler.yml`                    | Nothing reads the labels.                                                        |
-| The small jobs of `ci.yml` as separate jobs                  | Each bills a whole minute for seconds of work. Their steps move into fewer jobs. |
-| The plan and its acceptance for a small, well-bounded defect | The book, page 52. The failing test committed before the fix stays (page 32).    |
+| What is cut                                                                                                                                     | Why                                                                                       |
+| :---------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| End-to-end tests and the browser install on a pull request                                                                                      | They run after the merge.                                                                 |
+| The build and `format:check` in `pre-push`                                                                                                      | CI builds the same commit; lint-staged and CI cover the format.                           |
+| `pr-triage.yml` and `.github/labeler.yml`                                                                                                       | Nothing reads the labels.                                                                 |
+| The small jobs of `ci.yml` as separate jobs                                                                                                     | Each bills a whole minute for seconds of work. Their steps move into fewer jobs.          |
+| `playbooks/small.md`, the plan that `plan:check` asked of every branch that changes code, and the push hook that compared commits with the plan | The product owner's decision: the SDLC loop starts only when a person types `/sdlc-mode`. |
 
 ### Kept, and explained
 
