@@ -8,7 +8,7 @@ Marked **person** below: a file the spec's area of concern 6 says a person commi
 
 Workflows, five stacks (`nestjs`, `nextjs`, `nodejs`, `payload`, `turborepo`):
 
-- `templates/<stack>/.github/workflows/ci.yml` (changed): one job, `All Checks` (id `ci`), replaces `changes`, `agent-checks`, `checks`, `image`, `ci`, and `affected-apps` in `turborepo`. Its steps run in order: detect the changed paths and the verification mode; the agent checks; the static checks, the unit tests with coverage, and the build, when the mode is full; patch coverage with `--fail-under 80` on a pull request; the Playwright install and the end-to-end tests only when `github.event_name == 'push'`; the container image steps (hadolint, build, smoke test, Trivy) when the mode is full or the run is the weekly schedule and `vars.CONTAINER_IMAGE != 'false'`. In `turborepo` the image steps loop over the affected apps in place of the matrix. The job takes the union of the old jobs' `permissions` and `services`. `triage` needs only `ci`, and its condition also accepts `github.event_name == 'push'`; on a push it finds the merged pull request with `gh api repos/$REPOSITORY/commits/$SHA/pulls`, comments there, and ends the comment with `/sdlc-mode fix <name of the failed step>`. The product owner chose one job in the build session (requirement 11 against requirement 12).
+- `templates/<stack>/.github/workflows/ci.yml` (changed): one job, `All Checks` (id `ci`), replaces `changes`, `agent-checks`, `checks`, `image`, `ci`, and `affected-apps` in `turborepo`. Its steps run in order: detect the changed paths and the verification mode; the agent checks; the static checks, the unit tests with coverage, and the build, when the mode is full; patch coverage with `--fail-under 80` on a pull request; the Playwright install and the end-to-end tests, when the mode is full; the container image steps (hadolint, build, smoke test, Trivy) when the mode is full or the run is the weekly schedule and `vars.CONTAINER_IMAGE != 'false'`. In `turborepo` the image steps loop over the affected apps in place of the matrix. The job takes the union of the old jobs' `permissions` and `services`. `triage` needs only `ci`; its condition and its comment do not change. The product owner chose one job in the build session (requirement 11 against requirement 12).
 - `templates/base/.github/workflows/pr-triage.yml`, `templates/base/.github/labeler.yml` (deleted).
 - `plugins/sdlc/source/scripts/changed-documents.ts` (changed), rendered to `templates/base/scripts/changed-documents.ts`: its two messages name the `All Checks` job, where they named `Detect Changes`.
 
@@ -30,13 +30,12 @@ Playbooks, under `plugins/sdlc/source/skills/sdlc-mode/`, rendered to `plugins/s
 - `playbooks/small.md` (deleted).
 - `playbooks/fix.md` (changed): step 10 runs the end-to-end tests of the part it changed before the push.
 - `playbooks/build.md` (changed): step 9 runs the end-to-end tests of the part it changed before the push, and says so under **Not yet** when the project has none or the session cannot run them.
-- `playbooks/deploy.md` (changed): step 1 names the end-to-end tests among the checks of the commit.
 - `playbooks/review.md` step 5 and `SKILL.md` (changed), and the eval case `merged-with-a-run-in-progress-is-not-done` (renamed to `merged-with-a-run-on-main-in-progress-is-done`): a merged pull request whose checks passed is done, and a run still in progress on the default branch goes on the **Not yet** line.
 
 Documents:
 
-- `templates/base/SETUP.md` (changed): section 8 says the `triage` job also reports a failed push to the default branch on the merged pull request; section **Deploy** says the team's deploy workflow deploys the development environment on a push to the default branch, and a later environment takes a commit whose run passed.
-- `templates/<stack>/README.md`, `CONTRIBUTING.md`, `AGENTS.md` (changed, five stacks): `AGENTS.md` drops `pnpm format:check` from the document-only path of `pre-push`, as the engineer's commit of that hook did. They say what the commit, the push, the pull request, and the push to the default branch run. `pnpm check` no longer builds; CI runs the end-to-end tests after the merge. The healthy output of `pnpm check` in the Commands table is copied from a generated project.
+- `templates/base/SETUP.md` (changed): the sentence on a `small/` branch goes. Its sections on the `triage` job and on **Deploy** do not change.
+- `templates/<stack>/README.md`, `CONTRIBUTING.md`, `AGENTS.md` (changed, five stacks): `AGENTS.md` drops `pnpm format:check` from the document-only path of `pre-push`, as the engineer's commit of that hook did. They say what the commit, the push, the pull request, and the push to the default branch run. `pnpm check` no longer builds; CI runs the end-to-end tests on the pull request, as before. The healthy output of `pnpm check` in the Commands table is copied from a generated project.
 
 Evals and release:
 
@@ -63,7 +62,7 @@ Evals and release:
 
 - The riskiest step is 5. The five `ci.yml` files become one job each, and a mistake there runs too much, too little, or nothing; `zizmor` and `actionlint` catch syntax, not intent. The pull request's own CI does not run the template workflows; the `Template` job in CI checks only that a generated project's `pnpm verify` passes. The proof of the new job is a generated project on GitHub, which this session cannot create.
 - One job is slower than parallel jobs: the container image steps now run after the tests in the same job, and a pull request waits for both. The product owner chose this over keeping `image` apart.
-- The end-to-end tests stop guarding the merge. A broken flow is first seen after the merge, on `main`.
+- The first build moved the end-to-end tests behind the merge. The product owner then kept them on the pull request, as the book's page 27 says, so the slowest step of a pull request stays as slow as it was. The one job, the lighter `pre-push`, and patch coverage at 80 are what this change gains.
 - `check-plan.ts` is near the lint limit of 1,000 lines; the new self-test row may need another line shortened.
 - The session's token may not push a change under `templates/*/.github/workflows/`. If GitHub refuses the push, the engineer commits those five files.
 - The evals did not run: each case runs three times, with a second arm that has no plugin, about $0.40 a case, and the two suites hold 30 cases, about $12. The product owner decided not to run them. No score shows how the changed playbooks behave.
@@ -74,9 +73,9 @@ Evals and release:
 
 ## Proof
 
-1: the five `ci.yml` files, review of the diff: the end-to-end and Playwright steps carry `if: github.event_name == 'push'`; `nodejs` has neither.
+1: the five `ci.yml` files, review of the diff: the end-to-end and Playwright steps run when the mode is full, on a pull request and on a push; `nodejs` has neither.
 2: the same review: coverage, build, `diff-cover --fail-under 80` on a pull request; `secret-scan.yml` does not change.
-3: the same review: a failed end-to-end step on a push fails the one job `All Checks`.
+3: the same review: a failed end-to-end step fails the one job `All Checks`.
 4, 5: `git grep -n '"check":' -- 'templates/*/package.json'`, the diff of `pre-push`, and `pnpm check` in each generated project.
 6: `verify` and `verify:static` unchanged in the diff; `pnpm verify` in each generated project.
 7, 8, 9: `commit-msg`, `.commitlintrc.json`, `pre-commit`, and the commitlint packages are not in the diff.
@@ -84,8 +83,8 @@ Evals and release:
 11: review of the diff: each `ci.yml` has the jobs `ci` (named `All Checks`) and `triage` only.
 12: `codeql.yml`, `dependency-review.yml`, `scorecard.yml` are not in the diff; the image steps and the weekly schedule stay, inside `All Checks`.
 13: `control-band.yml`, `claude-fix-loop.yml`, `spec-on-intent-merge.yml` are not in the diff; `triage` stays.
-14: the diff of `deploy.md` step 1.
-15: review of the `triage` job: its condition, the `commits/<sha>/pulls` call, and the last line of the comment.
+14: `deploy.md` is not in the diff.
+15: review of the `triage` job: its condition and its last step match the default branch's.
 16, 23: the diff of `SETUP.md`.
 17: the diff of `build.md` step 9 and `fix.md` step 10.
 18, 19, 22: `git ls-files` lists no `small.md`; the diff of `SKILL.md`, `sdlc-help`, `fix.md` step 1, and the `AGENTS.md` files.

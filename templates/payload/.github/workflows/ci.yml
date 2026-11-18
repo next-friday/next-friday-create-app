@@ -141,10 +141,10 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Install Playwright browser
-        if: steps.mode.outputs.full_verification == 'true' && github.event_name == 'push'
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm exec playwright install --with-deps chromium
       - name: Run end-to-end tests
-        if: steps.mode.outputs.full_verification == 'true' && github.event_name == 'push'
+        if: steps.mode.outputs.full_verification == 'true'
         run: pnpm test:e2e
         env:
           NEXT_TELEMETRY_DISABLED: "1"
@@ -189,13 +189,13 @@ jobs:
   triage:
     name: Triage failed build
     needs: ci
-    if: failure() && vars.CLAUDE_CI_ENABLED == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: failure() && vars.CLAUDE_CI_ENABLED == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       actions: read # Needed to read the logs of the failed jobs.
       id-token: write # Needed to authenticate the Claude GitHub App with the workflow's OIDC token.
-      pull-requests: write # Needed to post the summary on the pull request, or on the merged one after a failed push.
+      pull-requests: write # Needed to post the summary on the pull request.
     steps:
       - name: Require a Claude credential
         env:
@@ -231,17 +231,7 @@ jobs:
       - name: Post the summary
         env:
           GH_TOKEN: ${{ github.token }}
-          EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
-          SHA: ${{ github.sha }}
           SUMMARY: ${{ fromJSON(steps.triage.outputs.structured_output).summary }}
-        run: |
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            PR_NUMBER="$(gh api "repos/$REPOSITORY/commits/$SHA/pulls" --jq '.[0].number // empty')"
-            [[ -n "$PR_NUMBER" ]] || { echo "No merged pull request made $SHA; nothing to comment on."; exit 0; }
-            failed_step="$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs" --jq '[.jobs[].steps[]? | select(.conclusion == "failure") | .name][0] // "All Checks"')"
-            SUMMARY="$(printf '%s\n\n/sdlc-mode fix %s' "$SUMMARY" "$failed_step")"
-          fi
-          gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"
+        run: gh pr comment "$PR_NUMBER" --repo "$REPOSITORY" --body "$SUMMARY"

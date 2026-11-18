@@ -33,7 +33,7 @@ This playbook turns a merged spec into a plan the engineer accepts, and then int
    - Before the branch is first pushed, set `Status: done.` in `intent.md` and `spec.md`. `pnpm plan:check` fails the push without it.
    - When a requirement of `spec.md` stays unmet, name it in the pull request description.
 9. Verify the work yourself. While you work, run the checks of the files you changed, as the project's agent instructions name them, and keep the output. Every one of them must pass. Fix the code, and never skip, delete, or weaken a test.
-   - Before the push, run the end-to-end tests that cover the part you changed, and keep the output: CI runs them only after the merge. When the project has no end-to-end test, or the session cannot run them, say so under **Not yet**.
+   - Before the push, run the end-to-end tests that cover the part you changed, and keep the output. When the project has no end-to-end test, or the session cannot run them, say so under **Not yet**.
    - The full set of checks runs once, in the `pre-push` hook, at the push of step 10. Quote the hook's output from that push under **Checks**.
    - Then run the `verifier` subagent once, on the `explore` model, as `../SKILL.md` step 4 says. Give it the list of checks you already ran, and fix what it reports. When you cannot start a subagent, do what `../../../agents/verifier.md`, relative to this playbook, says yourself.
    - For UI work, when the session has a browser tool, also compare a screenshot of the page with the mock the spec or the request names. Adjust until it matches.

@@ -10,9 +10,9 @@ The product owner has not answered the intent's open questions. Each one is an a
 
 The pull request gate:
 
-1. **Proposal.** In each stack's `.github/workflows/ci.yml`, the step that runs `pnpm test:e2e` and the step that installs the Playwright browsers run only on a push to the default branch. A pull request runs neither. `nodejs` has neither step and does not change. Area of concern 1.
+1. The end-to-end tests and the Playwright install stay on the pull request, where the book places the full test suite (page 27). The first build moved them behind the merge; the product owner then decided, in the build session, that the starter follows the book. When a project runs them elsewhere, such as before a promotion to one of its environments, is that project's own choice. Area of concern 1.
 2. A pull request still runs the static checks, the tests with coverage, the build, patch coverage at 80, and the secret scan with gitleaks and TruffleHog. Areas of concern 3 and 5.
-3. The job `All Checks` of a push to the default branch fails when an end-to-end test fails, as it does today.
+3. A failed end-to-end test fails the job `All Checks`, on a pull request and on a push to the default branch.
 
 The push gate:
 
@@ -35,9 +35,9 @@ Workflows and jobs:
 
 After the merge:
 
-14. `deploy.md` step 1 names the end-to-end tests among the checks of the commit: a promotion stops while they fail or run. Its wording on a failed or running check does not change.
-15. **Proposal.** When `CLAUDE_CI_ENABLED` is `true` and the run of a push to the default branch fails, the `triage` job runs and writes its summary as a comment on the pull request whose merge made that commit. The comment ends with the message that starts the fix: `/sdlc-mode fix` and the failing check's name. Area of concern 7.
-16. **Proposal.** `templates/base/SETUP.md`, section **Deploy**, says that the team's deploy workflow deploys the development environment on a push to the default branch, and that a later environment takes a commit whose run passed. `deploy.md` step 4 does not change. Area of concern 4.
+14. `deploy.md` step 1 does not change.
+15. The `triage` job runs when a pull request of this repository fails a check and `CLAUDE_CI_ENABLED` is `true`, as before this change. Area of concern 7.
+16. `templates/base/SETUP.md`, section **Deploy**, does not change: a project's environments, and what deploys to them, are the project's own. Area of concern 4.
 
 The session's own check:
 
@@ -62,13 +62,13 @@ Delivery:
 26. `pnpm verify` passes in the root and in a generated project of each stack of `src/stacks.ts`.
 27. `pnpm evals:run` and `pnpm evals:run:write` are run and their scores reported, as `AGENTS.md` says for a change to a skill. The cost is told to the product owner before they run.
 28. The change has one changeset for `@next-friday/create-app`. **Proposal:** `minor`, because a generated project's gates change and no CLI argument, prompt, or stack name does. The package is at `10.3.0`; merging the release pull request that follows publishes `10.4.0` to npm.
-29. After a pull request merged with its checks passed, a session reports the change as done. A run the merge started on the default branch, such as the end-to-end tests of requirement 1, does not make the reply `Not done:`: the reply names it on its **Not yet** line, because a promotion waits for it (requirement 14). `review.md` step 5 and the reply rules of `SKILL.md` say so, and the eval case `merged-with-a-run-on-main-in-progress-is-done` states it. The product owner decided this in the build session.
+29. After a pull request merged with its checks passed, a session reports the change as done. A run the merge started on the default branch does not make the reply `Not done:`: the reply names it on its **Not yet** line, because a promotion waits for it, as `deploy.md` step 1 says. `review.md` step 5 and the reply rules of `SKILL.md` say so, and the eval case `merged-with-a-run-on-main-in-progress-is-done` states it. The product owner decided this in the build session.
 
 ## Design
 
-**Proposal:** the change is higher risk. It moves a test gate from before the merge to after it in every generated project, and it takes the build and `format:check` out of `pre-push`. The product owner consults a tech lead before the merge, as `design.md` step 5 says.
+**Proposal:** the change is higher risk. It folds the jobs of every generated project's `Verify` workflow into one, and it takes the build and `format:check` out of `pre-push`. The product owner consults a tech lead before the merge, as `design.md` step 5 says.
 
-- `templates/<stack>/.github/workflows/ci.yml`, four stacks with end-to-end steps: each of those steps gains `if: github.event_name == 'push'`. A push to the default branch already runs the job `checks` when the commit changes code (`templates/nestjs/.github/workflows/ci.yml:55-58`), so no new workflow is needed. All five stacks: the jobs fold as requirement 11 says, and the `triage` job's condition also accepts a failed push (requirement 15).
+- `templates/<stack>/.github/workflows/ci.yml`, all five stacks: the jobs fold as requirement 11 says. The end-to-end steps keep running whenever the full verification runs.
 - `templates/<stack>/package.json`: the `check` script (line 16) drops `build` and names the static checks without `format:check`.
 - `templates/base/.husky/pre-push`: the document-only path runs `pnpm rules:check && pnpm plan:check`.
 - `templates/base/.github/workflows/pr-triage.yml`, `templates/base/.github/labeler.yml`: deleted.
@@ -94,7 +94,7 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
 1. No policy; the intent's constraint "A check the book asks for stays". The book places "the full test suite" at the commit or the pull request (page 27) and names no end-to-end test. Requirement 1 moves the end-to-end tests after the merge.
 
-   Decision: the end-to-end tests run after the merge, as the company's exception to page 27. The unit tests with coverage stay on the pull request, and requirement 17 has the session run the end-to-end tests of the part it changed before it pushes, which pages 31 to 33 ask for.
+   Decision: the end-to-end tests stay on the pull request, as page 27 says. The product owner's decision in the build session. Requirement 17 still has the session run the end-to-end tests of the part it changed before it pushes, which pages 31 to 33 ask for.
 
 2. No policy; open question 2 of the intent. The book names none of CodeQL, dependency review, Scorecard, the container image job, or a weekly run.
 
@@ -106,7 +106,7 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
 4. No policy; open question 3 of the intent. The book lets the agent deploy freely in development (page 45). The starter ships no deploy workflow, and after a merge no session is running to deploy.
 
-   Decision: the team's deploy workflow deploys the development environment on a push to the default branch, as a script with no model, and `SETUP.md` says so. `deploy.md` step 4 keeps asking for a person's word before an agent promotes.
+   Decision: the starter says nothing new about a project's environments. `deploy.md` step 4 keeps asking for a person's word before an agent promotes.
 
 5. Security rule 6. gitleaks and TruffleHog scan the same commits, and only TruffleHog verifies a found secret with its provider (`templates/base/.github/workflows/secret-scan.yml:33-36`).
 
@@ -118,7 +118,7 @@ The root of this repository keeps its own hooks and workflows. This spec changes
 
 7. No policy. The intent says that a failing after-merge check starts `playbooks/fix.md` without a person asking. `fix.md` stops for the engineer's acceptance of a plan, and no job today runs on a failed push.
 
-   Decision: the `triage` job reports the failure on the merged pull request with the message that starts the fix, and a person sends it. No agent writes code that nobody asked for.
+   Decision: nothing changes: with the end-to-end tests on the pull request, a failure is seen there, and the `triage` job already reports a failed pull request.
 
 8. No policy. Requirement 4 removes the build from `pre-push`, so a change that breaks the build is first seen in CI.
 

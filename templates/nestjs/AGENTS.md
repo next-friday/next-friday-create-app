@@ -4,17 +4,17 @@ NestJS HTTP API in TypeScript on pnpm and Node.js `>=26.13.0 <27`.
 
 ## Commands
 
-| Task                                                                 | Command                                             | Healthy output                                           |
-| :------------------------------------------------------------------- | :-------------------------------------------------- | :------------------------------------------------------- |
-| Start with reload                                                    | `pnpm start:dev`                                    | `Nest application successfully started`                  |
-| One test                                                             | `pnpm vitest run src/port.test.ts -t "<test name>"` | `Tests  1 passed \| 9 skipped (10)`                      |
-| Unit tests                                                           | `pnpm test`, or `pnpm test:coverage`                | `Tests  12 passed (12)`                                  |
-| End-to-end tests, which CI runs after a merge                        | `pnpm test:e2e`                                     | `Tests  2 passed (2)`                                    |
-| What `pre-commit` runs after gitleaks                                | `pnpm exec lint-staged`                             | `✔ Done running tasks for staged files!`                 |
-| What `pre-push` runs for a push of code                              | `pnpm check`                                        | exits 0; the last line is `$ tsc -p tsconfig.build.json` |
-| Every check, which a pull request runs in CI without `pnpm test:e2e` | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json` |
-| Render rules after a change                                          | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                 |
-| Compare the harness with a create-app version                        | `pnpm harness:check <version>`                      | ends with `none differs.`                                |
+| Task                                          | Command                                             | Healthy output                                           |
+| :-------------------------------------------- | :-------------------------------------------------- | :------------------------------------------------------- |
+| Start with reload                             | `pnpm start:dev`                                    | `Nest application successfully started`                  |
+| One test                                      | `pnpm vitest run src/port.test.ts -t "<test name>"` | `Tests  1 passed \| 9 skipped (10)`                      |
+| Unit tests                                    | `pnpm test`, or `pnpm test:coverage`                | `Tests  12 passed (12)`                                  |
+| End-to-end tests                              | `pnpm test:e2e`                                     | `Tests  2 passed (2)`                                    |
+| What `pre-commit` runs after gitleaks         | `pnpm exec lint-staged`                             | `✔ Done running tasks for staged files!`                 |
+| What `pre-push` runs for a push of code       | `pnpm check`                                        | exits 0; the last lines list every step as `passed`      |
+| Every check                                   | `pnpm verify`                                       | exits 0; the last line is `$ tsc -p tsconfig.build.json` |
+| Render rules after a change                   | `pnpm rules:sync`                                   | `Synced 35 agent rule files; 0 updated.`                 |
+| Compare the harness with a create-app version | `pnpm harness:check <version>`                      | ends with `none differs.`                                |
 
 ## Verifying your work
 

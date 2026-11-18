@@ -136,7 +136,7 @@ Each workflow below stays off until the repository variable `CLAUDE_CI_ENABLED` 
 
 - **`Spec on intent merge`.** When an `intent.md` reaches `main` with `Status: accepted.` and no `spec.md` beside it, which is how the product owner accepts it, runs `/sdlc-mode intent/<change>/intent.md`, so that `spec.md` arrives as a pull request for the product owner.
 - **`Claude fix loop`.** When a person with write access comments `@claude` on a line of a pull request from this repository, Claude addresses the comment and pushes to that branch. It cannot approve or merge.
-- **`triage` job of `Verify`.** When a pull request from this repository fails a check, reads the failed logs with the `Read` tool only and posts a three-line summary. When a push to `main` fails, such as the end-to-end tests after a merge, it posts the summary on the pull request whose merge made that commit, ending with the message that starts the fix: `/sdlc-mode fix` and the name of the failed step.
+- **`triage` job of `Verify`.** When a pull request from this repository fails a check, reads the failed logs with the `Read` tool only and posts a three-line summary.
 - **`Control band`.** Every day, runs the command in the repository variable `CONTROL_BAND_METRIC_COMMAND`, which writes `metric-values.json` as `{"baseline": [...], "recent": [...]}`, then `pnpm bands:check metric-values.json`. It writes the detection report to the run's job summary, which is where a `log` tier's finding is read. A tier whose action is `diagnose` runs `/sdlc-mode` with the finding and writes the diagnosis to the job summary; a tier whose action is `propose` opens an intent pull request through the `pull_request` route. It never acts on production and never runs a runbook.
 
 On a machine, `pnpm loop:measure` reports the loop's measures. It is not part of `pnpm verify`.
@@ -147,7 +147,7 @@ On a machine, `pnpm loop:measure` reports the loop's measures. It is not part of
 
 **Who.** An engineer, with the release managers.
 
-The project ships no deploy workflow; set up your own. It deploys the development environment on each push to `main`, and a later environment takes only a commit whose `Verify` run passed, the end-to-end tests included. It needs a workflow under `.github/workflows/` that deploys the image the `Dockerfile` builds, and a `prod` environment under **Settings → Environments** with the release managers as its required reviewers. Name the production environment `prod`, so that the production gate recognizes a dispatch to it.
+The project ships no deploy workflow; set up your own. It needs a workflow under `.github/workflows/` that deploys the image the `Dockerfile` builds, and a `prod` environment under **Settings → Environments** with the release managers as its required reviewers. Name the production environment `prod`, so that the production gate recognizes a dispatch to it.
 
 **Check.** A run of your deploy workflow against `prod` waits for a release manager's approval.
 

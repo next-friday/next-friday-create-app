@@ -43,7 +43,7 @@ Run the narrowest check that covers the change while you work. Git hooks run the
 | `pre-push`         | blocks pushes to `main` except the push that creates it, then by what the push changes: only documents, `pnpm rules:check` and `pnpm plan:check`; anything else, `pnpm check`, which is the static checks other than the format check, and the unit tests related to your changes |
 
 - **Scans.** CI also runs coverage, the build, the container image, and the secret, SAST, OSV, CodeQL, dependency-review, and OpenSSF Scorecard scans. CodeQL, dependency-review, and Scorecard run on public repositories, and on private ones when the `CODE_SCANNING` repository variable is `true`. Dependabot and OSV-Scanner report vulnerable dependencies.
-- **End-to-end tests.** Run `pnpm test:e2e` when you change pages or the admin panel. It starts the development server unless one is already running, and needs `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL` from `.env`. Run `pnpm exec playwright install chromium` once before the first run. CI runs it against the production build and a PostgreSQL service on a push to `main`, after the merge, and not on a pull request.
+- **End-to-end tests.** Run `pnpm test:e2e` when you change pages or the admin panel. It starts the development server unless one is already running, and needs `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL` from `.env`. Run `pnpm exec playwright install chromium` once before the first run. CI runs it against the production build and a PostgreSQL service on every pull request that is ready for review and changes code.
 - **Coverage.** CI requires 80% branch coverage on changed lines in `src/`, except layouts, the Payload config, and generated files.
 
 Run `pnpm verify` for repository changes.
