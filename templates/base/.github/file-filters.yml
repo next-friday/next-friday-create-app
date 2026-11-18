@@ -6,19 +6,17 @@ heavy:
   - "!.github/ISSUE_TEMPLATE/**"
   - "!.github/dependabot.yml"
   - "!intent/**"
+  - "!.agents/**"
+  - "!.claude/**"
 
 ci_policy:
   - ".github/file-filters.yml"
   - ".github/workflows/**"
-  - ".agents/**"
-  - ".claude/**"
   - "scripts/**"
-  - "!.agents/**/*.md"
-  - "!.claude/**/*.md"
 
 agent_docs:
-  - ".agents/**/*.md"
-  - ".claude/**/*.md"
+  - ".agents/**"
+  - ".claude/**"
   - "AGENTS.md"
   - "REVIEW.md"
   - "apps/*/AGENTS.md"
