@@ -34,7 +34,7 @@ Playbooks, under `plugins/sdlc/source/skills/sdlc-mode/`, rendered to `plugins/s
 
 Documents:
 
-- `AGENTS.md` (changed): line 20 tells the agent to run only the check of the files it changed and not to run `pnpm verify` itself, because `pre-push` runs it. `playbooks/small.md` step 4 and `playbooks/fix.md` step 10 (changed) verify as `build.md` step 9 says, in place of running every check. Each stack's `AGENTS.md` says the same above its **Verifying your work** list. The product owner ordered these three in the build session; the spec does not name them.
+- `AGENTS.md` (changed): line 20 tells the agent to run only the check of the files it changed and not to run `pnpm verify` itself, because `pre-push` runs it. `playbooks/small.md` step 4 and `playbooks/fix.md` step 10 (changed) verify as `build.md` step 9 says, in place of running every check. Each stack's `AGENTS.md` says the same above its **Verifying your work** list. The product owner ordered these three in the build session; the spec does not name them. In the same session the product owner ordered that no agent run a check the `pre-commit` or `pre-push` hook runs: `build.md` steps 8 and 9, `small.md` step 4, `fix.md` step 10, `open-pr.md` step 3, `review.md` step 4, the root and stack `AGENTS.md`, and the message of the reply-shape hook `plugins/sdlc/source/hooks/check-reply-shape.sh` say so. Each stack's `AGENTS.md` also loses `pnpm format:check` from the document-only path of `pre-push`, as the engineer's commit of that hook did.
 - `templates/base/SETUP.md` (changed): section 8 says the `triage` job also reports a failed push to the default branch on the merged pull request; section **Deploy** says the team's deploy workflow deploys the development environment on a push to the default branch, and a later environment takes a commit whose run passed.
 - `templates/<stack>/README.md`, `CONTRIBUTING.md`, `AGENTS.md` (changed, five stacks): what the commit, the push, the pull request, and the push to the default branch run. `pnpm check` no longer builds; CI runs the end-to-end tests after the merge. The healthy output of `pnpm check` in the Commands table is copied from a generated project.
 
@@ -53,7 +53,7 @@ Evals and release:
 5. Change the five `ci.yml` files and delete `pr-triage.yml` and `labeler.yml`. Check: `actionlint` and `zizmor` pass on each file, and `git grep -n -E "pr-triage|labeler" -- templates` finds nothing.
 6. Change the five `package.json` `check` scripts. Check: `git grep -n '"check":' -- 'templates/*/package.json'` shows no `build` and no `format:check`.
 7. Change `SETUP.md` and the five stacks' `README.md`, `CONTRIBUTING.md`, `AGENTS.md`. Check: `git grep -n -i -E "pull request.*end-to-end|end-to-end.*every pull request|production build \(the .pre-push" -- templates` finds nothing.
-8. Change the eval case. Tell the product owner the cost, then run `pnpm evals:run` and `pnpm evals:run:write`. Check: the scores are in the pull request.
+8. Change the eval case. Check: `pnpm plugin:check` passes. The product owner was told the cost of `pnpm evals:run` and `pnpm evals:run:write` and decided not to run them, so requirement 27 is met in part.
 9. Write the changeset, and set `Status: done.` in `intent.md` and `spec.md`. Check: `pnpm verify` passes in the root.
 10. Generate a project of each stack and run `pnpm verify` and `pnpm check` there; in the stacks with end-to-end tests, also `pnpm test:e2e`. Copy the healthy output of `pnpm check` into each `AGENTS.md`. Check: each exits 0.
 11. Run the `verifier` subagent, push, and open the pull request.
@@ -65,7 +65,7 @@ Evals and release:
 - The end-to-end tests stop guarding the merge. A broken flow is first seen after the merge, on `main`.
 - `check-plan.ts` is near the lint limit of 1,000 lines; the new self-test row may need another line shortened.
 - The session's token may not push a change under `templates/*/.github/workflows/`. If GitHub refuses the push, the engineer commits those five files.
-- Step 8 costs money: each case runs three times, with a second arm that has no plugin, about $0.40 a case. The two suites hold 30 cases, about $12.
+- The evals did not run: each case runs three times, with a second arm that has no plugin, about $0.40 a case, and the two suites hold 30 cases, about $12. The product owner decided not to run them. No score shows how the changed playbooks behave.
 - Options not taken:
   - Keeping `image` as its own job beside `All Checks`: the product owner chose one job.
   - Adding a new eval case for a small defect: requirement 27 changes the cases that state the old rule and adds none.
@@ -93,5 +93,5 @@ Evals and release:
 24: the search of step 7, and review of the five stacks' documents.
 25: `pnpm plugin:sync`, then `pnpm plugin:check` and `pnpm rules:check`.
 26: `pnpm verify` in the root and in a generated project of each stack.
-27: the diff of the eval case, and the scores of step 8 in the pull request.
+27: the diff of the eval case. The suites did not run, by the product owner's decision.
 28: `.changeset/fast-merge-feedback.md` holds `minor`; `pnpm verify` runs the changeset check.

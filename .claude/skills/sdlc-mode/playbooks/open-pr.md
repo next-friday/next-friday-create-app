@@ -4,7 +4,7 @@ Branch from the latest `origin/main`, and open the pull request ready for review
 
 1. Clean the diff against the default branch. Remove debug output, commented-out code, changes the plan does not name, and comments that add nothing the code does not show.
 2. Do what the project's `AGENTS.md` requires for this kind of change.
-3. When step 1 or 2 changed a file, run the checks of the files it changed again, and commit only when they pass.
+3. When step 1 or 2 changed a file, commit it. The `pre-commit` hook checks the staged files; run none of its checks yourself.
 4. Check that the change's `plan.md` names each file of the diff, or change `plan.md` in the same commit. The push hook refuses a push whose commits change a file the plan does not name without changing `plan.md` in the same commit.
 5. Push the branch and open the pull request. When the branch already has one, update it. Fill the body from `.github/pull_request_template.md` with these three things.
    - Say what changed and why, with the paths of `intent/<change>/spec.md` and `plan.md` when they exist.

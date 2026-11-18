@@ -26,13 +26,13 @@ Lint, format, Knip, and `package.json` ordering run over the whole workspace wha
 
 ## Verifying your work
 
-Each command below checks one part. While you work, run only the one that covers the files you changed; the `pre-push` hook runs the full set at the push.
+The hooks run these checks: `pre-commit` runs gitleaks and lint-staged on the staged files, and `pre-push` runs `pnpm check`. Run none of them yourself.
 
 - Build: `pnpm build` (the last line is Turborepo's `Tasks:` summary with every task successful)
 - Test: `pnpm test:coverage` (all green, and the last line is Turborepo's `Tasks:` summary with every task successful)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` for the affected apps once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check`, `pnpm plan:check`, and `pnpm format:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
+The `pre-push` hook runs `pnpm check` for the affected apps once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check` and `pnpm plan:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
 
 The `verifier` subagent starts the apps with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 
