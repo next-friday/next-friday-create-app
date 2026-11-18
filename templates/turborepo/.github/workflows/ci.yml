@@ -25,19 +25,6 @@ jobs:
       contents: read
       pull-requests: read # Needed by paths-filter to inspect pull request changes.
       id-token: write # Needed to exchange GitHub OIDC for a Turborepo Remote Cache token.
-    services:
-      postgres:
-        image: postgres:17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: payload
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready --username postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/payload
       PAYLOAD_SECRET: ci-only-secret
@@ -70,9 +57,11 @@ jobs:
           HEAVY: ${{ steps.filter.outputs.heavy }}
           CI_POLICY: ${{ steps.filter.outputs.ci_policy }}
           AGENT_DOCS: ${{ steps.filter.outputs.agent_docs }}
+          INTENT_DOCS: ${{ steps.filter.outputs.intent_docs }}
         run: |
           full_verification=false
           agent_checks=false
+          format_check=false
           if [[ "$EVENT_NAME" == "push" || ( "$EVENT_NAME" == "pull_request" && "$DRAFT" != "true" ) ]]; then
             if [[ "$HEAVY" == "true" || "$CI_POLICY" == "true" ]]; then
               full_verification=true
@@ -80,17 +69,41 @@ jobs:
             if [[ "$full_verification" == "true" || "$AGENT_DOCS" == "true" ]]; then
               agent_checks=true
             fi
+            if [[ "$agent_checks" == "true" || "$INTENT_DOCS" == "true" ]]; then
+              format_check=true
+            fi
           fi
 
-          echo "full_verification=$full_verification" >> "$GITHUB_OUTPUT"
-          echo "agent_checks=$agent_checks" >> "$GITHUB_OUTPUT"
+          {
+            echo "full_verification=$full_verification"
+            echo "agent_checks=$agent_checks"
+            echo "format_check=$format_check"
+          } >> "$GITHUB_OUTPUT"
       - name: Fetch the pull request base
         if: (steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule') && (github.event_name == 'pull_request')
         env:
           BASE_REF: ${{ github.base_ref }}
         run: git fetch --no-tags origin "$BASE_REF"
+      - name: Start PostgreSQL
+        if: steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule'
+        env:
+          POSTGRES_IMAGE: postgres:17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
+        run: |
+          docker run --detach --name postgres --publish 5432:5432 \
+            --env POSTGRES_PASSWORD=postgres --env POSTGRES_DB=payload \
+            --health-cmd "pg_isready --username postgres" --health-interval 5s --health-timeout 5s --health-retries 10 \
+            "$POSTGRES_IMAGE"
+          for _ in $(seq 60); do
+            if [[ "$(docker inspect --format '{{.State.Health.Status}}' postgres)" == "healthy" ]]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs postgres
+          echo "PostgreSQL did not become healthy." >&2
+          exit 1
       - name: Set up Node.js and pnpm
-        if: steps.mode.outputs.agent_checks == 'true' || steps.mode.outputs.full_verification == 'true' || github.event_name == 'schedule'
+        if: steps.mode.outputs.format_check == 'true' || github.event_name == 'schedule'
         uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
           cache: true
@@ -115,7 +128,7 @@ jobs:
         if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm gates:check
       - name: Check formatting
-        if: steps.mode.outputs.agent_checks == 'true'
+        if: steps.mode.outputs.format_check == 'true'
         run: pnpm format:check
       - name: Set up Turborepo Remote Cache
         if: (steps.mode.outputs.full_verification == 'true') && (vars.TURBO_TEAM != '')

@@ -64,7 +64,7 @@ pnpm install
 **Remove the backoffice.** Delete `apps/backoffice`, then remove what only it uses:
 
 - the root `generate:importmap`, `generate:types`, `migrate`, and `migrate:create` scripts in `package.json`;
-- `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL` from `turbo.json`, `.env.example`, and `.github/workflows/ci.yml`, and the `postgres` service in that workflow;
+- `DATABASE_URL`, `PAYLOAD_SECRET`, and `APP_URL` from `turbo.json`, `.env.example`, and `.github/workflows/ci.yml`, and the `Start PostgreSQL` step in that workflow;
 - the `apps/backoffice/...` entries in `eslint.config.ts`, `.prettierignore`, `.editorconfig-checker.json`, `.dockerignore`, and `.gitignore`.
 
 Then run `pnpm install` and `pnpm verify`.
