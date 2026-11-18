@@ -50,7 +50,7 @@
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
     "prepack": "pnpm build",
-    "plugin:check": "node scripts/sync-plugin.ts --check && node plugins/sdlc/source/skills/sdlc-mode/scripts/check-plan.ts --self-test && node plugins/sdlc/source/skills/sdlc-mode/scripts/check-bands.ts",
+    "plugin:check": "node scripts/sync-plugin.ts --check && node plugins/sdlc/source/skills/sdlc-loop/scripts/check-plan.ts --self-test && node plugins/sdlc/source/skills/sdlc-loop/scripts/check-bands.ts",
     "plugin:sync": "node scripts/sync-plugin.ts",
     "prepare": "husky",
     "rules:check": "node scripts/sync-agent-rules.ts --check",

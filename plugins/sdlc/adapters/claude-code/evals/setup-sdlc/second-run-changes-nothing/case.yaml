@@ -8,7 +8,7 @@ graders:
   - name: rule-keeps-its-lines
     type: tool_used
     tool: Write
-    input_match: '^(?=[\s\S]*rules/sdlc-models\.md)(?![\s\S]*budget: medium \(high\)[\s\S]*main: (?:claude-)?sonnet\S* high[\s\S]*explore: (?:claude-)?haiku\S* high[\s\S]*advise: (?:claude-)?opus\S* high)'
+    input_match: '^(?=[\s\S]*rules/sdlc-loopls\.md)(?![\s\S]*budget: medium \(high\)[\s\S]*main: (?:claude-)?sonnet\S* high[\s\S]*explore: (?:claude-)?haiku\S* high[\s\S]*advise: (?:claude-)?opus\S* high)'
     min: 0
     max: 0
   - name: package-json-is-unchanged

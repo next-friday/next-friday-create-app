@@ -72,17 +72,17 @@ const evalCasesDirectory = path.join(evalPluginRoot, "evals");
 const vendorNamesPath = path.join(adaptersRoot, "vendor-names.json");
 const subagentConfigPath = path.join(adaptersRoot, "agents.json");
 const toolWordsPath = path.join(adaptersRoot, "tool-words.json");
-const hooksDirectory = path.join(sourceRoot, "skills", "sdlc-mode", "hooks");
+const hooksDirectory = path.join(sourceRoot, "skills", "sdlc-loop", "hooks");
 const hookCasesSuffix = ".cases.json";
 const templateRoot = path.join("templates", "base");
 const projectRoots = ["", templateRoot];
 const projectSkillsDirectory = ".claude/skills";
 const projectSettingsPath = ".claude/settings.json";
-const toolWordsDirectory = "sdlc-mode/tool-words";
-const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-mode/hooks`;
+const toolWordsDirectory = "sdlc-loop/tool-words";
+const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-loop/hooks`;
 const hooksDirectoryWord = "{{hooks-directory}}";
 const projectHooksReference = `\${CLAUDE_PROJECT_DIR}/${projectHooksDirectory}`;
-const evalPluginHooksReference = `\${CLAUDE_PLUGIN_ROOT}/skills/sdlc-mode/hooks`;
+const evalPluginHooksReference = `\${CLAUDE_PLUGIN_ROOT}/skills/sdlc-loop/hooks`;
 
 const repositoryVariables = execFileSync("git", ["rev-parse", "--local-env-vars"], {
   encoding: "utf8",
@@ -169,7 +169,7 @@ function renderAgent(name: string, fields: string[], agent: AgentConfig, body: s
 }
 
 /**
- * Fill the word that names the hooks folder of the front-door skill with the path a target's skill file reaches it by.
+ * Fill the word that names the hooks folder of the `sdlc-loop` skill with the path a target's skill file reaches it by.
  * @param content Content of a source skill file.
  * @param hooksReference The hooks folder's path as the target's hook command resolves it.
  * @returns The content with the word replaced.
@@ -201,7 +201,7 @@ function findFrontmatterProblems(filePath: string, content: string): string[] {
 }
 
 /**
- * Find the hook entries a protected file holds for the front-door skill's hook scripts. The skill declares them in its own frontmatter, so a person removes them from the file and commits it; the script only reports.
+ * Find the hook entries a protected file holds for the loop's hook scripts. The entry skills declare them in their frontmatter, so a person removes them from the file and commits it; the script only reports.
  * @param filePath Path of the file from the repository root.
  * @param fileText Content of the file; a missing file holds no entry.
  * @returns One message for each hook entry whose command names the skill's hooks folder.
@@ -217,7 +217,7 @@ function findSkillHookEntries(filePath: string, fileText = "{}"): string[] {
       .filter(entry => entry.includes(projectHooksDirectory))
       .map(
         entry =>
-          `${filePath}: holds the ${event} hook entry ${entry}, which the sdlc-mode skill declares in its frontmatter; a person removes it and commits this file`,
+          `${filePath}: holds the ${event} hook entry ${entry}, which the loop's entry skills declare in their frontmatter; a person removes it and commits this file`,
       ),
   );
 }
@@ -709,7 +709,7 @@ function renderEvalPlugin(source: HarnessSource): [string, string][] {
 }
 
 /**
- * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills, with the hook scripts and the scripts inside the front-door skill, and the subagents.
+ * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills, with the hook scripts and the scripts inside the `sdlc-loop` skill, and the subagents.
  * @param projectRoot The project's folder from the repository root, empty for the repository itself.
  * @param source The harness source.
  * @returns The expected content of each file, by path from the repository root.
@@ -810,7 +810,7 @@ const sampleSource: HarnessSource = {
 };
 
 const sampleHookEntry =
-  '{"hooks":[{"command":"sh \\"$CLAUDE_PROJECT_DIR\\"/.claude/skills/sdlc-mode/hooks/h.sh","type":"command"}]}';
+  '{"hooks":[{"command":"sh \\"$CLAUDE_PROJECT_DIR\\"/.claude/skills/sdlc-loop/hooks/h.sh","type":"command"}]}';
 
 const blockingOutput = '{"decision":"block"}';
 
@@ -863,7 +863,7 @@ const selfTestCases: SelfTestCase[] = [
     name: "a link into the plugin passes",
     expected: [],
     problems: findEscapingReferences(
-      path.join(pluginRoot, "source/skills/sdlc-mode/SKILL.md"),
+      path.join(pluginRoot, "source/skills/sdlc-loop/SKILL.md"),
       "[a](playbooks/build.md) and `../../brand-policy/SKILL.md` and [b](https://example.com/../x)",
     ),
   },
@@ -975,7 +975,7 @@ const selfTestCases: SelfTestCase[] = [
   {
     name: "a protected file that holds a hook entry for the skill's hook scripts fails, and other hooks pass",
     expected: [
-      `f.json: holds the Stop hook entry ${sampleHookEntry}, which the sdlc-mode skill declares in its frontmatter; a person removes it and commits this file`,
+      `f.json: holds the Stop hook entry ${sampleHookEntry}, which the loop's entry skills declare in their frontmatter; a person removes it and commits this file`,
     ],
     problems: findSkillHookEntries(
       "f.json",

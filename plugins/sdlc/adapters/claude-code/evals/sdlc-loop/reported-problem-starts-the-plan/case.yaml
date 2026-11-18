@@ -1,0 +1,43 @@
+schema_version: "1.1"
+name: reported-problem-starts-the-plan
+expected_outcome: |
+  The message reports a problem through /sdlc-intent without asking a question. The agent follows the intent playbook: it asks its first question, and the reply holds no list of the playbook's steps. It does not tell the person to send /sdlc-intent again.
+graders:
+  - name: reply-holds-no-steps-section
+    type: regex
+    pattern: '^\*\*Steps'
+    flags: mu
+    match: not_contains
+  - name: reply-does-not-resend-the-command
+    type: regex
+    pattern: '(?<!skills)/(?:sdlc:)?sdlc-(?:intent|spec|plan|fix|review)(?![\w/-])'
+    flags: mu
+    match: not_contains
+  - name: no-file-created
+    type: regex
+    target: files
+    pattern: '^(?!\.git/config\.worktree$|\.git/objects/info/alternates$).+$'
+    flags: m
+    match: not_contains
+  - name: no-file-written
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+  - name: no-file-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+  - name: no-commit-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bcommit\b'
+    min: 0
+    max: 0
+  - name: no-push-or-pull-request-command
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^"]*\bpush\b|\bpr\s+create\b'
+    min: 0
+    max: 0

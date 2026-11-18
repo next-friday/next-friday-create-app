@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["scripts/changed-documents.ts", ".claude/skills/sdlc-mode/scripts/**"],
+  "ignore": ["scripts/changed-documents.ts", ".claude/skills/sdlc-loop/scripts/**"],
   "workspaces": {
     "apps/*": {
       "ignoreDependencies": ["@swc/core"]

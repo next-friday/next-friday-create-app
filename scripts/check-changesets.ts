@@ -320,7 +320,7 @@ const templateOnlyChanges = [
 ];
 
 const unpublishedFile =
-  "plugins/sdlc/adapters/claude-code/evals/sdlc-mode/answers-question-without-writing/prompt.md";
+  "plugins/sdlc/adapters/claude-code/evals/sdlc-loop/answers-question-without-writing/prompt.md";
 
 const selfTestCases: SelfTestCase[] = [
   {
