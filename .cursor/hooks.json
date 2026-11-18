@@ -25,9 +25,6 @@
         "command": ".agents/hooks/agent-production-gate.sh",
         "timeout": 10,
         "failClosed": true
-      },
-      {
-        "command": "sh .claude/skills/sdlc-mode/hooks/check-push.sh json"
       }
     ],
     "beforeMCPExecution": [

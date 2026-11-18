@@ -36,8 +36,6 @@ Part of the harness does not load in these cases:
 
 `sdlc-status.sh` runs as a `SessionStart` hook for Claude Code and a `sessionStart` hook for Cursor. When a session starts, it lists each `intent/<change>/` whose intent and spec are not `Status: done.`, `Status: rejected.`, or `Status: withdrawn.`, with its stage and who acts next, and leaves out a fix folder, which holds only `plan.md`, once that plan is on `origin`'s default branch. It reads the files and that one Git ref, and prints nothing when there is no such change or no `jq`. Claude Code adds the plain text to the session's context; Cursor gets it as `additional_context` from `sdlc-status.sh json`. `pnpm plugin:check` runs the hook against `source/hooks/sdlc-status.cases.json`.
 
-`check-push.sh` runs before a shell command, as a `PreToolUse` hook on `Bash` for Claude Code and a `beforeShellExecution` hook for Cursor. It reads only `git push`, and refuses it when a commit on the branch changes a file that the branch's one `plan.md` does not name without changing that `plan.md`.
-
 `check-reply-shape.sh` is a POSIX `sh` script that reads the hook input with `jq`, run as a `UserPromptSubmit` and a `Stop` hook for Claude Code and as three hooks for Cursor. It checks only a reply whose first line starts with `**Answer:**`, `**Result:**`, `**Waiting for you:**`, or `**No change:**`, and it blocks that reply once, with a reason that asks for the whole reply again, when the reply:
 
 - names a pull request or an issue by number outside a URL, a fenced block, and a code span that holds more than the bare number;

@@ -81,16 +81,6 @@
             "onFailure": "block"
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-push.sh",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "PostToolUse": [

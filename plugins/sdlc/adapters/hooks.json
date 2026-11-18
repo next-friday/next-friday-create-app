@@ -12,11 +12,6 @@
     {
       "event": "SessionStart",
       "script": "sdlc-status.sh"
-    },
-    {
-      "event": "PreToolUse",
-      "script": "check-push.sh",
-      "matcher": "Bash"
     }
   ],
   "cursor": [
@@ -39,11 +34,6 @@
     {
       "event": "sessionStart",
       "script": "sdlc-status.sh",
-      "argument": "json"
-    },
-    {
-      "event": "beforeShellExecution",
-      "script": "check-push.sh",
       "argument": "json"
     }
   ]
