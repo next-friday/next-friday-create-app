@@ -1,5 +1,5 @@
 ---
-"@next-friday/create-app": major
+"@next-friday/create-app": minor
 ---
 
 The SDLC loop acts only in a session where a person typed `/sdlc-mode`, and the sdlc plugin lives in its own folder.

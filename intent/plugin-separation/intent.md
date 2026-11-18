@@ -36,7 +36,7 @@ The product owner decided:
 ## Constraints
 
 - The work lands in the open pull request of `intent/fast-merge-feedback`, so one version goes out. The product owner's decision.
-- The release is `major`: a generated project loses `.cursor/`, `pnpm plan:check`, and `pnpm bands:check`. The product owner's decision.
+- The release is `minor`: a generated project loses `.cursor/`, `pnpm plan:check`, and `pnpm bands:check`. The product owner's decision.
 - `spec-on-intent-merge.yml`, `claude-fix-loop.yml`, and `control-band.yml` stay in the template; `control-band.yml` runs `check-bands.ts` from the skill's folder. The product owner's decision.
 - A trial in a scratch project on Claude Code 2.1.327 showed what a skill's frontmatter hooks do. They do not run in a session that did not call the skill. After the call they run on later turns, after `/compact`, can block `git push`, and can run a script in the skill's folder. They are gone after the session is resumed, and they do not run on a tool call a subagent makes. In a hook command of a project skill, `${CLAUDE_PROJECT_DIR}` resolves and `${CLAUDE_SKILL_DIR}` does not; in a plugin skill, `${CLAUDE_PLUGIN_ROOT}` resolves. The product owner accepted both gaps: after a resume the person types `/sdlc-mode` again.
 - Files a person commits stay a person's to commit: `.claude/settings.json`, `.husky/**`, `.agents/hooks/**`, `.agents/rules/**` and its rendered copies, `scripts/check-agent-gates.ts`, `scripts/sync-agent-rules.ts`.
