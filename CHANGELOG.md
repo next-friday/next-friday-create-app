@@ -1,5 +1,15 @@
 # @next-friday/create-app
 
+## 10.5.0
+
+### Minor Changes
+
+- 41154a3: A generated project holds a new rule, `asking-a-person`, that loads in every session. The agent asks a person only for a decision, checks that a request is needed before it makes one, and hands over an action a rule reserves for a person as one run.
+
+### Patch Changes
+
+- 41154a3: A pull request that changes only files under `intent/` runs the format check alone in CI, without the rule and agent gate checks. In the `payload` and `turborepo` stacks, CI starts PostgreSQL only when the checks that need it run.
+
 ## 10.4.0
 
 ### Minor Changes
