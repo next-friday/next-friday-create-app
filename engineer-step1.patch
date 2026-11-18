@@ -1,0 +1,1152 @@
+diff --git a/.agents/hooks/agent-format-after-edit.sh b/.agents/hooks/agent-format-after-edit.sh
+index 9b5db9c..f7cc1f7 100755
+--- a/.agents/hooks/agent-format-after-edit.sh
++++ b/.agents/hooks/agent-format-after-edit.sh
+@@ -2,8 +2,8 @@
+ set -uo pipefail
+ 
+ input=$(cat)
+-cd "${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}" || exit 0
+-path=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // .file_path // empty' <<< "$input")
++cd "${CLAUDE_PROJECT_DIR:-$PWD}" || exit 0
++path=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' <<< "$input")
+ [[ -n $path && -f $path ]] || exit 0
+ 
+ case $path in
+diff --git a/.agents/hooks/agent-mcp-gate.sh b/.agents/hooks/agent-mcp-gate.sh
+index 7319fe9..2c8514c 100755
+--- a/.agents/hooks/agent-mcp-gate.sh
++++ b/.agents/hooks/agent-mcp-gate.sh
+@@ -2,12 +2,10 @@
+ set -uo pipefail
+ 
+ allow() {
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-mcp-gate: %s\n' "$1" >&2
+   exit 2
+ }
+diff --git a/.agents/hooks/agent-production-gate.sh b/.agents/hooks/agent-production-gate.sh
+index 8870608..82dc146 100755
+--- a/.agents/hooks/agent-production-gate.sh
++++ b/.agents/hooks/agent-production-gate.sh
+@@ -2,19 +2,17 @@
+ set -uo pipefail
+ 
+ allow() {
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-production-gate: %s\n' "$1" >&2
+   exit 2
+ }
+ 
+ trap 'block ".agents/hooks/agent-production-gate.sh failed. Stop and report this error to the user; agents may not edit the gate."' ERR
+ command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
+-command=$(jq -r '.command // .tool_input.command // empty')
++command=$(jq -r '.tool_input.command // empty')
+ [[ -n $command ]] || allow
+ 
+ release_gate="Only .github/workflows/release.yml publishes the package, from the Release environment after the version pull request merges, and a maintainer approves the staged version (CONTRIBUTING.md, Releasing). Do not publish; report that the release waits on that pull request. To inspect the package, run pnpm pack. If a publish command appears only inside a message, write the text to a file with your file tool, not a shell heredoc, and pass it with git commit -F <file> or gh pr create --body-file <file>."
+diff --git a/.agents/hooks/agent-shell-gate.sh b/.agents/hooks/agent-shell-gate.sh
+index 8f5e01e..604b574 100755
+--- a/.agents/hooks/agent-shell-gate.sh
++++ b/.agents/hooks/agent-shell-gate.sh
+@@ -2,12 +2,10 @@
+ set -uo pipefail
+ 
+ allow() {
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-shell-gate: %s\n' "$1" >&2
+   exit 2
+ }
+@@ -15,12 +13,12 @@ block() {
+ trap 'block ".agents/hooks/agent-shell-gate.sh failed. Stop and report this error to the user; agents may not edit the gate."' ERR
+ command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
+ input=$(cat)
+-command=$(jq -r '.command // .tool_input.command // empty' <<< "$input")
++command=$(jq -r '.tool_input.command // empty' <<< "$input")
+ [[ -n $command ]] || allow
+ 
+ separator=$'\x1f'
+ redirect=$'\x1e'
+-protected_names='(\.husky|\.agents|\.cursor|\.claude/rules|\.claude/settings(\.local)?\.json|\.git/hooks|\.git/config(\.worktree)?|\.lintstagedrc\.json|\.gitleaks\.toml|\.commitlintrc\.json|\.prettierrc\.json|prettier\.config\.ts|eslint\.config\.ts|scripts/(sync-agent-rules|check-agent-gates)\.ts)'
++protected_names='(\.husky|\.agents|\.claude/rules|\.claude/settings(\.local)?\.json|\.git/hooks|\.git/config(\.worktree)?|\.lintstagedrc\.json|\.gitleaks\.toml|\.commitlintrc\.json|\.prettierrc\.json|prettier\.config\.ts|eslint\.config\.ts|scripts/(sync-agent-rules|check-agent-gates)\.ts)'
+ protected="(^|[/=])$protected_names(/|$)"
+ policy="Hooks and agent policy files are company policy; stop and ask the user."
+ human_gate="A code owner approves a pull request and a person merges it. Do not approve or merge; report that the pull request waits on that review."
+diff --git a/.agents/hooks/agent-test-edit-gate.sh b/.agents/hooks/agent-test-edit-gate.sh
+index 5f46076..8e341fa 100755
+--- a/.agents/hooks/agent-test-edit-gate.sh
++++ b/.agents/hooks/agent-test-edit-gate.sh
+@@ -2,12 +2,10 @@
+ set -uo pipefail
+ 
+ allow() {
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-test-edit-gate: %s\n' "$1" >&2
+   exit 2
+ }
+@@ -16,8 +14,8 @@ trap 'block ".agents/hooks/agent-test-edit-gate.sh failed. Stop and report this
+ command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
+ test_path_pattern='(\.test\.|\.spec\.|\.e2e\.test\.|(^|/)tests?/)'
+ input=$(cat)
+-project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
+-path=$(jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // .file_path // empty' <<< "$input")
++project=${CLAUDE_PROJECT_DIR:-$PWD}
++path=$(jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // empty' <<< "$input")
+ [[ -n $path && $path =~ $test_path_pattern ]] || allow
+ branch=$(git -C "$project" symbolic-ref --quiet --short HEAD 2> /dev/null) || branch=
+ [[ $branch == fix/* ]] || allow
+diff --git a/.agents/rules.json b/.agents/rules.json
+index 1ac60d2..26df712 100644
+--- a/.agents/rules.json
++++ b/.agents/rules.json
+@@ -16,9 +16,6 @@
+       ".agents/hooks/**",
+       ".claude/settings.json",
+       ".claude/rules/**",
+-      ".cursor/rules/**",
+-      ".cursor/hooks/**",
+-      ".cursor/hooks.json",
+       "scripts/sync-agent-rules.ts",
+       "scripts/check-agent-gates.ts",
+       ".husky/**",
+diff --git a/.claude/rules/constitution-changes.md b/.claude/rules/constitution-changes.md
+index 2bb094e..cca08f1 100644
+--- a/.claude/rules/constitution-changes.md
++++ b/.claude/rules/constitution-changes.md
+@@ -5,9 +5,6 @@ paths:
+   - ".agents/hooks/**"
+   - ".claude/settings.json"
+   - ".claude/rules/**"
+-  - ".cursor/rules/**"
+-  - ".cursor/hooks/**"
+-  - ".cursor/hooks.json"
+   - "scripts/sync-agent-rules.ts"
+   - "scripts/check-agent-gates.ts"
+   - ".husky/**"
+diff --git a/.claude/settings.json b/.claude/settings.json
+index 13cce61..f22f05c 100644
+--- a/.claude/settings.json
++++ b/.claude/settings.json
+@@ -15,7 +15,6 @@
+     "deny": [
+       "Edit(./.agents/rules/**)",
+       "Edit(./.claude/rules/**)",
+-      "Edit(./.cursor/rules/**)",
+       "Edit(./.commitlintrc.json)",
+       "Edit(./.prettierrc.json)",
+       "Edit(./prettier.config.ts)",
+@@ -24,8 +23,6 @@
+       "Edit(./.agents/hooks/**)",
+       "Edit(./.claude/settings.json)",
+       "Edit(./.claude/settings.local.json)",
+-      "Edit(./.cursor/hooks.json)",
+-      "Edit(./.cursor/hooks/**)",
+       "Edit(./scripts/sync-agent-rules.ts)",
+       "Edit(./scripts/check-agent-gates.ts)",
+       "Edit(./.husky/**)",
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 2d4cd1f..d4c405c 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -100,7 +100,7 @@ jobs:
+           persist-credentials: false
+       - name: Set up pnpm
+         uses: ./.github/actions/setup-pnpm
+-      - name: Check Cursor rules match .agents/rules
++      - name: Check Claude Code rules match .agents/rules
+         run: pnpm rules:check
+       - name: Check agent gates
+         run: pnpm gates:check
+diff --git a/scripts/check-agent-gates.ts b/scripts/check-agent-gates.ts
+index 810b11f..a34a657 100644
+--- a/scripts/check-agent-gates.ts
++++ b/scripts/check-agent-gates.ts
+@@ -5,7 +5,6 @@ import {tmpdir} from "node:os";
+ 
+ type GateCase = {
+   expectedExit: 0 | 2;
+-  expectedPermission?: "allow";
+   gate: string;
+   input: Record<string, unknown>;
+   name: string;
+@@ -25,11 +24,9 @@ for (const name of repositoryVariables) {
+ }
+ 
+ const shellGate = ".agents/hooks/agent-shell-gate.sh";
+-const constitutionGate = ".cursor/hooks/agent-constitution-gate.sh";
+ const mcpGate = ".agents/hooks/agent-mcp-gate.sh";
+ const productionGate = ".agents/hooks/agent-production-gate.sh";
+ const testEditGate = ".agents/hooks/agent-test-edit-gate.sh";
+-const sourceFile = "src/example.ts";
+ 
+ const blockedCommands = [
+   "printf 'exit 0' > .husky/pre-commit",
+@@ -206,7 +203,7 @@ const reviewWriteCases = [
+     },
+   },
+   {
+-    name: "APPROVE in a JSON string, as Cursor sends it",
++    name: "APPROVE in a JSON string",
+     toolInput: '{"method":"create","event":"APPROVE"}',
+     expectedExit: 2,
+   },
+@@ -240,27 +237,6 @@ const reviewWriteCases = [
+   },
+ ];
+ 
+-const protectedPaths = [
+-  ".agents/rules/code-comments.md",
+-  ".agents/rules.json",
+-  ".agents/hooks/agent-shell-gate.sh",
+-  ".claude/rules/code-comments.md",
+-  ".claude/settings.json",
+-  ".cursor/rules/code-comments.mdc",
+-  ".cursor/hooks.json",
+-  ".cursor/hooks/agent-constitution-gate.sh",
+-  "scripts/sync-agent-rules.ts",
+-  "eslint.config.ts",
+-  ".husky/pre-commit",
+-  ".lintstagedrc.json",
+-  ".gitleaks.toml",
+-  ".git/hooks/pre-commit",
+-  ".git/config",
+-  ".git/config.worktree",
+-  ".claude/settings.local.json",
+-  "src/../.husky/pre-commit",
+-];
+-
+ /**
+  * Create a repository on a branch, with one commit per file after an empty commit on `main`.
+  * @param branch - The branch to check out.
+@@ -314,62 +290,44 @@ const testFile = `src/${testFileName}`;
+ const outsideRepository = mkdtempSync(path.join(tmpdir(), "agent-gates-outside-"));
+ 
+ const cases: GateCase[] = [
+-  ...blockedCommands.flatMap(command => [
+-    {
+-      gate: shellGate,
+-      input: {
++  ...blockedCommands.map(command => ({
++    gate: shellGate,
++    input: {
++      tool_input: {
+         command,
+       },
+-      expectedExit: 2 as const,
+-      name: `Cursor shell: ${command}`,
+     },
+-    {
+-      gate: shellGate,
+-      input: {
+-        tool_input: {
+-          command,
+-        },
+-      },
+-      expectedExit: 2 as const,
+-      name: `Claude Bash: ${command}`,
+-    },
+-  ]),
++    expectedExit: 2 as const,
++    name: `Claude Bash: ${command}`,
++  })),
+   ...allowedCommands.map(command => ({
+     gate: shellGate,
+     input: {
+-      command,
++      tool_input: {
++        command,
++      },
+     },
+     expectedExit: 0 as const,
+-    expectedPermission: "allow" as const,
+     name: `shell: ${command}`,
+   })),
+-  ...publishCommands.flatMap(command => [
+-    {
+-      gate: productionGate,
+-      input: {
++  ...publishCommands.map(command => ({
++    gate: productionGate,
++    input: {
++      tool_input: {
+         command,
+       },
+-      expectedExit: 2 as const,
+-      name: `Cursor publish: ${command}`,
+-    },
+-    {
+-      gate: productionGate,
+-      input: {
+-        tool_input: {
+-          command,
+-        },
+-      },
+-      expectedExit: 2 as const,
+-      name: `Claude publish: ${command}`,
+     },
+-  ]),
++    expectedExit: 2 as const,
++    name: `Claude publish: ${command}`,
++  })),
+   ...nonPublishCommands.map(command => ({
+     gate: productionGate,
+     input: {
+-      command,
++      tool_input: {
++        command,
++      },
+     },
+     expectedExit: 0 as const,
+-    expectedPermission: "allow" as const,
+     name: `publish gate: ${command}`,
+   })),
+   ...mcpTools.blocked.map(tool => ({
+@@ -388,19 +346,8 @@ const cases: GateCase[] = [
+       tool_input: "{}",
+     },
+     expectedExit: 0 as const,
+-    expectedPermission: "allow" as const,
+     name: `MCP: ${tool}`,
+   })),
+-  ...protectedPaths.map(file => ({
+-    gate: constitutionGate,
+-    input: {
+-      tool_input: {
+-        file_path: file,
+-      },
+-    },
+-    expectedExit: 2 as const,
+-    name: `constitution: ${file}`,
+-  })),
+   ...reviewWriteCases.map(({expectedExit, name, toolInput}) => ({
+     gate: mcpGate,
+     input: {
+@@ -410,16 +357,6 @@ const cases: GateCase[] = [
+     expectedExit: expectedExit as 0 | 2,
+     name: `MCP: pull_request_review_write with ${name}`,
+   })),
+-  {
+-    gate: constitutionGate,
+-    name: "constitution: src file",
+-    expectedExit: 0,
+-    input: {
+-      tool_input: {
+-        file_path: sourceFile,
+-      },
+-    },
+-  },
+   ...[
+     {
+       projectDirectory: fixBranchWithTest,
+@@ -459,17 +396,11 @@ const failures = cases.filter(gateCase => {
+     env: {
+       ...childEnvironment,
+       CLAUDE_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
+-      CURSOR_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
+     },
+     input: JSON.stringify(gateCase.input),
+   });
+ 
+-  const isPermissionWrong =
+-    gateCase.expectedPermission !== undefined &&
+-    (JSON.parse(result.stdout.toString()) as {permission?: string}).permission !==
+-      gateCase.expectedPermission;
+-
+-  return result.status !== gateCase.expectedExit || isPermissionWrong;
++  return result.status !== gateCase.expectedExit;
+ });
+ 
+ for (const directory of [
+@@ -485,14 +416,9 @@ for (const directory of [
+ }
+ 
+ if (failures.length > 0) {
+-  const failureLines = failures.map(gateCase => {
+-    const permission =
+-      gateCase.expectedPermission === undefined
+-        ? ""
+-        : ` and permission ${gateCase.expectedPermission}`;
+-
+-    return `- ${gateCase.name} (expected exit ${gateCase.expectedExit}${permission})`;
+-  });
++  const failureLines = failures.map(
++    gateCase => `- ${gateCase.name} (expected exit ${gateCase.expectedExit})`,
++  );
+ 
+   process.stderr.write(`Agent gate checks failed:\n${failureLines.join("\n")}\n`);
+   process.exitCode = 1;
+diff --git a/scripts/sync-agent-rules.ts b/scripts/sync-agent-rules.ts
+index 61c5954..8349873 100644
+--- a/scripts/sync-agent-rules.ts
++++ b/scripts/sync-agent-rules.ts
+@@ -38,21 +38,6 @@ function renderClaudeRule(name: string, rule: RuleConfig, body: string): string
+   return `---\npaths:\n${paths}\n---\n\n${body}`;
+ }
+ 
+-/**
+- * Render the Cursor rule with the full body, because Cursor does not inline referenced files.
+- * @param rule Rule configuration.
+- * @param body Shared rule body.
+- * @returns The `.cursor/rules` file content.
+- */
+-function renderCursorRule(rule: RuleConfig, body: string): string {
+-  const scope =
+-    rule.globs === undefined
+-      ? "alwaysApply: true"
+-      : `globs: "${rule.globs.join(",")}"\nalwaysApply: false`;
+-
+-  return `---\ndescription: "${rule.description}"\n${scope}\n---\n\n${body}`;
+-}
+-
+ const config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, RuleConfig>;
+ const configNames = Object.keys(config);
+ const sourceNames = listNames(sourceDirectory, ".md");
+@@ -66,7 +51,6 @@ if (missingConfig.length > 0 || missingSource.length > 0) {
+ }
+ 
+ const claudeDirectory = ".claude/rules";
+-const cursorDirectory = ".cursor/rules";
+ const expected = new Map<string, string>();
+ 
+ for (const name of configNames) {
+@@ -79,11 +63,10 @@ for (const name of configNames) {
+   const body = readFileSync(path.join(sourceDirectory, `${name}.md`), "utf8");
+ 
+   expected.set(path.join(claudeDirectory, `${name}.md`), renderClaudeRule(name, rule, body));
+-  expected.set(path.join(cursorDirectory, `${name}.mdc`), renderCursorRule(rule, body));
+ }
+ 
+ const sharedFiles: Record<string, string[]> = {
+-  ".agents/mcp.json": [".mcp.json", ".cursor/mcp.json"],
++  ".agents/mcp.json": [".mcp.json"],
+   ".agents/review.md": ["REVIEW.md"],
+ };
+ 
+@@ -99,7 +82,6 @@ for (const [source, targets] of sharedSources) {
+ 
+ const orphans = [
+   ...listNames(claudeDirectory, ".md").map(name => path.join(claudeDirectory, `${name}.md`)),
+-  ...listNames(cursorDirectory, ".mdc").map(name => path.join(cursorDirectory, `${name}.mdc`)),
+   ...Object.values(sharedFiles)
+     .flat()
+     .filter(file => existsSync(file)),
+diff --git a/templates/base/.agents/hooks/agent-format-after-edit.sh b/templates/base/.agents/hooks/agent-format-after-edit.sh
+index 9b5db9c..f7cc1f7 100644
+--- a/templates/base/.agents/hooks/agent-format-after-edit.sh
++++ b/templates/base/.agents/hooks/agent-format-after-edit.sh
+@@ -2,8 +2,8 @@
+ set -uo pipefail
+ 
+ input=$(cat)
+-cd "${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}" || exit 0
+-path=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // .file_path // empty' <<< "$input")
++cd "${CLAUDE_PROJECT_DIR:-$PWD}" || exit 0
++path=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' <<< "$input")
+ [[ -n $path && -f $path ]] || exit 0
+ 
+ case $path in
+diff --git a/templates/base/.agents/hooks/agent-mcp-gate.sh b/templates/base/.agents/hooks/agent-mcp-gate.sh
+index 0b885a8..330c026 100755
+--- a/templates/base/.agents/hooks/agent-mcp-gate.sh
++++ b/templates/base/.agents/hooks/agent-mcp-gate.sh
+@@ -3,19 +3,17 @@ set -uo pipefail
+ 
+ # shellcheck source=.agents/hooks/record-gate-decision.sh
+ if ! source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-gate-decision.sh"; then
+-  printf '%s\n' '{"permission":"deny","user_message":"agent-mcp-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate."}'
++  printf '%s\n' 'agent-mcp-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate.' >&2
+   exit 2
+ fi
+ 
+ allow() {
+   record_gate_decision agent-mcp-gate allow "" "${input:-}" "${lifted_approval:-}"
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+   record_gate_decision agent-mcp-gate block "${2:-$1}" "${input:-}"
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-mcp-gate: %s\n' "$1" >&2
+   exit 2
+ }
+diff --git a/templates/base/.agents/hooks/agent-production-gate.sh b/templates/base/.agents/hooks/agent-production-gate.sh
+index f22b7f6..27a4bbd 100755
+--- a/templates/base/.agents/hooks/agent-production-gate.sh
++++ b/templates/base/.agents/hooks/agent-production-gate.sh
+@@ -3,19 +3,17 @@ set -uo pipefail
+ 
+ # shellcheck source=.agents/hooks/record-gate-decision.sh
+ if ! source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-gate-decision.sh"; then
+-  printf '%s\n' '{"permission":"deny","user_message":"agent-production-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate."}'
++  printf '%s\n' 'agent-production-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate.' >&2
+   exit 2
+ fi
+ 
+ allow() {
+   record_gate_decision agent-production-gate allow "" "${input:-}" "${lifted_approval:-}"
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+   record_gate_decision agent-production-gate block "${2:-$1}" "${input:-}"
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-production-gate: %s\n' "$1" >&2
+   exit 2
+ }
+@@ -23,9 +21,9 @@ block() {
+ trap 'block ".agents/hooks/agent-production-gate.sh failed. Stop and report this error to the user; agents may not edit the gate."' ERR
+ command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
+ input=$(cat)
+-command=$(jq -r '.command // .tool_input.command // empty' <<< "$input")
++command=$(jq -r '.tool_input.command // empty' <<< "$input")
+ [[ -n $command ]] || allow
+-project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
++project=${CLAUDE_PROJECT_DIR:-$PWD}
+ approval_form_file=.agents/release-approval-form
+ approval=${RELEASE_APPROVAL:-}
+ unmatched_approval=
+diff --git a/templates/base/.agents/hooks/agent-shell-gate.sh b/templates/base/.agents/hooks/agent-shell-gate.sh
+index 2cdaa6c..608ab5d 100755
+--- a/templates/base/.agents/hooks/agent-shell-gate.sh
++++ b/templates/base/.agents/hooks/agent-shell-gate.sh
+@@ -3,19 +3,17 @@ set -uo pipefail
+ 
+ # shellcheck source=.agents/hooks/record-gate-decision.sh
+ if ! source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-gate-decision.sh"; then
+-  printf '%s\n' '{"permission":"deny","user_message":"agent-shell-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate."}'
++  printf '%s\n' 'agent-shell-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate.' >&2
+   exit 2
+ fi
+ 
+ allow() {
+   record_gate_decision agent-shell-gate allow "" "${input:-}" "${lifted_approval:-}"
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+   record_gate_decision agent-shell-gate block "${2:-$1}" "${input:-}"
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-shell-gate: %s\n' "$1" >&2
+   exit 2
+ }
+@@ -23,12 +21,12 @@ block() {
+ trap 'block ".agents/hooks/agent-shell-gate.sh failed. Stop and report this error to the user; agents may not edit the gate."' ERR
+ command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
+ input=$(cat)
+-command=$(jq -r '.command // .tool_input.command // empty' <<< "$input")
++command=$(jq -r '.tool_input.command // empty' <<< "$input")
+ [[ -n $command ]] || allow
+ 
+ separator=$'\x1f'
+ redirect=$'\x1e'
+-protected_names='(\.husky|\.agents|\.cursor|\.claude/rules|\.claude/settings(\.local)?\.json|\.git/hooks|\.git/config(\.worktree)?|\.lintstagedrc\.json|\.gitleaks\.toml|\.commitlintrc\.json|\.prettierrc\.json|prettier\.config\.ts|eslint\.config\.ts|scripts/(sync-agent-rules|check-agent-gates)\.ts)'
++protected_names='(\.husky|\.agents|\.claude/rules|\.claude/settings(\.local)?\.json|\.git/hooks|\.git/config(\.worktree)?|\.lintstagedrc\.json|\.gitleaks\.toml|\.commitlintrc\.json|\.prettierrc\.json|prettier\.config\.ts|eslint\.config\.ts|scripts/(sync-agent-rules|check-agent-gates)\.ts)'
+ protected="(^|[/=])$protected_names(/|$)"
+ policy="Hooks and agent policy files are company policy; stop and ask the user."
+ human_gate="A code owner approves a pull request and a person merges it. Do not approve or merge; report that the pull request waits on that review."
+diff --git a/templates/base/.agents/hooks/agent-test-edit-gate.sh b/templates/base/.agents/hooks/agent-test-edit-gate.sh
+index 7bd9f69..51e8d6f 100644
+--- a/templates/base/.agents/hooks/agent-test-edit-gate.sh
++++ b/templates/base/.agents/hooks/agent-test-edit-gate.sh
+@@ -3,19 +3,17 @@ set -uo pipefail
+ 
+ # shellcheck source=.agents/hooks/record-gate-decision.sh
+ if ! source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-gate-decision.sh"; then
+-  printf '%s\n' '{"permission":"deny","user_message":"agent-test-edit-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate."}'
++  printf '%s\n' 'agent-test-edit-gate: .agents/hooks/record-gate-decision.sh could not be loaded, so the gate cannot record its decision. Stop and report this error to the user; agents may not edit the gate.' >&2
+   exit 2
+ fi
+ 
+ allow() {
+   record_gate_decision agent-test-edit-gate allow "" "${input:-}" "${lifted_approval:-}"
+-  printf '%s\n' '{"permission":"allow"}'
+   exit 0
+ }
+ 
+ block() {
+   record_gate_decision agent-test-edit-gate block "${2:-$1}" "${input:-}"
+-  jq -n --arg message "$1" '{permission:"deny",user_message:$message,agent_message:$message}'
+   printf 'agent-test-edit-gate: %s\n' "$1" >&2
+   exit 2
+ }
+@@ -24,8 +22,8 @@ trap 'block ".agents/hooks/agent-test-edit-gate.sh failed. Stop and report this
+ command -v jq > /dev/null || block "jq is required to read the hook input. Install it: https://jqlang.org/download/"
+ test_path_pattern='(\.test\.|\.spec\.|\.e2e\.test\.|(^|/)tests?/)'
+ input=$(cat)
+-project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
+-path=$(jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // .file_path // empty' <<< "$input")
++project=${CLAUDE_PROJECT_DIR:-$PWD}
++path=$(jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // empty' <<< "$input")
+ [[ -n $path && $path =~ $test_path_pattern ]] || allow
+ branch=$(git -C "$project" symbolic-ref --quiet --short HEAD 2> /dev/null) || branch=
+ [[ $branch == fix/* ]] || allow
+diff --git a/templates/base/.agents/hooks/record-gate-decision.sh b/templates/base/.agents/hooks/record-gate-decision.sh
+index faa5ecd..0f0c6b4 100755
+--- a/templates/base/.agents/hooks/record-gate-decision.sh
++++ b/templates/base/.agents/hooks/record-gate-decision.sh
+@@ -6,9 +6,9 @@
+ # name, which the release record needs.
+ record_gate_decision() {
+   local hook=$1 decision=$2 reason=$3 input=$4 approval=${5:-} project log session
+-  project=${CLAUDE_PROJECT_DIR:-${CURSOR_PROJECT_DIR:-$PWD}}
++  project=${CLAUDE_PROJECT_DIR:-$PWD}
+   log=${AGENT_GATE_LOG:-$project/.agents/logs/gate-decisions.jsonl}
+-  session=$(jq -r '.session_id // .conversation_id // empty' <<< "$input" 2> /dev/null) || session=
++  session=$(jq -r '.session_id // empty' <<< "$input" 2> /dev/null) || session=
+   {
+     mkdir -p "${log%/*}" \
+       && jq -cn \
+diff --git a/templates/base/.claude/settings.json b/templates/base/.claude/settings.json
+index 3b23fdd..d37dfe8 100644
+--- a/templates/base/.claude/settings.json
++++ b/templates/base/.claude/settings.json
+@@ -16,7 +16,6 @@
+     "deny": [
+       "Edit(./.agents/rules/**)",
+       "Edit(./.claude/rules/**)",
+-      "Edit(./.cursor/rules/**)",
+       "Edit(./.commitlintrc.json)",
+       "Edit(./.prettierrc.json)",
+       "Edit(./prettier.config.ts)",
+@@ -25,8 +24,6 @@
+       "Edit(./.agents/hooks/**)",
+       "Edit(./.claude/settings.json)",
+       "Edit(./.claude/settings.local.json)",
+-      "Edit(./.cursor/hooks.json)",
+-      "Edit(./.cursor/hooks/**)",
+       "Edit(./scripts/sync-agent-rules.ts)",
+       "Edit(./scripts/check-agent-gates.ts)",
+       "Edit(./.husky/**)",
+diff --git a/templates/base/scripts/check-agent-gates.ts b/templates/base/scripts/check-agent-gates.ts
+index 9a88102..9733eff 100644
+--- a/templates/base/scripts/check-agent-gates.ts
++++ b/templates/base/scripts/check-agent-gates.ts
+@@ -6,7 +6,6 @@ import {tmpdir} from "node:os";
+ type GateCase = {
+   expectedApproval?: string;
+   expectedExit: 0 | 2;
+-  expectedPermission?: "allow";
+   expectedSession?: string;
+   gate: string;
+   input: Record<string, unknown>;
+@@ -29,11 +28,9 @@ for (const name of repositoryVariables) {
+ }
+ 
+ const shellGate = ".agents/hooks/agent-shell-gate.sh";
+-const constitutionGate = ".cursor/hooks/agent-constitution-gate.sh";
+ const mcpGate = ".agents/hooks/agent-mcp-gate.sh";
+ const productionGate = ".agents/hooks/agent-production-gate.sh";
+ const testEditGate = ".agents/hooks/agent-test-edit-gate.sh";
+-const sourceFile = "src/example.ts";
+ const statusCommand = "git status";
+ 
+ const blockedCommands = [
+@@ -299,7 +296,7 @@ const reviewWriteCases = [
+     },
+   },
+   {
+-    name: "APPROVE in a JSON string, as Cursor sends it",
++    name: "APPROVE in a JSON string",
+     toolInput: '{"method":"create","event":"APPROVE"}',
+     expectedExit: 2,
+   },
+@@ -333,27 +330,6 @@ const reviewWriteCases = [
+   },
+ ];
+ 
+-const protectedPaths = [
+-  ".agents/rules/code-comments.md",
+-  ".agents/rules.json",
+-  ".agents/hooks/agent-shell-gate.sh",
+-  ".claude/rules/code-comments.md",
+-  ".claude/settings.json",
+-  ".cursor/rules/code-comments.mdc",
+-  ".cursor/hooks.json",
+-  ".cursor/hooks/agent-constitution-gate.sh",
+-  "scripts/sync-agent-rules.ts",
+-  "eslint.config.ts",
+-  ".husky/pre-commit",
+-  ".lintstagedrc.json",
+-  ".gitleaks.toml",
+-  ".git/hooks/pre-commit",
+-  ".git/config",
+-  ".git/config.worktree",
+-  ".claude/settings.local.json",
+-  "src/../.husky/pre-commit",
+-];
+-
+ /**
+  * Create a repository on a branch, with one commit per file after an empty commit on `main`.
+  * @param branch - The branch to check out.
+@@ -407,55 +383,36 @@ const testFile = `src/${testFileName}`;
+ const outsideRepository = mkdtempSync(path.join(tmpdir(), "agent-gates-outside-"));
+ 
+ const cases: GateCase[] = [
+-  ...blockedCommands.flatMap(command => [
+-    {
+-      gate: shellGate,
+-      input: {
++  ...blockedCommands.map(command => ({
++    gate: shellGate,
++    input: {
++      tool_input: {
+         command,
+       },
+-      expectedExit: 2 as const,
+-      name: `Cursor shell: ${command}`,
+-    },
+-    {
+-      gate: shellGate,
+-      input: {
+-        tool_input: {
+-          command,
+-        },
+-      },
+-      expectedExit: 2 as const,
+-      name: `Claude Bash: ${command}`,
+     },
+-  ]),
++    expectedExit: 2 as const,
++    name: `Claude Bash: ${command}`,
++  })),
+   ...allowedCommands.map(command => ({
+     gate: shellGate,
+     input: {
+-      command,
++      tool_input: {
++        command,
++      },
+     },
+     expectedExit: 0 as const,
+-    expectedPermission: "allow" as const,
+     name: `shell: ${command}`,
+   })),
+-  ...productionCommands.flatMap(command => [
+-    {
+-      gate: productionGate,
+-      input: {
++  ...productionCommands.map(command => ({
++    gate: productionGate,
++    input: {
++      tool_input: {
+         command,
+       },
+-      expectedExit: 2 as const,
+-      name: `Cursor production: ${command}`,
+-    },
+-    {
+-      gate: productionGate,
+-      input: {
+-        tool_input: {
+-          command,
+-        },
+-      },
+-      expectedExit: 2 as const,
+-      name: `Claude production: ${command}`,
+     },
+-  ]),
++    expectedExit: 2 as const,
++    name: `Claude production: ${command}`,
++  })),
+   ...approvalLiftsGate.map(releaseApproval => ({
+     gate: productionGate,
+     releaseApproval,
+@@ -465,7 +422,6 @@ const cases: GateCase[] = [
+         command: sampleProductionCommand,
+       },
+     },
+-    expectedPermission: "allow" as const,
+     name: `production with RELEASE_APPROVAL="${releaseApproval}": ${sampleProductionCommand}`,
+     expectedExit: 0 as const,
+   })),
+@@ -483,10 +439,11 @@ const cases: GateCase[] = [
+   ...nonProductionCommands.map(command => ({
+     gate: productionGate,
+     input: {
+-      command,
++      tool_input: {
++        command,
++      },
+     },
+     expectedExit: 0 as const,
+-    expectedPermission: "allow" as const,
+     name: `production: ${command}`,
+   })),
+   ...mcpTools.blocked.map(tool => ({
+@@ -505,19 +462,8 @@ const cases: GateCase[] = [
+       tool_input: "{}",
+     },
+     expectedExit: 0 as const,
+-    expectedPermission: "allow" as const,
+     name: `MCP: ${tool}`,
+   })),
+-  ...protectedPaths.map(file => ({
+-    gate: constitutionGate,
+-    input: {
+-      tool_input: {
+-        file_path: file,
+-      },
+-    },
+-    expectedExit: 2 as const,
+-    name: `constitution: ${file}`,
+-  })),
+   ...reviewWriteCases.map(({expectedExit, name, toolInput}) => ({
+     gate: mcpGate,
+     input: {
+@@ -527,16 +473,6 @@ const cases: GateCase[] = [
+     expectedExit: expectedExit as 0 | 2,
+     name: `MCP: pull_request_review_write with ${name}`,
+   })),
+-  {
+-    gate: constitutionGate,
+-    name: "constitution: src file",
+-    expectedExit: 0,
+-    input: {
+-      tool_input: {
+-        file_path: sourceFile,
+-      },
+-    },
+-  },
+   ...[
+     {
+       projectDirectory: fixBranchWithTest,
+@@ -571,39 +507,24 @@ const cases: GateCase[] = [
+   })),
+   {
+     gate: shellGate,
+-    expectedPermission: "allow",
+     expectedSession: "claude-session",
+     name: "record: the session of a Claude Code hook input",
+     expectedExit: 0,
+     input: {
+-      command: statusCommand,
++      tool_input: {
++        command: statusCommand,
++      },
+       session_id: "claude-session",
+     },
+   },
+-  {
+-    gate: productionGate,
+-    expectedSession: "cursor-conversation",
+-    name: "record: the conversation of a Cursor hook input",
+-    expectedExit: 2,
+-    input: {
+-      command: sampleProductionCommand,
+-      conversation_id: "cursor-conversation",
+-    },
+-  },
+   {
+     gate: shellGate,
+     name: "record: a blocked command that holds a secret",
+     expectedExit: 2,
+     input: {
+-      command: "rm sk_live_SECRET123=.agents/hooks/agent-shell-gate.sh",
+-    },
+-  },
+-  {
+-    gate: constitutionGate,
+-    name: "record: a blocked path that holds a secret",
+-    expectedExit: 2,
+-    input: {
+-      file_path: ".agents/rules/sk_live_SECRET123.md",
++      tool_input: {
++        command: "rm sk_live_SECRET123=.agents/hooks/agent-shell-gate.sh",
++      },
+     },
+   },
+   {
+@@ -613,17 +534,20 @@ const cases: GateCase[] = [
+     releaseApproval: "CHG-123",
+     expectedExit: 2,
+     input: {
+-      command: sampleProductionCommand,
++      tool_input: {
++        command: sampleProductionCommand,
++      },
+     },
+   },
+   {
+     gate: shellGate,
+-    expectedPermission: "allow",
+     name: "record: an allow when the record cannot be written",
+     expectedExit: 0,
+     isRecordUnwritable: true,
+     input: {
+-      command: statusCommand,
++      tool_input: {
++        command: statusCommand,
++      },
+     },
+   },
+   {
+@@ -632,7 +556,9 @@ const cases: GateCase[] = [
+     expectedExit: 2,
+     isRecordUnwritable: true,
+     input: {
+-      command: sampleProductionCommand,
++      tool_input: {
++        command: sampleProductionCommand,
++      },
+     },
+   },
+ ];
+@@ -730,22 +656,15 @@ const failures = cases.filter((gateCase, index) => {
+       ...childEnvironment,
+       AGENT_GATE_LOG: recordPath,
+       CLAUDE_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
+-      CURSOR_PROJECT_DIR: gateCase.projectDirectory ?? process.cwd(),
+       RELEASE_APPROVAL: gateCase.releaseApproval,
+     },
+     input: JSON.stringify(gateCase.input),
+   });
+ 
+-  const isPermissionWrong =
+-    gateCase.expectedPermission !== undefined &&
+-    (JSON.parse(result.stdout.toString()) as {permission?: string}).permission !==
+-      gateCase.expectedPermission;
+-
+   const isRecordChecked = gateCase.isRecordUnwritable !== true;
+ 
+   return (
+     result.status !== gateCase.expectedExit ||
+-    isPermissionWrong ||
+     (isRecordChecked && isRecordWrong(gateCase, recordPath))
+   );
+ });
+@@ -764,14 +683,9 @@ for (const directory of [
+ }
+ 
+ if (failures.length > 0) {
+-  const failureLines = failures.map(gateCase => {
+-    const permission =
+-      gateCase.expectedPermission === undefined
+-        ? ""
+-        : ` and permission ${gateCase.expectedPermission}`;
+-
+-    return `- ${gateCase.name} (expected exit ${gateCase.expectedExit}${permission})`;
+-  });
++  const failureLines = failures.map(
++    gateCase => `- ${gateCase.name} (expected exit ${gateCase.expectedExit})`,
++  );
+ 
+   process.stderr.write(`Agent gate checks failed:\n${failureLines.join("\n")}\n`);
+   process.exitCode = 1;
+diff --git a/templates/base/scripts/sync-agent-rules.ts b/templates/base/scripts/sync-agent-rules.ts
+index b1906eb..fd031b1 100644
+--- a/templates/base/scripts/sync-agent-rules.ts
++++ b/templates/base/scripts/sync-agent-rules.ts
+@@ -38,21 +38,6 @@ function renderClaudeRule(name: string, rule: RuleConfig, body: string): string
+   return `---\npaths:\n${paths}\n---\n\n${body}`;
+ }
+ 
+-/**
+- * Render the Cursor rule with the full body, because Cursor does not inline referenced files.
+- * @param rule Rule configuration.
+- * @param body Shared rule body.
+- * @returns The `.cursor/rules` file content.
+- */
+-function renderCursorRule(rule: RuleConfig, body: string): string {
+-  const scope =
+-    rule.globs === undefined
+-      ? "alwaysApply: true"
+-      : `globs: "${rule.globs.join(",")}"\nalwaysApply: false`;
+-
+-  return `---\ndescription: "${rule.description}"\n${scope}\n---\n\n${body}`;
+-}
+-
+ const config = JSON.parse(readFileSync(configPath, "utf8")) as Record<string, RuleConfig>;
+ const configNames = Object.keys(config);
+ const sourceNames = listNames(sourceDirectory, ".md");
+@@ -66,7 +51,6 @@ if (missingConfig.length > 0 || missingSource.length > 0) {
+ }
+ 
+ const claudeDirectory = ".claude/rules";
+-const cursorDirectory = ".cursor/rules";
+ const expected = new Map<string, string>();
+ 
+ for (const name of configNames) {
+@@ -74,11 +58,10 @@ for (const name of configNames) {
+   const body = readFileSync(path.join(sourceDirectory, `${name}.md`), "utf8");
+ 
+   expected.set(path.join(claudeDirectory, `${name}.md`), renderClaudeRule(name, rule, body));
+-  expected.set(path.join(cursorDirectory, `${name}.mdc`), renderCursorRule(rule, body));
+ }
+ 
+ const sharedFiles: Record<string, string[]> = {
+-  ".agents/mcp.json": [".mcp.json", ".cursor/mcp.json"],
++  ".agents/mcp.json": [".mcp.json"],
+   ".agents/review.md": ["REVIEW.md"],
+ };
+ 
+@@ -94,7 +77,6 @@ for (const [source, targets] of sharedSources) {
+ 
+ const orphans = [
+   ...listNames(claudeDirectory, ".md").map(name => path.join(claudeDirectory, `${name}.md`)),
+-  ...listNames(cursorDirectory, ".mdc").map(name => path.join(cursorDirectory, `${name}.mdc`)),
+   ...Object.values(sharedFiles)
+     .flat()
+     .filter(file => existsSync(file)),
+diff --git a/templates/nestjs/.agents/rules.json b/templates/nestjs/.agents/rules.json
+index 1ac60d2..26df712 100644
+--- a/templates/nestjs/.agents/rules.json
++++ b/templates/nestjs/.agents/rules.json
+@@ -16,9 +16,6 @@
+       ".agents/hooks/**",
+       ".claude/settings.json",
+       ".claude/rules/**",
+-      ".cursor/rules/**",
+-      ".cursor/hooks/**",
+-      ".cursor/hooks.json",
+       "scripts/sync-agent-rules.ts",
+       "scripts/check-agent-gates.ts",
+       ".husky/**",
+diff --git a/templates/nestjs/.claude/rules/constitution-changes.md b/templates/nestjs/.claude/rules/constitution-changes.md
+index 2bb094e..cca08f1 100644
+--- a/templates/nestjs/.claude/rules/constitution-changes.md
++++ b/templates/nestjs/.claude/rules/constitution-changes.md
+@@ -5,9 +5,6 @@ paths:
+   - ".agents/hooks/**"
+   - ".claude/settings.json"
+   - ".claude/rules/**"
+-  - ".cursor/rules/**"
+-  - ".cursor/hooks/**"
+-  - ".cursor/hooks.json"
+   - "scripts/sync-agent-rules.ts"
+   - "scripts/check-agent-gates.ts"
+   - ".husky/**"
+diff --git a/templates/nextjs/.agents/rules.json b/templates/nextjs/.agents/rules.json
+index 113165d..48da2be 100644
+--- a/templates/nextjs/.agents/rules.json
++++ b/templates/nextjs/.agents/rules.json
+@@ -16,9 +16,6 @@
+       ".agents/hooks/**",
+       ".claude/settings.json",
+       ".claude/rules/**",
+-      ".cursor/rules/**",
+-      ".cursor/hooks/**",
+-      ".cursor/hooks.json",
+       "scripts/sync-agent-rules.ts",
+       "scripts/check-agent-gates.ts",
+       ".husky/**",
+diff --git a/templates/nextjs/.claude/rules/constitution-changes.md b/templates/nextjs/.claude/rules/constitution-changes.md
+index 7a1cdf0..c0975d9 100644
+--- a/templates/nextjs/.claude/rules/constitution-changes.md
++++ b/templates/nextjs/.claude/rules/constitution-changes.md
+@@ -5,9 +5,6 @@ paths:
+   - ".agents/hooks/**"
+   - ".claude/settings.json"
+   - ".claude/rules/**"
+-  - ".cursor/rules/**"
+-  - ".cursor/hooks/**"
+-  - ".cursor/hooks.json"
+   - "scripts/sync-agent-rules.ts"
+   - "scripts/check-agent-gates.ts"
+   - ".husky/**"
+diff --git a/templates/nodejs/.agents/rules.json b/templates/nodejs/.agents/rules.json
+index 1ac60d2..26df712 100644
+--- a/templates/nodejs/.agents/rules.json
++++ b/templates/nodejs/.agents/rules.json
+@@ -16,9 +16,6 @@
+       ".agents/hooks/**",
+       ".claude/settings.json",
+       ".claude/rules/**",
+-      ".cursor/rules/**",
+-      ".cursor/hooks/**",
+-      ".cursor/hooks.json",
+       "scripts/sync-agent-rules.ts",
+       "scripts/check-agent-gates.ts",
+       ".husky/**",
+diff --git a/templates/nodejs/.claude/rules/constitution-changes.md b/templates/nodejs/.claude/rules/constitution-changes.md
+index 2bb094e..cca08f1 100644
+--- a/templates/nodejs/.claude/rules/constitution-changes.md
++++ b/templates/nodejs/.claude/rules/constitution-changes.md
+@@ -5,9 +5,6 @@ paths:
+   - ".agents/hooks/**"
+   - ".claude/settings.json"
+   - ".claude/rules/**"
+-  - ".cursor/rules/**"
+-  - ".cursor/hooks/**"
+-  - ".cursor/hooks.json"
+   - "scripts/sync-agent-rules.ts"
+   - "scripts/check-agent-gates.ts"
+   - ".husky/**"
+diff --git a/templates/payload/.agents/rules.json b/templates/payload/.agents/rules.json
+index ad4bcf8..91230e8 100644
+--- a/templates/payload/.agents/rules.json
++++ b/templates/payload/.agents/rules.json
+@@ -16,9 +16,6 @@
+       ".agents/hooks/**",
+       ".claude/settings.json",
+       ".claude/rules/**",
+-      ".cursor/rules/**",
+-      ".cursor/hooks/**",
+-      ".cursor/hooks.json",
+       "scripts/sync-agent-rules.ts",
+       "scripts/check-agent-gates.ts",
+       ".husky/**",
+diff --git a/templates/payload/.claude/rules/constitution-changes.md b/templates/payload/.claude/rules/constitution-changes.md
+index 2bb094e..cca08f1 100644
+--- a/templates/payload/.claude/rules/constitution-changes.md
++++ b/templates/payload/.claude/rules/constitution-changes.md
+@@ -5,9 +5,6 @@ paths:
+   - ".agents/hooks/**"
+   - ".claude/settings.json"
+   - ".claude/rules/**"
+-  - ".cursor/rules/**"
+-  - ".cursor/hooks/**"
+-  - ".cursor/hooks.json"
+   - "scripts/sync-agent-rules.ts"
+   - "scripts/check-agent-gates.ts"
+   - ".husky/**"
+diff --git a/templates/turborepo/.agents/rules.json b/templates/turborepo/.agents/rules.json
+index 113165d..48da2be 100644
+--- a/templates/turborepo/.agents/rules.json
++++ b/templates/turborepo/.agents/rules.json
+@@ -16,9 +16,6 @@
+       ".agents/hooks/**",
+       ".claude/settings.json",
+       ".claude/rules/**",
+-      ".cursor/rules/**",
+-      ".cursor/hooks/**",
+-      ".cursor/hooks.json",
+       "scripts/sync-agent-rules.ts",
+       "scripts/check-agent-gates.ts",
+       ".husky/**",
+diff --git a/templates/turborepo/.claude/rules/constitution-changes.md b/templates/turborepo/.claude/rules/constitution-changes.md
+index 7a1cdf0..c0975d9 100644
+--- a/templates/turborepo/.claude/rules/constitution-changes.md
++++ b/templates/turborepo/.claude/rules/constitution-changes.md
+@@ -5,9 +5,6 @@ paths:
+   - ".agents/hooks/**"
+   - ".claude/settings.json"
+   - ".claude/rules/**"
+-  - ".cursor/rules/**"
+-  - ".cursor/hooks/**"
+-  - ".cursor/hooks.json"
+   - "scripts/sync-agent-rules.ts"
+   - "scripts/check-agent-gates.ts"
+   - ".husky/**"
