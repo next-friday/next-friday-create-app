@@ -17,12 +17,12 @@ The request decides which steps run:
 2. **Read the rule** when it exists: the rule in the person's home directory that the agent tool loads in every session. Its path is the `rules-file` line of this agent tool's words: read the files in [`../sdlc-mode/tool-words/`](../sdlc-mode/tool-words/), and take the one whose first line names the agent tool this session runs in. With no file for the agent tool, say that this skill has no words for it, write no rule, and go to step 6 when the request holds the word `project`, and to step 9 otherwise. The rule's `budget:` line is the current budget, and a role line whose model is on the list keeps that model. A line for a role that is not in step 3 is from an older version: drop it. When the session cannot read the rule, take the lines the request gives as its content, and otherwise start from the defaults.
 3. **Choose each role's model.** A role without a kept model gets its default. A default the session does not offer becomes the offered model of the same family, the newest when there are several. When the family has none, ask about that role in the question of step 4.
 
-   | Role      | Default  | Default effort | Does                                                                              |
-   | :-------- | :------- | :------------- | :-------------------------------------------------------------------------------- |
-   | `main`    | `sonnet` | `high`         | The model of the session itself, which does the work.                             |
-   | `explore` | `haiku`  | `xhigh`        | A subagent that reads and searches files, and the `verifier`, which runs the app. |
-   | `review`  | `sonnet` | `high`         | A subagent that reviews a pull request's diff with a fresh context.               |
-   | `advise`  | `opus`   | `medium`       | A subagent that advises as `../sdlc-mode/SKILL.md` step 4 says.                   |
+   | Role      | Default  | Default effort | Does                                                                                      |
+   | :-------- | :------- | :------------- | :---------------------------------------------------------------------------------------- |
+   | `main`    | `sonnet` | `high`         | The model that writes the code: the session, or a subagent of a session on another model. |
+   | `explore` | `haiku`  | `xhigh`        | A subagent that reads and searches files, and the `verifier`, which runs the app.         |
+   | `review`  | `sonnet` | `high`         | A subagent that reviews a pull request's diff with a fresh context.                       |
+   | `advise`  | `opus`   | `medium`       | A subagent that advises as `../sdlc-mode/SKILL.md` step 4 says.                           |
 
 4. **Fix the budget,** which sets the reasoning effort of the roles. When the request names one of the five labels, that is the budget and you ask nothing about it. Otherwise ask one question, as `../sdlc-mode/SKILL.md` step 6 says for a choice between ways, with these choices, `balanced` as the recommended one, adding the roles of step 3 that have no model. Name the current budget when the rule records one; with no rule, say that `balanced` matches the defaults.
 
@@ -48,7 +48,7 @@ The request decides which steps run:
 
    When the session cannot write the rule, show the whole rule and its path in the reply, and say that the person saves it there; write it nowhere else.
 
-   A session cannot change its own model, so say how to choose the `main` model for the next session: the `model-switch` line gives it. When the words hold an `advisor` line, do what it says too.
+   A session cannot change its own model, so say how to choose the `main` model for the next session: the `model-switch` line gives it. Say too that a session on another model hands the code to a subagent on the `main` model, as `../sdlc-mode/SKILL.md` step 4 says. When the words hold an `advisor` line, do what it says too.
 
 6. **Read `SETUP.md`** at the project root. When there is none, say "This project has no `SETUP.md`" and go to step 9. Otherwise decide for each step whether it is done by checking the repository: run the step's **Check** when it only reads files or local git state, and read the files the step names. Report each step as `done`, `not done`, or `a person checks this` when the repository cannot show it, such as a setting on a website, an account, or someone's decision. For example:
 
