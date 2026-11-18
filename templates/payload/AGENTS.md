@@ -20,6 +20,8 @@ Payload CMS on Next.js App Router and PostgreSQL, in TypeScript on pnpm and Node
 
 ## Verifying your work
 
+Each command below checks one part. While you work, run only the one that covers the files you changed; the `pre-push` hook runs the full set at the push.
+
 - Build: `pnpm build` (prints the `Route (app)` table)
 - Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)

@@ -18,6 +18,8 @@ NestJS HTTP API in TypeScript on pnpm and Node.js `>=26.13.0 <27`.
 
 ## Verifying your work
 
+Each command below checks one part. While you work, run only the one that covers the files you changed; the `pre-push` hook runs the full set at the push.
+
 - Build: `pnpm build` (prints nothing after `$ tsc -p tsconfig.build.json`)
 - Test: `pnpm test:coverage` (all green, then the coverage summary)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)

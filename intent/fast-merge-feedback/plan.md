@@ -34,6 +34,7 @@ Playbooks, under `plugins/sdlc/source/skills/sdlc-mode/`, rendered to `plugins/s
 
 Documents:
 
+- `AGENTS.md` (changed): line 20 tells the agent to run only the check of the files it changed and not to run `pnpm verify` itself, because `pre-push` runs it. `playbooks/small.md` step 4 and `playbooks/fix.md` step 10 (changed) verify as `build.md` step 9 says, in place of running every check. Each stack's `AGENTS.md` says the same above its **Verifying your work** list. The product owner ordered these three in the build session; the spec does not name them.
 - `templates/base/SETUP.md` (changed): section 8 says the `triage` job also reports a failed push to the default branch on the merged pull request; section **Deploy** says the team's deploy workflow deploys the development environment on a push to the default branch, and a later environment takes a commit whose run passed.
 - `templates/<stack>/README.md`, `CONTRIBUTING.md`, `AGENTS.md` (changed, five stacks): what the commit, the push, the pull request, and the push to the default branch run. `pnpm check` no longer builds; CI runs the end-to-end tests after the merge. The healthy output of `pnpm check` in the Commands table is copied from a generated project.
 
