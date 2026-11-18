@@ -1347,6 +1347,8 @@ if (selfTestFailures.length > 0) {
 
   process.stderr.write(`Plan self-tests failed:\n${failureLines.join("\n")}\n`);
   process.exitCode = 1;
+} else if (process.argv.includes("--self-test")) {
+  process.stdout.write(`Ran ${selfTestCases.length} plan self-tests.\n`);
 } else {
   const argumentPaths = process.argv.slice(2);
   const changeFolders = argumentPaths.length === 0 ? listChangeFolders() : [];

@@ -47,8 +47,8 @@ The loop:
 
 18. `playbooks/small.md` and its rendered copies are deleted. `SKILL.md` loses its row and `sdlc-help` loses its topic. The product owner decided this in the build session.
 19. Every defect takes `fix.md` with its plan, as today.
-20. `plugins/sdlc/source/scripts/check-plan.ts` refuses a branch that changes code and adds no plan only when the branch also changes an `intent.md` or a `spec.md`: that work is in the SDLC loop, and the playbook asks for the plan the engineer accepted. A branch that changes only code, outside the loop, pushes as usual. The rule on a fix that edits a test the default branch holds stays.
-21. The push hook `plugins/sdlc/source/hooks/check-push.sh`, which refused a commit that changes a file the plan does not name, is deleted with its entries in the agent settings. Area of concern 6.
+20. The plan check refuses a branch that changes code and adds no plan only when the branch also changes an `intent.md` or a `spec.md`. No `package.json` script, git hook, or workflow job runs it: the push hook of the `sdlc-mode` skill runs it before a `git push`, in a session that called `/sdlc-mode`, as `intent/plugin-separation/intent.md` says. The rule on a fix that edits a test the default branch holds stays.
+21. The loop's hooks are declared in the frontmatter of `sdlc-mode/SKILL.md`, and `.claude/settings.json` holds none of them. The old push hook, which refused a commit that changed a file the plan did not name, is gone. Area of concern 6.
 22. The root and each stack's `AGENTS.md` say that `/sdlc-mode` starts the SDLC loop only when a person types it.
 
 Documents:

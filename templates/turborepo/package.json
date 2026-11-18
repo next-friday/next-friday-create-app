@@ -11,9 +11,8 @@
   "author": "Next Friday",
   "type": "module",
   "scripts": {
-    "bands:check": "node scripts/check-bands.ts",
     "build": "turbo run build $TURBO_FILTER",
-    "check": "node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check sort-package-json:check typecheck knip depcruise test:changed",
+    "check": "node scripts/run-checks.ts rules:check gates:check lint:check sort-package-json:check typecheck knip depcruise test:changed",
     "clean": "rm -rf apps/*/.next apps/*/coverage .turbo coverage *.tsbuildinfo .eslintcache node_modules/.cache",
     "depcruise": "turbo run depcruise $TURBO_FILTER",
     "dev": "turbo run dev --filter=./apps/* --concurrency=10",
@@ -26,10 +25,8 @@
     "knip": "knip",
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
-    "loop:measure": "node scripts/measure-loop.ts",
     "migrate": "pnpm --filter ./apps/backoffice migrate",
     "migrate:create": "pnpm --filter ./apps/backoffice migrate:create",
-    "plan:check": "node scripts/check-plan.ts",
     "prepare": "husky && pnpm --filter \"./apps/*\" exec next typegen",
     "rules:check": "node scripts/sync-agent-rules.ts --check",
     "rules:sync": "node scripts/sync-agent-rules.ts",
@@ -43,7 +40,7 @@
     "test:watch": "turbo run test:watch --filter=./apps/*",
     "typecheck": "tsc --noEmit -p tsconfig.json && turbo run typecheck $TURBO_FILTER",
     "verify": "node scripts/run-checks.ts verify:static test:coverage build",
-    "verify:static": "node scripts/run-checks.ts rules:check gates:check plan:check bands:check lint:check format:check sort-package-json:check typecheck knip depcruise"
+    "verify:static": "node scripts/run-checks.ts rules:check gates:check lint:check format:check sort-package-json:check typecheck knip depcruise"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",

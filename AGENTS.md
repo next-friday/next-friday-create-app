@@ -23,12 +23,12 @@ For a change to the prompts or the arguments, also run `node dist/main.mjs` with
 
 ## Conventions
 
-1. **Edit `src/`, `test/`, and `templates/`; never edit `dist/` or a rendered copy.** The sources are `.agents/` and `plugins/sdlc/source/`. `pnpm rules:sync` renders `.agents/` into `.claude/rules/` and `REVIEW.md`. `pnpm plugin:sync` renders `plugins/sdlc/source/` into `.claude/skills/`, `plugins/sdlc/adapters/claude-code/`, and `templates/base/`. Edit a source, never its rendered copy.
+1. **Edit `src/`, `test/`, and `templates/`; never edit `dist/` or a rendered copy.** The sources are `.agents/` and `plugins/sdlc/source/`. `pnpm rules:sync` renders `.agents/` into `.claude/rules/` and `REVIEW.md`. `pnpm plugin:sync` renders `plugins/sdlc/source/` into `.claude/skills/`, `plugins/sdlc/adapters/claude-code/`, and `templates/base/`. Edit a source, never its rendered copy. The loop's scripts (`check-plan.ts`, `check-bands.ts`, `measure-loop.ts`) and hooks live inside `plugins/sdlc/source/skills/sdlc-mode/`; `scripts/` holds this repository's own `run-checks.ts`, `changed-documents.ts`, and `check-harness.ts`.
 2. **Preserve CLI arguments, prompts, and stack names** unless a major changeset declares the break. `.changeset/README.md` says when a change needs a changeset.
 3. **When you change a `base` file that a stack replaces, make the same change in each replacement.** `CONTRIBUTING.md` lists them.
 4. **Store `.gitignore` as `_gitignore` and commit no `pnpm-lock.yaml` under `templates/`.**
 5. **After a change under `templates/`, run `pnpm verify` in a project generated from each stack in `src/stacks.ts`,** because CI runs all of them.
-6. **`/sdlc-mode` starts the SDLC loop, only when a person types it.** In an agent tool with no command for it, read and follow `.claude/skills/sdlc-mode/SKILL.md` when a person asks for the loop. In the loop, its playbooks decide how branches, commits, and pull requests are made, over a skill from another checkout.
+6. **`/sdlc-mode` starts the SDLC loop, only when a person types it.** In an agent tool with no command for it, read and follow `.claude/skills/sdlc-mode/SKILL.md` when a person asks for the loop. The skill declares its hooks in its frontmatter, so its checks, including the plan check before a `git push`, run only in a session that called it; after a session is resumed, type `/sdlc-mode` again. In the loop, its playbooks decide how branches, commits, and pull requests are made, over a skill from another checkout.
 7. **Run parallel sessions in separate worktrees** (`claude --worktree <name>`), on tasks that touch different files. Tasks that share files run in one session, one after another. Start with two or three sessions.
 
 ## Things Claude gets wrong

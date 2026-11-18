@@ -1,8 +1,10 @@
 #!/bin/sh
 command -v jq > /dev/null || exit 0
-input=$(cat)
+input=
+[ -t 0 ] || input=$(cat)
 project=$(printf '%s' "$input" | jq -r '.cwd // ""')
-[ -n "$project" ] && [ -d "$project/intent" ] || exit 0
+[ -n "$project" ] || project=$PWD
+[ -d "$project/intent" ] || exit 0
 
 read_status() {
   [ -f "$1" ] || return 0

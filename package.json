@@ -32,7 +32,6 @@
   ],
   "scripts": {
     "audit": "pnpm audit",
-    "bands:check": "node plugins/sdlc/source/scripts/check-bands.ts",
     "build": "tsdown",
     "changeset": "changeset",
     "changeset:status": "changeset status --since main",
@@ -46,14 +45,12 @@
     "format": "prettier --write --cache .",
     "format:check": "prettier --check --cache . && editorconfig-checker",
     "gates:check": "node scripts/check-agent-gates.ts",
-    "harness:check": "node plugins/sdlc/source/scripts/check-harness.ts --self-test",
+    "harness:check": "node scripts/check-harness.ts --self-test",
     "knip": "knip",
     "lint": "eslint . --fix --cache --max-warnings=0 --no-inline-config",
     "lint:check": "eslint . --cache --max-warnings=0 --no-inline-config",
-    "loop:measure": "node plugins/sdlc/source/scripts/measure-loop.ts",
     "prepack": "pnpm build",
-    "plan:check": "node plugins/sdlc/source/scripts/check-plan.ts",
-    "plugin:check": "node scripts/sync-plugin.ts --check",
+    "plugin:check": "node scripts/sync-plugin.ts --check && node plugins/sdlc/source/skills/sdlc-mode/scripts/check-plan.ts --self-test && node plugins/sdlc/source/skills/sdlc-mode/scripts/check-bands.ts",
     "plugin:sync": "node scripts/sync-plugin.ts",
     "prepare": "husky",
     "rules:check": "node scripts/sync-agent-rules.ts --check",
@@ -64,7 +61,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "node plugins/sdlc/source/scripts/run-checks.ts rules:check plugin:check gates:check plan:check harness:check bands:check changesets:check lint:check format:check sort-package-json:check typecheck test:coverage knip build --then check:publint"
+    "verify": "node scripts/run-checks.ts rules:check plugin:check gates:check harness:check changesets:check lint:check format:check sort-package-json:check typecheck test:coverage knip build --then check:publint"
   },
   "dependencies": {
     "@clack/prompts": "1.8.1"

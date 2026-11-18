@@ -8,6 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import {parse as parseYaml} from "yaml";
 import path from "node:path";
 import {tmpdir} from "node:os";
 
@@ -26,16 +27,9 @@ type AgentConfig = {
   tools?: string[];
 };
 
-type HookConfig = {
-  argument?: string;
-  event: string;
-  matcher?: string;
-  script: string;
-  timeout?: number;
-};
-
 type HookCase = {
   argument?: string;
+  branchFiles?: Record<string, string>;
   changedFiles?: string[];
   committed?: boolean;
   expected: string;
@@ -56,14 +50,10 @@ type ToolWords = {
 type AgentTool = {
   agentFields: (agent: AgentConfig) => string[];
   agentsDirectory: string;
-  hookFilePath: string;
-  key: string;
-  renderHookEntry: (hook: HookConfig) => Record<string, unknown>;
 };
 
 type HarnessSource = {
   agents: Map<string, AgentConfig & {body: string}>;
-  hookScripts: Map<string, string>;
   skills: Map<string, string>;
 };
 
@@ -81,17 +71,17 @@ const evalCasesDirectory = path.join(evalPluginRoot, "evals");
 const vendorNamesPath = path.join(adaptersRoot, "vendor-names.json");
 const subagentConfigPath = path.join(adaptersRoot, "agents.json");
 const toolWordsPath = path.join(adaptersRoot, "tool-words.json");
-const hookConfigPath = path.join(adaptersRoot, "hooks.json");
-const hooksDirectory = path.join(sourceRoot, "hooks");
+const hooksDirectory = path.join(sourceRoot, "skills", "sdlc-mode", "hooks");
 const hookCasesSuffix = ".cases.json";
-const hookTimeoutSeconds = 10;
 const templateRoot = path.join("templates", "base");
 const projectRoots = ["", templateRoot];
-const sourceScriptsDirectory = path.join(sourceRoot, "scripts");
-const templateScriptsDirectory = path.join(templateRoot, "scripts");
 const projectSkillsDirectory = ".claude/skills";
+const projectSettingsPath = ".claude/settings.json";
 const toolWordsDirectory = "sdlc-mode/tool-words";
 const projectHooksDirectory = `${projectSkillsDirectory}/sdlc-mode/hooks`;
+const hooksDirectoryWord = "{{hooks-directory}}";
+const projectHooksReference = `\${CLAUDE_PROJECT_DIR}/${projectHooksDirectory}`;
+const evalPluginHooksReference = `\${CLAUDE_PLUGIN_ROOT}/skills/sdlc-mode/hooks`;
 
 const repositoryVariables = execFileSync("git", ["rev-parse", "--local-env-vars"], {
   encoding: "utf8",
@@ -128,88 +118,10 @@ function findClaudeAgentFields(agent: AgentConfig): string[] {
   ];
 }
 
-/**
- * Build the shell command that runs a hook script through `sh`.
- * @param scriptPath The script's path as the tool's shell resolves it, quoted where it holds a variable.
- * @param hook The hook that `hooks.json` names.
- * @returns The command, with the argument after the script when the hook has one.
- */
-function renderHookCommand(scriptPath: string, hook: HookConfig): string {
-  return ["sh", scriptPath, ...(hook.argument === undefined ? [] : [hook.argument])].join(" ");
-}
-
-/**
- * Render one hook as Claude Code reads it under an event, in a plugin's hook file or in a project's settings.
- * @param hook A hook that `hooks.json` names for Claude Code.
- * @param scriptPath The script's path as the shell resolves it.
- * @returns The entry, which runs the script through `sh`.
- */
-function renderClaudeHookEntry(hook: HookConfig, scriptPath: string): Record<string, unknown> {
-  return {
-    ...(hook.matcher !== undefined && {
-      matcher: hook.matcher,
-    }),
-    hooks: [
-      {
-        type: "command",
-        timeout: hook.timeout ?? hookTimeoutSeconds,
-        command: renderHookCommand(scriptPath, hook),
-      },
-    ],
-  };
-}
-
-/**
- * Group hooks by event, in the order `hooks.json` lists them, so two scripts can share an event.
- * @param hooks The hooks that `hooks.json` names for one agent tool.
- * @param render Renders one hook as its tool expects it.
- * @returns Each event and its rendered hooks.
- */
-function groupHooksByEvent(
-  hooks: HookConfig[],
-  render: (hook: HookConfig) => Record<string, unknown>,
-): Record<string, Record<string, unknown>[]> {
-  const grouped: Record<string, Record<string, unknown>[]> = {};
-
-  for (const hook of hooks) {
-    grouped[hook.event] = [...(grouped[hook.event] ?? []), render(hook)];
-  }
-
-  return grouped;
-}
-
-/**
- * Render one hook of the plugin that `claude plugin eval` loads.
- * @param hook A hook that `hooks.json` names for Claude Code.
- * @returns The entry, which runs the script from the plugin's `hooks` folder.
- */
-function renderEvalPluginHookEntry(hook: HookConfig): Record<string, unknown> {
-  return renderClaudeHookEntry(hook, `"\${CLAUDE_PLUGIN_ROOT}/hooks/${hook.script}"`);
-}
-
-/**
- * Render the hook file of the plugin that `claude plugin eval` loads, at `hooks/hooks.json`.
- * @param hooks The hooks that `hooks.json` names for Claude Code.
- * @returns The file content, with the hooks of each event in the order `hooks.json` lists them.
- */
-function renderEvalPluginHooks(hooks: HookConfig[]): string {
-  return `${JSON.stringify(
-    {
-      hooks: groupHooksByEvent(hooks, renderEvalPluginHookEntry),
-    },
-    undefined,
-    2,
-  )}\n`;
-}
-
 const agentTools: AgentTool[] = [
   {
     agentFields: findClaudeAgentFields,
-    key: "claude-code",
     agentsDirectory: ".claude/agents",
-    hookFilePath: ".claude/settings.json",
-    renderHookEntry: hook =>
-      renderClaudeHookEntry(hook, `"$CLAUDE_PROJECT_DIR"/${projectHooksDirectory}/${hook.script}`),
   },
 ];
 
@@ -256,64 +168,57 @@ function renderAgent(name: string, fields: string[], agent: AgentConfig, body: s
 }
 
 /**
- * Order the keys of every object in a JSON value, so that two values with the same content have the same text.
- * @param value A parsed JSON value.
- * @returns The value with each object's keys in order.
+ * Fill the word that names the hooks folder of the front-door skill with the path a target's skill file reaches it by.
+ * @param content Content of a source skill file.
+ * @param hooksReference The hooks folder's path as the target's hook command resolves it.
+ * @returns The content with the word replaced.
  */
-function sortKeys(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(item => sortKeys(item));
-  }
-
-  return value !== null && typeof value === "object"
-    ? Object.fromEntries(
-        Object.entries(value)
-          .toSorted(([first], [second]) => first.localeCompare(second))
-          .map(([key, item]) => [key, sortKeys(item)]),
-      )
-    : value;
+function fillHooksDirectory(content: string, hooksReference: string): string {
+  return content.replaceAll(hooksDirectoryWord, () => hooksReference);
 }
 
 /**
- * Find the hook entries a protected file lacks, and the entries it holds for a harness script that `hooks.json` no longer runs that way. A person commits that file, so the script only reports.
- * @param filePath Path of the file from the repository root.
- * @param hooks The hooks that `hooks.json` names for the file's agent tool.
- * @param render Renders one hook as the file holds it under the hook's event.
- * @param fileText Content of the file; a missing file holds no entry.
- * @returns One message per hook whose entry is not under its event, then one per stale harness entry.
+ * Find a skill file whose frontmatter is not valid YAML: the agent tool then reads none of it, hooks included.
+ * @param filePath The rendered file's path.
+ * @param content The rendered file's content.
+ * @returns At most one message.
  */
-function findHookEntryProblems(
-  filePath: string,
-  hooks: HookConfig[],
-  render: (hook: HookConfig) => Record<string, unknown>,
-  fileText = "{}",
-): string[] {
+function findFrontmatterProblems(filePath: string, content: string): string[] {
+  const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(content)?.[1];
+
+  if (frontmatter === undefined) {
+    return [];
+  }
+
+  try {
+    parseYaml(frontmatter);
+
+    return [];
+  } catch {
+    return [`${filePath}: its frontmatter is not valid YAML`];
+  }
+}
+
+/**
+ * Find the hook entries a protected file holds for the front-door skill's hook scripts. The skill declares them in its own frontmatter, so a person removes them from the file and commits it; the script only reports.
+ * @param filePath Path of the file from the repository root.
+ * @param fileText Content of the file; a missing file holds no entry.
+ * @returns One message for each hook entry whose command names the skill's hooks folder.
+ */
+function findSkillHookEntries(filePath: string, fileText = "{}"): string[] {
   const {hooks: heldHooks = {}} = JSON.parse(fileText) as {
     hooks?: Record<string, unknown[]>;
   };
 
-  const expected = hooks.map(hook => `${hook.event} ${JSON.stringify(sortKeys(render(hook)))}`);
-
-  const held = Object.entries(heldHooks).flatMap(([event, entries]) =>
-    entries.map(entry => `${event} ${JSON.stringify(sortKeys(entry))}`),
+  return Object.entries(heldHooks).flatMap(([event, entries]) =>
+    entries
+      .map(entry => JSON.stringify(entry))
+      .filter(entry => entry.includes(projectHooksDirectory))
+      .map(
+        entry =>
+          `${filePath}: holds the ${event} hook entry ${entry}, which the sdlc-mode skill declares in its frontmatter; a person removes it and commits this file`,
+      ),
   );
-
-  return [
-    ...expected
-      .filter(entry => !held.includes(entry))
-      .map(entry => entry.split(" "))
-      .map(
-        ([event = "", ...entry]) =>
-          `${filePath}: lacks the ${event} hook entry ${entry.join(" ")}; a person commits this file`,
-      ),
-    ...held
-      .filter(entry => entry.includes(projectHooksDirectory) && !expected.includes(entry))
-      .map(entry => entry.split(" "))
-      .map(
-        ([event = "", ...entry]) =>
-          `${filePath}: holds the ${event} hook entry ${entry.join(" ")}, which the harness no longer has; a person removes it and commits this file`,
-      ),
-  ];
 }
 
 /**
@@ -412,11 +317,11 @@ function commitCaseFiles(repository: string, isMerged = false): void {
 }
 
 /**
- * Create a Git repository with one commit that holds a source file, a plan, and an ignore rule for `coverage/`, for a hook case.
+ * Create an empty Git repository for a hook case.
  * @param parentDirectory The directory to create the repository in.
  * @returns The repository's path.
  */
-function createCaseRepository(parentDirectory: string): string {
+function initializeCaseRepository(parentDirectory: string): string {
   const repository = path.join(parentDirectory, "repository");
 
   mkdirSync(repository);
@@ -426,8 +331,48 @@ function createCaseRepository(parentDirectory: string): string {
     stdio: ["ignore", "ignore", "pipe"],
   });
 
+  return repository;
+}
+
+/**
+ * Create a Git repository with one commit that holds a source file, a plan, and an ignore rule for `coverage/`, for a hook case.
+ * @param parentDirectory The directory to create the repository in.
+ * @returns The repository's path.
+ */
+function createCaseRepository(parentDirectory: string): string {
+  const repository = initializeCaseRepository(parentDirectory);
+
   writeCaseFiles(repository, ["src/version.ts", "intent/app-version/plan.md"], "first\n");
   writeCaseFiles(repository, [".gitignore"], "coverage/\n");
+  commitCaseFiles(repository);
+
+  return repository;
+}
+
+/**
+ * Create a Git repository whose first commit holds a README and is `origin/main`, then commit files on a branch that leaves it.
+ * @param parentDirectory The directory to create the repository in.
+ * @param branchFiles The content of each file the branch commits, by path.
+ * @returns The repository's path, on the branch.
+ */
+function createBranchCaseRepository(
+  parentDirectory: string,
+  branchFiles: Record<string, string>,
+): string {
+  const repository = initializeCaseRepository(parentDirectory);
+
+  writeCaseFiles(repository, ["README.md"], "first\n");
+  commitCaseFiles(repository, true);
+
+  execFileSync("git", ["checkout", "--quiet", "-b", "case-branch"], {
+    cwd: repository,
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+
+  for (const [file, content] of Object.entries(branchFiles)) {
+    writeCaseFiles(repository, [file], content);
+  }
+
   commitCaseFiles(repository);
 
   return repository;
@@ -450,13 +395,25 @@ function writeCaseTranscript(directory: string, transcript?: unknown[]): Record<
 /**
  * Run a hook script on one case in a private state directory.
  * @param script Path of the script from the repository root.
- * @param hookCase The case. Changed files make the case run in a new Git repository: the script takes its snapshot with the `snapshot` argument, the files are written, and the case input gains the repository as `cwd`. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
+ * @param hookCase The case. Branch files make the case run in a new Git repository, with the files committed on a branch that leaves `origin/main`, and the case input gains the repository as `cwd`. Changed files make the case run in a new Git repository: the script takes its snapshot with the `snapshot` argument, the files are written, and the case input gains the repository as `cwd`. A transcript is written to a file, one entry on a line, and the case input gains its path as `transcript_path`.
  * @returns The standard output of the script on the case input.
  */
 function runHookCase(script: string, hookCase: HookCase): string {
   const stateDirectory = mkdtempSync(path.join(tmpdir(), "sdlc-hook-case-"));
 
   try {
+    if (hookCase.branchFiles !== undefined) {
+      return runHookScript(
+        script,
+        hookCase.argument,
+        {
+          ...hookCase.input,
+          cwd: createBranchCaseRepository(stateDirectory, hookCase.branchFiles),
+        },
+        stateDirectory,
+      );
+    }
+
     if (hookCase.fileContents !== undefined) {
       const repository = createCaseRepository(stateDirectory);
 
@@ -629,11 +586,10 @@ function findToolWords(filePath: string, text: string): string[] {
 }
 
 /**
- * Read the harness from the source: the skills with each agent tool's words, the hook scripts that `hooks.json` names, and the subagents.
- * @param hooksConfig The hooks that `hooks.json` names for each agent tool.
- * @returns The content of each skill file by its path under a skills folder, of each hook script by its name, and each subagent's configuration and body by its name.
+ * Read the harness from the source: the skills, with their scripts and hook scripts, and each agent tool's words, and the subagents.
+ * @returns The content of each skill file by its path under a skills folder, and each subagent's configuration and body by its name.
  */
-function readHarnessSource(hooksConfig: Record<string, HookConfig[]>): HarnessSource {
+function readHarnessSource(): HarnessSource {
   const skillsDirectory = path.join(sourceRoot, "skills");
   const toolWords = JSON.parse(readFileSync(toolWordsPath, "utf8")) as Record<string, ToolWords>;
 
@@ -641,10 +597,6 @@ function readHarnessSource(hooksConfig: Record<string, HookConfig[]>): HarnessSo
     string,
     AgentConfig
   >;
-
-  const scripts = new Set(
-    Object.values(hooksConfig).flatMap(hooks => hooks.map(hook => hook.script)),
-  );
 
   return {
     agents: new Map(
@@ -656,14 +608,13 @@ function readHarnessSource(hooksConfig: Record<string, HookConfig[]>): HarnessSo
         },
       ]),
     ),
-    hookScripts: new Map(
-      [...scripts].map(script => [script, readFileSync(path.join(hooksDirectory, script), "utf8")]),
-    ),
     skills: new Map([
-      ...listFiles(skillsDirectory, false).map((file): [string, string] => [
-        file,
-        readFileSync(path.join(skillsDirectory, file), "utf8"),
-      ]),
+      ...listFiles(skillsDirectory, false)
+        .filter(file => !file.endsWith(hookCasesSuffix))
+        .map((file): [string, string] => [
+          file,
+          readFileSync(path.join(skillsDirectory, file), "utf8"),
+        ]),
       ...Object.entries(toolWords).map(([tool, words]): [string, string] => [
         path.join(toolWordsDirectory, `${tool}.md`),
         renderToolWordsFile(words),
@@ -691,29 +642,23 @@ function renderAgents(
 }
 
 /**
- * Render the plugin that `claude plugin eval` loads: the manifest, the skills, the hooks in the plugin's own layout, and the subagents.
+ * Render the plugin that `claude plugin eval` loads: the manifest, the skills, and the subagents.
  * @param source The harness source.
- * @param hooks The hooks that `hooks.json` names for Claude Code.
  * @returns The expected content of each file of the plugin, by path from the repository root.
  */
-function renderEvalPlugin(source: HarnessSource, hooks: HookConfig[]): [string, string][] {
+function renderEvalPlugin(source: HarnessSource): [string, string][] {
   return [
     [evalPluginManifestPath, `${JSON.stringify(manifestFields, undefined, 2)}\n`],
     ...[...source.skills].map(([file, content]): [string, string] => [
       path.join(evalPluginRoot, "skills", file),
-      content,
-    ]),
-    [path.join(evalPluginRoot, "hooks", "hooks.json"), renderEvalPluginHooks(hooks)],
-    ...[...new Set(hooks.map(({script}) => script))].map((script): [string, string] => [
-      path.join(evalPluginRoot, "hooks", script),
-      source.hookScripts.get(script) ?? "",
+      fillHooksDirectory(content, evalPluginHooksReference),
     ]),
     ...renderAgents(path.join(evalPluginRoot, "agents"), source, findClaudeAgentFields),
   ];
 }
 
 /**
- * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills with the hook scripts beside the front-door skill, and the subagents.
+ * Render what a project holds of the harness, in the folders each agent tool reads from the repository: the skills, with the hook scripts and the scripts inside the front-door skill, and the subagents.
  * @param projectRoot The project's folder from the repository root, empty for the repository itself.
  * @param source The harness source.
  * @returns The expected content of each file, by path from the repository root.
@@ -722,27 +667,12 @@ function renderProject(projectRoot: string, source: HarnessSource): [string, str
   return [
     ...[...source.skills].map(([file, content]): [string, string] => [
       path.join(projectRoot, projectSkillsDirectory, file),
-      content,
-    ]),
-    ...[...source.hookScripts].map(([script, content]): [string, string] => [
-      path.join(projectRoot, projectHooksDirectory, script),
-      content,
+      fillHooksDirectory(content, projectHooksReference),
     ]),
     ...agentTools.flatMap(({agentFields, agentsDirectory}) =>
       renderAgents(path.join(projectRoot, agentsDirectory), source, agentFields),
     ),
   ];
-}
-
-/**
- * Render the scripts a generated project runs its checks with.
- * @returns The expected content of each script under `templates/base/scripts/`, by path from the repository root.
- */
-function renderTemplateScripts(): [string, string][] {
-  return listFiles(sourceScriptsDirectory, false).map(file => [
-    path.join(templateScriptsDirectory, file),
-    readFileSync(path.join(sourceScriptsDirectory, file), "utf8"),
-  ]);
 }
 
 /**
@@ -825,36 +755,11 @@ const sampleSource: HarnessSource = {
       },
     ],
   ]),
-  hookScripts: new Map([["h.sh", "exit 0\n"]]),
-  skills: new Map([[path.join("s", "SKILL.md"), "skill\n"]]),
+  skills: new Map([[path.join("s", "SKILL.md"), `skill ${hooksDirectoryWord}\n`]]),
 };
 
-const sampleHook: HookConfig = {
-  event: "Stop",
-  script: "h.sh",
-};
-
-const twoStopHooks: HookConfig[] = ["a.sh", "b.sh"].map(script => ({
-  script,
-  event: "Stop",
-}));
-
-const sampleHookEntry = '{"hooks":[{"command":"sh h.sh","type":"command"}]}';
-
-/**
- * Render the sample hook the way a self-test's protected file holds it.
- * @returns The entry of `sampleHookEntry`, with its keys in another order.
- */
-function renderSampleHookEntry(): Record<string, unknown> {
-  return {
-    hooks: [
-      {
-        type: "command",
-        command: "sh h.sh",
-      },
-    ],
-  };
-}
+const sampleHookEntry =
+  '{"hooks":[{"command":"sh \\"$CLAUDE_PROJECT_DIR\\"/.claude/skills/sdlc-mode/hooks/h.sh","type":"command"}]}';
 
 const blockingOutput = '{"decision":"block"}';
 
@@ -989,18 +894,14 @@ const selfTestCases: SelfTestCase[] = [
     problems: findToolWords("a.md", "use {{model-switch}}"),
   },
   {
-    name: "a project holds the skills, the hook scripts, and the subagents",
+    name: "a project holds the skills with the hooks folder filled in, and the subagents",
     expected: [
       path.join("t", ".claude", "skills", "s", "SKILL.md"),
-      path.join("t", ".claude", "skills", "sdlc-mode", "hooks", "h.sh"),
+      `skill ${projectHooksReference}\n`,
       path.join("t", ".claude", "agents", "a.md"),
       "---\nname: a\ndescription: d\ntools: Read\nmodel: haiku\n---\n\nbody",
     ],
-    problems: (() => {
-      const files = renderProject("t", sampleSource);
-
-      return [...files.map(([file]) => file), ...files.slice(2).map(([, content]) => content)];
-    })(),
+    problems: renderProject("t", sampleSource).flat(),
   },
   {
     name: "a rendered file with other content, a missing one, and an extra one are stale",
@@ -1021,32 +922,19 @@ const selfTestCases: SelfTestCase[] = [
     ),
   },
   {
-    name: "a protected file that holds the hook entry passes, whatever the order of its keys",
-    expected: [],
-    problems: findHookEntryProblems(
+    name: "a protected file that holds a hook entry for the skill's hook scripts fails, and other hooks pass",
+    expected: [
+      `f.json: holds the Stop hook entry ${sampleHookEntry}, which the sdlc-mode skill declares in its frontmatter; a person removes it and commits this file`,
+    ],
+    problems: findSkillHookEntries(
       "f.json",
-      [sampleHook],
-      renderSampleHookEntry,
       `{"hooks": {"Stop": [{"hooks": [{"command": "other"}]}, ${sampleHookEntry}]}}`,
     ),
   },
   {
-    name: "a protected file that holds the hook entry under another event, and a stale harness entry, fails",
-    expected: [
-      `f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`,
-      'f.json: holds the Stop hook entry {"hooks":[{"command":"sh .claude/skills/sdlc-mode/hooks/old.sh"}]}, which the harness no longer has; a person removes it and commits this file',
-    ],
-    problems: findHookEntryProblems(
-      "f.json",
-      [sampleHook],
-      renderSampleHookEntry,
-      `{"hooks": {"SessionStart": [${sampleHookEntry}], "Stop": [{"hooks": [{"command": "sh .claude/skills/sdlc-mode/hooks/old.sh"}]}]}}`,
-    ),
-  },
-  {
-    name: "a missing protected file lacks every hook entry",
-    expected: [`f.json: lacks the Stop hook entry ${sampleHookEntry}; a person commits this file`],
-    problems: findHookEntryProblems("f.json", [sampleHook], renderSampleHookEntry),
+    name: "a missing protected file holds no hook entry",
+    expected: [],
+    problems: findSkillHookEntries("f.json"),
   },
   {
     name: "a protected file that still loads the harness as a plugin fails",
@@ -1063,6 +951,16 @@ const selfTestCases: SelfTestCase[] = [
     name: "a protected file with other keys and other hooks passes",
     expected: [],
     problems: findPluginLoaderKeys("f.json", '{"permissions": {}, "hooks": {"stop": []}}'),
+  },
+  {
+    name: "a frontmatter with a double quote inside a double-quoted value fails",
+    expected: ["a.md: its frontmatter is not valid YAML"],
+    problems: findFrontmatterProblems("a.md", '---\ncommand: "sh "$A"/b.sh"\n---\n'),
+  },
+  {
+    name: "a frontmatter with a double quote inside a single-quoted value passes",
+    expected: [],
+    problems: findFrontmatterProblems("a.md", "---\ncommand: 'sh \"$A\"/b.sh'\n---\n"),
   },
   {
     name: "a listed name fails in any case and an unlisted one passes",
@@ -1124,35 +1022,6 @@ const selfTestCases: SelfTestCase[] = [
     ),
   },
   {
-    name: "the eval plugin's hook file holds two hooks of one event, each run from the plugin's folder",
-    expected: [
-      `{"hooks":{"Stop":[${["a.sh", "b.sh"]
-        .map(
-          script =>
-            `{"hooks":[{"type":"command","timeout":10,"command":"sh \\"\${CLAUDE_PLUGIN_ROOT}/hooks/${script}\\""}]}`,
-        )
-        .join(",")}]}}`,
-    ],
-    problems: [JSON.stringify(JSON.parse(renderEvalPluginHooks(twoStopHooks)))],
-  },
-  {
-    name: "a hook renders for the protected file with its argument, matcher, and timeout",
-    expected: [
-      '{"matcher":"Bash","hooks":[{"type":"command","timeout":900,"command":"sh \\"$CLAUDE_PROJECT_DIR\\"/.claude/skills/sdlc-mode/hooks/h.sh snapshot"}]}',
-    ],
-    problems: agentTools.map(({renderHookEntry}) =>
-      JSON.stringify(
-        renderHookEntry({
-          event: "e",
-          script: "h.sh",
-          matcher: "Bash",
-          argument: "snapshot",
-          timeout: 900,
-        }),
-      ),
-    ),
-  },
-  {
     name: "a subagent renders its tool's fields",
     expected: ["---\nname: a\ndescription: d\nmodel: haiku\n---\n\nbody"],
     problems: [renderAgent("a", ["model: haiku"], subagent, "body")],
@@ -1170,18 +1039,11 @@ if (selfTestFailures.length > 0) {
   process.exitCode = 1;
 } else {
   const isCheckOnly = process.argv.includes("--check");
-
-  const hooksConfig = JSON.parse(readFileSync(hookConfigPath, "utf8")) as Record<
-    string,
-    HookConfig[]
-  >;
-
-  const source = readHarnessSource(hooksConfig);
+  const source = readHarnessSource();
 
   const expected = new Map([
-    ...renderEvalPlugin(source, hooksConfig["claude-code"] ?? []),
+    ...renderEvalPlugin(source),
     ...projectRoots.flatMap(projectRoot => renderProject(projectRoot, source)),
-    ...renderTemplateScripts(),
   ]);
 
   const staleFiles = findStaleFiles(
@@ -1200,10 +1062,13 @@ if (selfTestFailures.length > 0) {
       ...staleFiles.map(file => `${file}: is stale; run \`pnpm plugin:sync\``),
       ...[...expected].flatMap(([file, content]) => findToolWords(file, content)),
       ...[...expected]
-        .filter(([file]) => file.includes(`${path.sep}skills${path.sep}`))
+        .filter(
+          ([file]) => file.includes(`${path.sep}skills${path.sep}`) && path.extname(file) === ".md",
+        )
         .flatMap(([file, content]) => [
           ...findMissingReferences(file, content, renderedFiles),
           ...findMissingPlaybooks(file, content, renderedFiles),
+          ...findFrontmatterProblems(file, content),
         ]),
       ...listFiles(pluginRoot, true)
         .filter(file => textExtensions.has(path.extname(file)))
@@ -1214,17 +1079,12 @@ if (selfTestFailures.length > 0) {
         .flatMap(file => findVendorNames(file, readFileSync(file, "utf8"), vendorNames)),
       ...findHookProblems(),
       ...findVersionKey(evalPluginManifestPath, expected.get(evalPluginManifestPath) ?? "{}"),
-      ...projectRoots.flatMap(projectRoot =>
-        agentTools.flatMap(({hookFilePath, key, renderHookEntry}) => {
-          const file = path.join(projectRoot, hookFilePath);
-          const text = readHeldFile(file);
+      ...projectRoots.flatMap(projectRoot => {
+        const file = path.join(projectRoot, projectSettingsPath);
+        const text = readHeldFile(file);
 
-          return [
-            ...findHookEntryProblems(file, hooksConfig[key] ?? [], renderHookEntry, text),
-            ...findPluginLoaderKeys(file, text),
-          ];
-        }),
-      ),
+        return [...findSkillHookEntries(file, text), ...findPluginLoaderKeys(file, text)];
+      }),
     ];
 
     if (problems.length > 0) {

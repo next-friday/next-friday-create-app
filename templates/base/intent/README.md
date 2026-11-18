@@ -4,6 +4,7 @@ This folder is the intent home. Every change starts here as an `intent.md`. Git 
 
 - Each change has its own folder, `intent/<change>/`, where `<change>` is a short kebab-case name. The folder holds `intent.md` (Plan), then `spec.md` (Design), then `plan.md` (Build).
 - The playbooks in `.claude/skills/sdlc-mode/playbooks/` say who writes and who accepts each file.
+- The checks of the loop, such as the plan check before a `git push`, run only in a session where a person typed `/sdlc-mode`. After a session is resumed, type `/sdlc-mode` again.
 - A change is `done` when the tree meets every numbered requirement of its `spec.md`. The agent sets `Status: done.` in `intent.md` and `spec.md` in the pull request that meets the last requirement, and the code owner's approval of that pull request accepts it.
 
 ## Reading the records

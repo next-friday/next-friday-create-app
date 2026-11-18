@@ -1,17 +1,17 @@
 # sdlc harness
 
-The `sdlc` harness runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a help skill, a setup skill, a verifier subagent, the default policies, and three hooks.
+The `sdlc` harness runs the software development loop: a skill that matches a request to a playbook and takes it to the next human gate, a help skill, a setup skill, a verifier subagent, the default policies, and the hooks of the loop.
 
 ## Where it loads from
 
 `pnpm plugin:sync` renders `source/` into the folders Claude Code reads from the repository, in this repository's root and in `templates/base/`, so a project holds the harness and installs nothing:
 
-| Path                         | Holds                                                                                                                                     |
-| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| `.claude/skills/`            | The seven skills. Under `sdlc-mode/`: the playbooks, `tool-words/` with the agent tool's words, and `hooks/` with the three hook scripts. |
-| `.claude/agents/verifier.md` | The subagent with the fields Claude Code reads.                                                                                           |
+| Path                         | Holds                                                                                                                                                                      |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.claude/skills/`            | The seven skills. Under `sdlc-mode/`: the playbooks, `tool-words/` with the agent tool's words, and `hooks/` with the hook scripts and `scripts/` with the loop's scripts. |
+| `.claude/agents/verifier.md` | The subagent with the fields Claude Code reads.                                                                                                                            |
 
-Claude Code loads `.claude/skills/`. `.claude/settings.json` runs the hook scripts on the Claude Code events of `adapters/hooks.json`. A person commits that file, and `pnpm plugin:check` fails when it lacks an entry. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
+Claude Code loads `.claude/skills/`. `sdlc-mode/SKILL.md` declares the hooks in its frontmatter, so Claude Code registers them when a person types `/sdlc-mode` and keeps them for the rest of the session ([Claude Code: Hooks in skills and agents](https://code.claude.com/docs/en/hooks.md#hooks-in-skills-and-agents)). A skill's hooks are not kept across a resume, so after a resumed session the person types `/sdlc-mode` again. `.claude/settings.json` holds no hook of the skill, and `pnpm plugin:check` fails when it does. Another agent tool reads `.claude/skills/sdlc-mode/SKILL.md`, the path `AGENTS.md` names.
 
 Part of the harness does not load in these cases:
 
@@ -21,16 +21,18 @@ Part of the harness does not load in these cases:
 
 ## What this folder holds
 
-| Path                          | Holds                                                                                                                                                                                          |
-| :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `source/`                     | The skills, the subagent's text, the hook scripts with their case tables, and the scripts behind `plan:check`, `bands:check`, and `loop:measure`.                                              |
-| `adapters/`                   | `agents.json` for the subagent's fields, `hooks.json` for the hook events, `tool-words.json` for the words `tool-words/` holds, and `vendor-names.json` for the names `source/` must not hold. |
-| `adapters/claude-code/`       | The render of `source/` as a plugin, which only `claude plugin eval` loads. `pnpm plugin:sync` writes it.                                                                                      |
-| `adapters/claude-code/evals/` | The eval cases, authored there.                                                                                                                                                                |
+| Path                          | Holds                                                                                                                                                                               |
+| :---------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source/`                     | The skills, the subagent's text, and, inside `skills/sdlc-mode/`, the hook scripts with their case tables and the scripts `check-plan.ts`, `check-bands.ts`, and `measure-loop.ts`. |
+| `adapters/`                   | `agents.json` for the subagent's fields, `tool-words.json` for the words `tool-words/` holds, and `vendor-names.json` for the names `source/` must not hold.                        |
+| `adapters/claude-code/`       | The render of `source/` as a plugin, which only `claude plugin eval` loads. `pnpm plugin:sync` writes it.                                                                           |
+| `adapters/claude-code/evals/` | The eval cases, authored there.                                                                                                                                                     |
 
 ## Hooks
 
-`sdlc-status.sh` runs as a `SessionStart` hook for Claude Code. When a session starts, it lists each `intent/<change>/` whose intent and spec are not `Status: done.`, `Status: rejected.`, or `Status: withdrawn.`, with its stage and who acts next, and leaves out a fix folder, which holds only `plan.md`, once that plan is on `origin`'s default branch. It reads the files and that one Git ref, and prints nothing when there is no such change or no `jq`. Claude Code adds the plain text to the session's context. `pnpm plugin:check` runs the hook against `source/hooks/sdlc-status.cases.json`.
+`check-push.sh` runs as a `PreToolUse` hook on `Bash` for Claude Code. Before a `git push`, it runs `node .claude/skills/sdlc-mode/scripts/check-plan.ts` in the project folder, and it blocks the push with the script's output when the script exits non-zero. Any other command passes. The hook needs `jq` and `node` on the `PATH` and does nothing without them. `pnpm plugin:check` runs the hook against the cases in `source/skills/sdlc-mode/hooks/check-push.cases.json`.
+
+`sdlc-status.sh` is a plain command, not a hook: `sdlc-mode/SKILL.md` step 1 runs `sh .claude/skills/sdlc-mode/hooks/sdlc-status.sh` when the request names no change. It lists each `intent/<change>/` whose intent and spec are not `Status: done.`, `Status: rejected.`, or `Status: withdrawn.`, with its stage and who acts next, and leaves out a fix folder, which holds only `plan.md`, once that plan is on `origin`'s default branch. It reads the files and that one Git ref, and prints nothing when there is no such change or no `jq`. `pnpm plugin:check` runs the script against `source/skills/sdlc-mode/hooks/sdlc-status.cases.json`.
 
 `check-reply-shape.sh` is a POSIX `sh` script that reads the hook input with `jq`, run as a `UserPromptSubmit` and a `Stop` hook for Claude Code. It checks only a reply whose first line starts with `**Answer:**`, `**Result:**`, `**Waiting for you:**`, or `**No change:**`, and it blocks that reply once, with a reason that asks for the whole reply again, when the reply:
 
@@ -45,19 +47,19 @@ Part of the harness does not load in these cases:
 
 To know what changed during the turn, the script takes a snapshot when the person sends a message: `check-reply-shape.sh snapshot`. It stores a checksum of the content of every file Git tracks or does not ignore, outside `intent/`, in a file named after the conversation under `${TMPDIR:-/tmp}/sdlc-reply-shape/`. When the agent stops, the script takes the checksum again and compares. It reads the content through a copy of the Git index and a scratch object store, both under that directory and deleted after each run, so staging and committing change nothing, and the project's index and objects are not written. It reads every file that changed since the copy of the index, and every untracked file each time, so a large untracked file that Git does not ignore can take the hook past its ten seconds; the rule then does not apply to that turn. Outside a Git repository, on the first stop with no stored checksum, and when the session's folder moved to another repository, the rule does not apply. Only `intent/` at the repository's root is left out, and the content of a submodule is not read.
 
-The hook needs `jq` on the `PATH` and does nothing without it. `pnpm plugin:check` runs the hook against the cases in `source/hooks/check-reply-shape.cases.json`.
+The hook needs `jq` on the `PATH` and does nothing without it. `pnpm plugin:check` runs the hook against the cases in `source/skills/sdlc-mode/hooks/check-reply-shape.cases.json`.
 
 ## Checks
 
 Run each from the repository root. Each one runs its self-tests first and exits 1 on a problem or a self-test failure.
 
-| Command                        | Checks                                                                                                                                                                                                                                                                                            |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm plan:check`              | Each `intent/<change>/plan.md` against the plan template and its `spec.md`; a branch that changes code with no `plan.md`, except a `dependabot/` or `changeset-release/` branch; and a fix that edits a test the default branch holds, unless the plan says `Test change accepted by: @<handle>.` |
-| `pnpm harness:check <version>` | In a generated project, each harness file against the reference project of that create-app version. In this repository, `pnpm harness:check` runs only its self-tests.                                                                                                                            |
-| `pnpm bands:check`             | `bands.yaml` against the rules for control bands.                                                                                                                                                                                                                                                 |
-| `pnpm loop:measure`            | For each `intent/<change>` folder, the days from intent to spec and the commits after each step.                                                                                                                                                                                                  |
-| `pnpm plugin:check`            | The rendered folders against `source/`; each relative path a rendered skill names; and the hook entries and the keys of `.claude/settings.json`, in the root and in `templates/base/`.                                                                                                            |
+| Command                                                 | Checks                                                                                                                                                                                                                                                                                                                                    |
+| :------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node .claude/skills/sdlc-mode/scripts/check-plan.ts`   | Each `intent/<change>/plan.md` against the plan template and its `spec.md`; a branch that changes code with no `plan.md`, except a `dependabot/` or `changeset-release/` branch; and a fix that edits a test the default branch holds, unless the plan says `Test change accepted by: @<handle>.` `--self-test` runs only its self-tests. |
+| `pnpm harness:check <version>`                          | In a generated project, each harness file against the reference project of that create-app version. In this repository, `pnpm harness:check` runs only its self-tests.                                                                                                                                                                    |
+| `node .claude/skills/sdlc-mode/scripts/check-bands.ts`  | `bands.yaml` against the rules for control bands.                                                                                                                                                                                                                                                                                         |
+| `node .claude/skills/sdlc-mode/scripts/measure-loop.ts` | For each `intent/<change>` folder, the days from intent to spec and the commits after each step.                                                                                                                                                                                                                                          |
+| `pnpm plugin:check`                                     | The rendered folders against `source/`; each relative path a rendered skill names; the hook scripts against their cases; `.claude/settings.json`, in the root and in `templates/base/`, for a hook entry of the skill and for the keys that load the harness as a plugin; and the self-tests of `check-plan.ts` and `check-bands.ts`.     |
 
 ## Eval cases
 

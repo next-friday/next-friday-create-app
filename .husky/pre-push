@@ -27,9 +27,9 @@ $ref_files"
   fi
 done
 
-if [ "$are_changed_files_known" = true ] && printf '%s\n' "$changed_files" | node plugins/sdlc/source/scripts/changed-documents.ts; then
-  pnpm rules:check && pnpm plugin:check && pnpm plan:check && pnpm format:check || {
-    echo "pre-push: pnpm rules:check, pnpm plugin:check, pnpm plan:check, or pnpm format:check failed. Fix the failures above, commit, then push again." >&2
+if [ "$are_changed_files_known" = true ] && printf '%s\n' "$changed_files" | node scripts/changed-documents.ts; then
+  pnpm rules:check && pnpm plugin:check && pnpm format:check || {
+    echo "pre-push: pnpm rules:check, pnpm plugin:check, or pnpm format:check failed. Fix the failures above, commit, then push again." >&2
     exit 1
   }
   exit 0

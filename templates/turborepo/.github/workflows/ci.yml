@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      pull-requests: read # Needed by paths-filter to inspect pull request changes, and by plan:check to read who merged the plan's pull request.
+      pull-requests: read # Needed by paths-filter to inspect pull request changes.
       id-token: write # Needed to exchange GitHub OIDC for a Turborepo Remote Cache token.
     services:
       postgres:
@@ -114,11 +114,6 @@ jobs:
       - name: Check agent gates
         if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm gates:check
-      - name: Check plans
-        if: steps.mode.outputs.agent_checks == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }} # plan:check reads who merged the plan's pull request.
-        run: pnpm plan:check
       - name: Check formatting
         if: steps.mode.outputs.agent_checks == 'true'
         run: pnpm format:check
@@ -134,9 +129,6 @@ jobs:
         run: |
           echo "TURBO_FILTER=--affected" >> "$GITHUB_ENV"
           echo "TURBO_SCM_BASE=origin/$BASE_REF" >> "$GITHUB_ENV"
-      - name: Check bands
-        if: steps.mode.outputs.full_verification == 'true'
-        run: pnpm bands:check
       - name: Check lint
         if: steps.mode.outputs.full_verification == 'true'
         run: pnpm lint:check

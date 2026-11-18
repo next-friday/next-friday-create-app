@@ -1,0 +1,54 @@
+[
+  {
+    "name": "not a push: allowed",
+    "input": {
+      "tool_input": {
+        "command": "git status"
+      }
+    },
+    "expected": "pass"
+  },
+  {
+    "name": "a word that only contains push: allowed",
+    "input": {
+      "tool_input": {
+        "command": "git log --grep=pushed"
+      }
+    },
+    "expected": "pass"
+  },
+  {
+    "name": "a commit message that names a push: allowed",
+    "input": {
+      "tool_input": {
+        "command": "git commit -m \"then git push now\""
+      }
+    },
+    "expected": "pass"
+  },
+  {
+    "name": "a push in a repository with no intent folder: allowed",
+    "input": {
+      "tool_input": {
+        "command": "git push -u origin feat/x"
+      }
+    },
+    "branchFiles": {
+      "src/app.ts": "export {};\n"
+    },
+    "expected": "pass"
+  },
+  {
+    "name": "a push with a global option, on a branch that changes a spec and code with no plan: blocked",
+    "input": {
+      "tool_input": {
+        "command": "git -c core.quotePath=false push"
+      }
+    },
+    "branchFiles": {
+      "intent/x/spec.md": "# Spec\n",
+      "src/app.ts": "export {};\n"
+    },
+    "expected": "block"
+  }
+]

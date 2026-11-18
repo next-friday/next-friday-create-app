@@ -43,7 +43,7 @@ Each stack is `templates/base` plus `templates/<stack>`. The CLI copies `base`, 
 - `base` holds the files every stack uses with the same content, such as the Git hooks, gitleaks, and agent rules. It is not a template on its own.
 - A stack directory holds the files whose content differs by stack, such as `package.json` or `eslint.config.ts`.
 - A stack replaces a `base` file only when that stack needs different content. Today these replace `base`: `knip.json`, `pnpm-workspace.yaml`, and `.github/dependabot.yml` in `turborepo`, and `.agents/review.md` with its rendered `REVIEW.md` in `payload` and `turborepo`. When you change one of those `base` files, make the same change in each replacement.
-- Do not link the root and `templates/` trees. The root copies govern this repository; `templates/` ships to every generated project. One exception: `pnpm plugin:sync` renders the harness into `templates/base/.claude/skills/`, and `templates/base/.claude/agents/`, and the three scripts `check-plan.ts`, `check-bands.ts`, and `measure-loop.ts` in `templates/base/scripts/`, from `plugins/sdlc/source/`; `pnpm plugin:check` fails when one differs.
+- Do not link the root and `templates/` trees. The root copies govern this repository; `templates/` ships to every generated project. One exception: `pnpm plugin:sync` renders the harness into `templates/base/.claude/skills/` and `templates/base/.claude/agents/` from `plugins/sdlc/source/`; `pnpm plugin:check` fails when one differs. `templates/base/scripts/` holds the template's own authored scripts, such as `run-checks.ts`, `changed-documents.ts`, and `check-harness.ts`, which stay the same as the root copies in `scripts/`.
 - root `pnpm rules:sync` renders only the root. A template's rendered copy lives in `templates/base` when every stack renders it the same, and in each stack otherwise (for example `deterministic-testing`, whose globs differ by stack). Run `pnpm rules:sync` in a generated project and copy the output back with your file-editing tool, because the shell gate blocks `cp` and `rsync` into `.agents` and `.claude/rules` paths.
 - Each stack stores its `.gitignore` as `_gitignore`, because npm leaves `.gitignore` out of published packages. The CLI renames it.
 
@@ -63,7 +63,7 @@ cd "$dir/next-friday-template-nestjs" && git add --all && pnpm verify
 - `src/main.ts` calls `create()` in `src/create.ts`, which copies `templates/base`, then `templates/<stack>`, renames the project, and installs.
 - A stack is an entry in `src/stacks.ts` plus `templates/<stack>/`, whose `package.json` is named `next-friday-template-<stack>`.
 - Agent rules, `review.md`, and `mcp.json`: the files under `.agents/` are the source; `pnpm rules:sync` renders them into `.claude/`, `REVIEW.md`, and the MCP configs. Never edit a rendered copy.
-- The `sdlc` harness: `plugins/sdlc/source/` holds the skills, the subagent's text, the hook scripts, and the scripts behind `plan:check`, `bands:check`, and `loop:measure`. `pnpm plugin:sync` renders them into the folders Claude Code reads from the repository, in the root and in `templates/base/`: the skills in `.claude/skills/`, with the hook scripts and the tool's words under `sdlc-mode/`, and the subagent in `.claude/agents/`. It also renders the three scripts into `templates/base/scripts/`, and `plugins/sdlc/adapters/claude-code/`, the plugin that only `claude plugin eval` loads. Never edit a rendered file; the eval cases in `plugins/sdlc/adapters/claude-code/evals/` and the JSON files in `plugins/sdlc/adapters/` are authored there. `.claude/settings.json` runs the hook scripts; a person commits it, and `pnpm plugin:check` fails when it lacks an entry of `plugins/sdlc/adapters/hooks.json`.
+- The `sdlc` harness: `plugins/sdlc/source/` holds the skills, the subagent's text, and, inside `skills/sdlc-mode/`, the hook scripts and the scripts `check-plan.ts`, `check-bands.ts`, and `measure-loop.ts`. `pnpm plugin:sync` renders them into the folders Claude Code reads from the repository, in the root and in `templates/base/`: the skills in `.claude/skills/`, with the hooks, the scripts, and the tool's words under `sdlc-mode/`, and the subagent in `.claude/agents/`. It also renders `plugins/sdlc/adapters/claude-code/`, the plugin that only `claude plugin eval` loads. Never edit a rendered file; the eval cases in `plugins/sdlc/adapters/claude-code/evals/` and the JSON files in `plugins/sdlc/adapters/` are authored there. The hooks are declared in the frontmatter of `sdlc-mode/SKILL.md`, so they run only in a session where a person typed `/sdlc-mode`; `.claude/settings.json` holds no hook of the skill, and `pnpm plugin:check` fails when it does. `pnpm plugin:check` also runs the self-tests of `check-plan.ts` and `check-bands.ts`. No script of this repository runs the plan check or the bands check on a push or in CI.
 
 Run parallel sessions in separate worktrees, on tasks that touch different files. Start each with `claude --worktree <name>`: a worktree is its own checkout on its own branch. Tasks that share files run in one session, one after another. Start with two or three sessions, and add one only while you can review every stream properly.
 
@@ -79,11 +79,11 @@ Three jobs in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) run only in
 
 ## Git hooks
 
-| Hook         | What it does                                                                                                                                                                            |
-| :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pre-commit` | Rejects commits on `main`, scans staged changes with gitleaks (`.gitleaks.toml`), runs lint-staged.                                                                                     |
-| `commit-msg` | Checks the message with `@next-friday/commitlint-config-friday`.                                                                                                                        |
-| `pre-push`   | Rejects pushes to `main`, then runs `pnpm verify`. A push that changes only documents runs `pnpm rules:check`, `pnpm plugin:check`, `pnpm plan:check`, and `pnpm format:check` instead. |
+| Hook         | What it does                                                                                                                                                         |
+| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre-commit` | Rejects commits on `main`, scans staged changes with gitleaks (`.gitleaks.toml`), runs lint-staged.                                                                  |
+| `commit-msg` | Checks the message with `@next-friday/commitlint-config-friday`.                                                                                                     |
+| `pre-push`   | Rejects pushes to `main`, then runs `pnpm verify`. A push that changes only documents runs `pnpm rules:check`, `pnpm plugin:check`, and `pnpm format:check` instead. |
 
 ## Release intent
 
@@ -147,4 +147,4 @@ This repository is the source of truth for intents, specs, plans, and lessons (t
 
 ### How the loop is measured
 
-`pnpm loop:measure` reads git history and prints one row per `intent/<change>/` folder: the days from the first `intent.md` commit to the first `spec.md` commit, the commits to `intent.md` after the first `spec.md` commit, and the commits to `spec.md` after the first `plan.md` commit. The other plays' indicators are not collected in this repository.
+`node .claude/skills/sdlc-mode/scripts/measure-loop.ts` reads git history and prints one row per `intent/<change>/` folder: the days from the first `intent.md` commit to the first `spec.md` commit, the commits to `intent.md` after the first `spec.md` commit, and the commits to `spec.md` after the first `plan.md` commit. The other plays' indicators are not collected in this repository.

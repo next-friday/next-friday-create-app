@@ -90,39 +90,6 @@
           }
         ]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-reply-shape.sh snapshot",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/check-reply-shape.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/skills/sdlc-mode/hooks/sdlc-status.sh",
-            "timeout": 10
-          }
-        ]
-      }
     ]
   }
 }

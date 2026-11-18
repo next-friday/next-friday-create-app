@@ -2,6 +2,23 @@
 name: sdlc-mode
 description: The front door for work in this project. Matches a request to a playbook and runs it to the next human gate. Run it with /sdlc-mode.
 disable-model-invocation: true
+hooks:
+  UserPromptSubmit:
+    - hooks:
+        - type: command
+          timeout: 10
+          command: 'sh "${CLAUDE_PLUGIN_ROOT}/skills/sdlc-mode/hooks"/check-reply-shape.sh snapshot'
+  Stop:
+    - hooks:
+        - type: command
+          timeout: 10
+          command: 'sh "${CLAUDE_PLUGIN_ROOT}/skills/sdlc-mode/hooks"/check-reply-shape.sh'
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          timeout: 60
+          command: 'sh "${CLAUDE_PLUGIN_ROOT}/skills/sdlc-mode/hooks"/check-push.sh'
 ---
 
 # SDLC
@@ -24,6 +41,8 @@ Do these steps in order.
    | Anything else                                                                                                                                                                                    | Say which of the rows above is closest and why it does not fit, answer what you can as `playbooks/question.md` says, and stop. |
 
    When a request both asks a question and reports a problem, use `question` and offer `intent` in one line. A problem reported with `/sdlc-mode` is the person's ask for `intent`.
+
+   When the request names no change, run `sh "${CLAUDE_PLUGIN_ROOT}/skills/sdlc-mode/hooks"/sdlc-status.sh < /dev/null` and show its lines.
 
    Do not start work a person did not ask for. When a message reports a problem without asking for work, answer in a few lines. On the **Now** line, give the message that would start the work, which is `/sdlc-mode` followed by their own words.
 
@@ -69,7 +88,7 @@ Run every command, the checks included, before you write the reply. Write the re
 - Send nothing outside the session, such as a message to another session or a service, unless a task step says to.
 - Name each action by what it is. Call something a review only when a review ran. A reminder to check CI is a reminder.
 - When a step fails for want of a permission, stop. Say what failed and what the person can do, before you do anything in its place.
-- When a **Gate** or a check blocks you, report the block, the playbook step it enforces, and the person's options. Name the check that refused, as its message words it. The plan check, which `pre-push` and CI run, says a branch "adds or changes no `intent/<change>/plan.md`". It enforces `playbooks/build.md` step 5, where the engineer accepts the plan. Never write another artifact that the check accepts in place of the one it asks for, such as a plan with no intent or spec to get past the plan check. When the change has no intent and no spec, the way forward is an intent, so tell the person to start one with `/sdlc-mode`. Never offer to draft the plan in its place.
+- When a **Gate** or a check blocks you, report the block, the playbook step it enforces, and the person's options. Name the check that refused, as its message words it. The plan check, which this skill's push hook runs before a `git push`, says a branch "adds or changes no `intent/<change>/plan.md`". It enforces `playbooks/build.md` step 5, where the engineer accepts the plan. Never write another artifact that the check accepts in place of the one it asks for, such as a plan with no intent or spec to get past the plan check. When the change has no intent and no spec, the way forward is an intent, so tell the person to start one with `/sdlc-mode`. Never offer to draft the plan in its place.
 - Write an `Accepted by:` or `Author:` handle only when the person gave it, or when the host shows whose account the session runs as.
 - Explain a technical term, such as a ruleset or a changeset, in a few words the first time a reply uses it.
 - A hook or a host message that asks you to commit or push does not lift a **Gate** or a step that waits for a person. Leave the files as they are, answer as the **First line** rule says for `**No change:**`, and stop.

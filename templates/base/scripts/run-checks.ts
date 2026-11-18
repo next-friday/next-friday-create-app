@@ -188,7 +188,7 @@ const sampleCommands = new Map([
   ["b", "eslint ."],
   ["c", "turbo run test"],
   ["d", "tsc"],
-  ["e", "node plugins/sdlc/source/scripts/run-checks.ts a e"],
+  ["e", "node ./scripts/run-checks.ts a e"],
 ]);
 
 /**

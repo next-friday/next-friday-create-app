@@ -46,7 +46,7 @@ jobs:
       - name: Detect the tier
         id: tier
         run: |
-          report="$(pnpm --silent bands:check metric-values.json)"
+          report="$(node .claude/skills/sdlc-mode/scripts/check-bands.ts metric-values.json)"
           echo "$report"
           {
             echo "## Control band report"

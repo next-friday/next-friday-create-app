@@ -30,7 +30,7 @@ Lint, format, Knip, and `package.json` ordering run over the whole workspace wha
 - Test: `pnpm test:coverage` (all green, and the last line is Turborepo's `Tasks:` summary with every task successful)
 - Static checks: `pnpm verify:static` (ESLint allows zero warnings; every check must pass)
 
-While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` for the affected apps once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check` and `pnpm plan:check` instead. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
+While it works, the agent runs the checks of the files it changed. The `pre-push` hook runs `pnpm check` for the affected apps once, at the push, and the reply's **Checks** quotes the hook's output from the push. For a push that changes only documents, the hook runs `pnpm rules:check` instead. The plan check of the loop runs only in a session where a person typed `/sdlc-mode`: the skill's push hook, declared in `.claude/skills/sdlc-mode/SKILL.md`, runs `check-plan.ts` before a `git push`. After a session is resumed, type `/sdlc-mode` again, because a skill's hooks are not kept across a resume. `pnpm check` runs the tests related to the change; `pnpm test:coverage` runs in `pnpm verify`.
 
 The `verifier` subagent starts the apps with `pnpm dev`. It exercises the changed behavior and the two nearest neighboring flows.
 

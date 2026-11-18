@@ -30,7 +30,7 @@ This playbook turns a merged spec into a plan the engineer accepts, and then int
    - A failure of the machine, such as a missing database, a port in use, or a tool that is not installed, is a check that cannot run. Report it as one, as step 9 says.
    - For a bug fix, follow `playbooks/fix.md` steps 8 and 9.
    - When the work departs from the plan, change `plan.md` in the same commit.
-   - Before the branch is first pushed, set `Status: done.` in `intent.md` and `spec.md`. `pnpm plan:check` fails the push without it.
+   - Before the branch is first pushed, set `Status: done.` in `intent.md` and `spec.md`. The push hook of this skill, which runs `scripts/check-plan.ts` before a `git push`, fails the push without it.
    - When a requirement of `spec.md` stays unmet, name it in the pull request description.
 9. Verify the work yourself. While you work, run the checks of the files you changed, as the project's agent instructions name them, and keep the output. Every one of them must pass. Fix the code, and never skip, delete, or weaken a test.
    - Before the push, run the end-to-end tests that cover the part you changed, and keep the output. When the project has no end-to-end test, or the session cannot run them, say so under **Not yet**.
