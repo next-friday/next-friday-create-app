@@ -16,7 +16,7 @@ This playbook turns a merged intent into the requirements and design spec.
 4. Commit `spec.md` on a new branch. Push the branch and open a pull request ready for review, as the opening paragraph of `playbooks/open-pr.md` says for branches and pull requests. When you cannot open a pull request from this session, say so and give the pushed branch's name.
 5. **Gate: the product owner reviews the spec.** The product owner decides each area of concern with its policy owner. They give you each corrected `Decision:` in the chat or on the pull request, and you write it and push. The spec says `Status: accepted.` from its first commit, so their merge is what accepts it and those decisions. To reject it, they ask you to write the reason on a line of its own and to set the status line to end with `Status: rejected.`, and they merge that. For a change the spec classes as higher risk, the product owner consults a tech lead first. You never decide, merge, or reject for them. Report the pull request's URL and stop, as `playbooks/review.md` step 5 says.
 
-**Hands off to:** `playbooks/build.md`. An engineer with an agent runs it when the product owner has merged the spec's pull request and the engineer sends `/sdlc-mode build` with the spec's path.
+**Hands off to:** `playbooks/build.md`. An engineer with an agent runs it when the product owner has merged the spec's pull request and the engineer sends `/sdlc-mode build` with the spec's path, or says yes when you ask, as `playbooks/review.md` step 5 says.
 
 ## Template
 
